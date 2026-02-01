@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
 TaskFlow - Task and project management app for small teams. Multi-page vanilla JavaScript app using Vite + Bootstrap 5 + Supabase.
@@ -48,23 +46,7 @@ Enforce at 3 layers: RLS policies, backend routes, frontend UI.
 - Standard registration creates `user` role
 - Invite registration assigns role from invite token
 
-## Implementation Workflow
 
-Follow `plans/` specs sequentially (01-12):
-1. Project Setup
-2. Supabase Setup
-3. Database Schema
-4. Authentication
-5. Dashboard
-6. Project Management
-7. Task Management
-8. Task Assignment
-9. File Storage
-10. Admin Panel
-11. UI Polish
-12. Deployment
-
-Each spec has detailed steps. Read entire spec before implementing.
 
 ## Common Pitfalls
 
@@ -80,4 +62,4 @@ Each spec has detailed steps. Read entire spec before implementing.
 - `docs/project-technical-summary.md` - Architecture details
 - `docs/coding-conventions.md` - Code style
 - `docs/security.md` - Security practices
-- `plans/README.md` - Implementation specs overview
+
