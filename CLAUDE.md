@@ -1,0 +1,83 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+TaskFlow - Task and project management app for small teams. Multi-page vanilla JavaScript app using Vite + Bootstrap 5 + Supabase.
+
+## Critical Commands
+
+**IMPORTANT**: All npm commands run from `frontend/` directory, NOT project root.
+
+```bash
+cd frontend
+npm install
+npm run dev          # Dev server on localhost:5173
+npm run build
+```
+
+## Architecture
+
+### Multi-Page Application (NOT SPA)
+Separate HTML files for each feature:
+- `index.html` - Landing + sys_admin bootstrap modal
+- `signup.html` - Registration (regular + invite-based)
+- `signin.html` - Login
+- `dashboard.html` - User overview
+- `projects.html` - Project management
+- `tasks.html` - Task board
+- `admin.html` - Admin panel (invites, company)
+
+### Role-Based Access (3 roles in auth.users metadata)
+- `sys_admin` - Created via bootstrap modal (one-time)
+- `admin` - Company admin (manages invites)
+- `user` - Standard user
+
+Enforce at 3 layers: RLS policies, backend routes, frontend UI.
+
+### Database Key Points
+- Multi-tenant via `companies` table
+- RLS uses `auth.user_company_id()` for isolation
+- Helper functions: `auth.is_company_admin()`, `auth.is_system_admin()`
+- Tables: companies, projects, tasks, attachments, invites
+- No public users table (data in auth.users metadata)
+
+### Authentication
+- Supabase Auth handles everything (no custom auth)
+- Standard registration creates `user` role
+- Invite registration assigns role from invite token
+
+## Implementation Workflow
+
+Follow `plans/` specs sequentially (01-12):
+1. Project Setup
+2. Supabase Setup
+3. Database Schema
+4. Authentication
+5. Dashboard
+6. Project Management
+7. Task Management
+8. Task Assignment
+9. File Storage
+10. Admin Panel
+11. UI Polish
+12. Deployment
+
+Each spec has detailed steps. Read entire spec before implementing.
+
+## Common Pitfalls
+
+1. Running npm from project root instead of `frontend/`
+2. Forgetting RLS policies for company isolation
+3. Hardcoding company_id instead of using `auth.user_company_id()`
+4. Skipping role validation at all three layers
+5. Not handling invite-based registration differently
+6. Committing `.env` file
+
+## Key Documentation
+
+- `docs/project-technical-summary.md` - Architecture details
+- `docs/coding-conventions.md` - Code style
+- `docs/security.md` - Security practices
+- `plans/README.md` - Implementation specs overview
