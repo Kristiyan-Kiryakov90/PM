@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(test:*)",
+      "Bash(npm init -y)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(node scripts/test-login.js:*)",
+      "Bash(node -e \"import\\(''dotenv''\\).then\\(m => m.default.config\\({path: ''.env''}\\)\\); import\\(''@supabase/supabase-js''\\).then\\(async \\({createClient}\\) => { const url = process.env.SUPABASE_URL; const key = process.env.SUPABASE_SERVICE_ROLE_KEY; const supabase = createClient\\(url, key\\); const {data, error} = await supabase.from\\(''projects''\\).select\\(''count''\\); console.log\\(''Projects table exists:'', !error || error.code === ''PGRST116''\\); if\\(error\\) console.log\\(''Error:'', error.message\\); }\\);\")",
+      "Bash(node:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(powershell \"Stop-Process -Id 58852 -Force\")",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(claude doctor)",
+      "Bash(dir:*)",
+      "WebSearch",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "Bash(clip:*)",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__search_docs"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}
