@@ -1,0 +1,23 @@
+/**
+ * Sign Up Page Styles
+ */
+
+.signup-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.signup-card {
+  padding: 2rem;
+}
+
+.signup-logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.signup-logo h1 {
+  color: var(--primary-color);
+  font-size: 2rem;
+  font-weight: 700;
+}

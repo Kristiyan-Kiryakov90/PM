@@ -1,0 +1,54 @@
+/**
+ * Tasks Page Styles
+ */
+
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.task-board {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+}
+
+.task-column {
+  flex: 1;
+  min-width: 300px;
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+}
+
+.task-card {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  background-color: white;
+}
+
+.task-priority {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.task-priority.high {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.task-priority.medium {
+  background-color: #fff3cd;
+  color: #664d03;
+}
+
+.task-priority.low {
+  background-color: #cfe2ff;
+  color: #084298;
+}

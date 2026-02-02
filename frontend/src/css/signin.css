@@ -1,0 +1,23 @@
+/**
+ * Sign In Page Styles
+ */
+
+.signin-container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.signin-card {
+  padding: 2rem;
+}
+
+.signin-logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.signin-logo h1 {
+  color: var(--primary-color);
+  font-size: 2rem;
+  font-weight: 700;
+}

@@ -1,0 +1,132 @@
+/**
+ * Global Styles
+ * Shared styles across all pages
+ */
+
+/* Import Bootstrap */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Root CSS Variables */
+:root {
+  --primary-color: #0d6efd;
+  --secondary-color: #6c757d;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --header-height: 60px;
+  --sidebar-width: 250px;
+
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.3s;
+}
+
+/* Global Resets */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  line-height: 1.6;
+  color: #333;
+  background-color: #f8f9fa;
+}
+
+/* Utility Classes */
+.full-height {
+  min-height: 100vh;
+}
+
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.card-shadow {
+  box-shadow: var(--box-shadow);
+}
+
+.transition {
+  transition: all var(--transition-speed) ease;
+}
+
+/* Loading Spinner */
+.spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner-overlay.hidden {
+  display: none;
+}
+
+/* Alert Messages */
+.alert {
+  border-radius: var(--border-radius);
+}
+
+/* Buttons */
+.btn {
+  border-radius: var(--border-radius);
+  transition: var(--transition-speed);
+}
+
+/* Cards */
+.card {
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: none;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+  border-radius: var(--border-radius);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Links */
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: var(--transition-speed);
+}
+
+a:hover {
+  color: darken(var(--primary-color), 15%);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+}
+
+@media (max-width: 576px) {
+  :root {
+    --sidebar-width: 100%;
+  }
+}

@@ -1,0 +1,30 @@
+/**
+ * Dashboard Page Styles
+ */
+
+.dashboard-header {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 2rem;
+}
+
+.stats-card {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stats-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.stats-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-transform: uppercase;
+}
+
+.recent-tasks {
+  margin-top: 2rem;
+}

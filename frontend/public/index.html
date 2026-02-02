@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow - Task & Project Management</title>
+  <link rel="stylesheet" href="../src/css/global.css">
+  <link rel="stylesheet" href="../src/css/index.css">
+</head>
+<body>
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mx-auto text-center">
+          <h1 class="hero-title">TaskFlow</h1>
+          <p class="hero-subtitle">Simple task and project management for small teams</p>
+          <div class="mt-4">
+            <a href="signup.html" class="btn btn-light btn-lg me-2">Get Started</a>
+            <a href="signin.html" class="btn btn-outline-light btn-lg">Sign In</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <h2 class="text-center mb-5">Features</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card feature-card">
+            <div class="feature-icon">📋</div>
+            <h3>Project Management</h3>
+            <p>Organize your work into projects and track progress</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card feature-card">
+            <h3 class="feature-icon">✅</div>
+            <h3>Task Tracking</h3>
+            <p>Create, assign, and manage tasks with ease</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card feature-card">
+            <div class="feature-icon">👥</div>
+            <h3>Team Collaboration</h3>
+            <p>Work together with your team in one place</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Test Supabase Connection -->
+  <script type="module">
+    import { checkConnection } from '../src/js/services/supabase.js';
+
+    // Test connection on page load
+    checkConnection();
+  </script>
+</body>
+</html>
