@@ -8,16 +8,111 @@
   <link rel="stylesheet" href="../src/css/tasks.css">
 </head>
 <body>
-  <div class="container-fluid">
-    <h1>Tasks</h1>
-    <p>Tasks page - Coming in Plan 06</p>
-  </div>
+  <!-- Navigation (injected by navbar component) -->
+
+  <!-- Main Content -->
+  <main class="tasks-main">
+    <div class="container py-6">
+      <!-- Header with Filters -->
+      <div class="tasks-header mb-8">
+        <div class="row align-items-center mb-4">
+          <div class="col">
+            <h1 class="mb-2">Tasks</h1>
+            <p class="text-muted">Track and manage all your tasks in one place.</p>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary" id="newTaskBtn">
+              <span>➕</span> New Task
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="row g-3">
+          <div class="col-md-3">
+            <select class="form-select" id="filterStatus">
+              <option value="">All Status</option>
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filterProject">
+              <option value="">All Projects</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filterAssignee">
+              <option value="">All Assignees</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <input type="search" class="form-control" id="searchTasks" placeholder="Search tasks...">
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks List -->
+      <div id="tasksContainer">
+        <div class="empty-state">
+          <div class="empty-state-icon">✅</div>
+          <h3 class="empty-state-title">No tasks yet</h3>
+          <p class="empty-state-message">Create your first task to start tracking work.</p>
+          <button class="btn btn-primary" id="emptyStateCreateBtn">Create Task</button>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <script type="module">
+    import { renderNavbar } from '../src/js/components/navbar.js';
     import { requireAuth } from '../src/js/utils/router.js';
+    import { showError, showInfo } from '../src/js/utils/ui-helpers.js';
 
     async function init() {
-      await requireAuth();
+      try {
+        // Ensure user is authenticated
+        await requireAuth();
+
+        // Render navbar
+        await renderNavbar();
+
+        // Setup event listeners
+        const newTaskBtn = document.getElementById('newTaskBtn');
+        const emptyStateCreateBtn = document.getElementById('emptyStateCreateBtn');
+        const filterStatus = document.getElementById('filterStatus');
+        const searchTasks = document.getElementById('searchTasks');
+
+        if (newTaskBtn) {
+          newTaskBtn.addEventListener('click', () => {
+            showInfo('Create task functionality coming in Plan 06');
+          });
+        }
+
+        if (emptyStateCreateBtn) {
+          emptyStateCreateBtn.addEventListener('click', () => {
+            showInfo('Create task functionality coming in Plan 06');
+          });
+        }
+
+        if (filterStatus) {
+          filterStatus.addEventListener('change', () => {
+            showInfo('Task filtering coming in Plan 06');
+          });
+        }
+
+        if (searchTasks) {
+          searchTasks.addEventListener('input', () => {
+            showInfo('Task search coming in Plan 06');
+          });
+        }
+
+        // TODO: Load tasks from API in Plan 06
+      } catch (error) {
+        console.error('Tasks page initialization error:', error);
+        showError('Failed to load tasks. Please refresh the page.');
+      }
     }
 
     init();

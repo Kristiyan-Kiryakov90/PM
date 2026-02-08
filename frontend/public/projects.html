@@ -8,19 +8,123 @@
   <link rel="stylesheet" href="../src/css/projects.css">
 </head>
 <body>
-  <div class="container-fluid">
-    <h1>Projects</h1>
-    <p>Projects page - Coming in Plan 05</p>
+  <!-- Navigation (injected by navbar component) -->
+
+  <!-- Main Content -->
+  <main class="projects-main">
+    <div class="container py-6">
+      <!-- Header with Action -->
+      <div class="projects-header mb-8">
+        <div class="row align-items-center">
+          <div class="col">
+            <h1 class="mb-2">Projects</h1>
+            <p class="text-muted">Organize your work into projects and track progress.</p>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary" id="newProjectBtn">
+              <span>➕</span> New Project
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="projects-filters mb-6">
+        <select class="form-select" id="statusFilter">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      <!-- Projects Grid -->
+      <div id="projectsContainer" class="projects-grid">
+        <div class="empty-state">
+          <div class="empty-state-icon">📁</div>
+          <h3 class="empty-state-title">No projects yet</h3>
+          <p class="empty-state-message">Create your first project to get started organizing your work.</p>
+          <button class="btn btn-primary" id="emptyStateCreateBtn">Create Project</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create/Edit Project Modal -->
+  <div class="modal fade" id="projectModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="projectModalTitle">Create Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="projectForm">
+            <div class="form-group mb-3">
+              <label for="projectName" class="form-label">Project Name *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="projectName"
+                placeholder="e.g., Website Redesign"
+                maxlength="100"
+                required
+              >
+              <small class="form-text">Max 100 characters</small>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="projectDescription" class="form-label">Description</label>
+              <textarea
+                class="form-control"
+                id="projectDescription"
+                placeholder="What is this project about?"
+                rows="4"
+                maxlength="500"
+              ></textarea>
+              <small class="form-text">Optional, max 500 characters</small>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="projectStatus" class="form-label">Status</label>
+              <select class="form-select" id="projectStatus">
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div id="projectFormErrors"></div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="projectFormSubmit">Create Project</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script type="module">
-    import { requireAuth } from '../src/js/utils/router.js';
+  <!-- Delete Project Confirmation Modal -->
+  <div class="modal fade" id="deleteProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete <strong id="deleteProjectName"></strong>?</p>
+          <p class="text-muted small">This action cannot be undone. All tasks in this project will also be deleted.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Project</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    async function init() {
-      await requireAuth();
-    }
-
-    init();
-  </script>
+  <script type="module" src="../src/js/pages/projects.js"></script>
 </body>
 </html>

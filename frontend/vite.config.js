@@ -8,6 +8,9 @@ export default defineConfig({
   // Public directory for static assets
   publicDir: 'public',
 
+  // Read .env from project root (parent directory)
+  envDir: resolve(__dirname, '..'),
+
   // Environment variables prefix
   envPrefix: 'VITE_',
 

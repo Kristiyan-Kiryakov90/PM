@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - TaskFlow</title>
+  <link rel="stylesheet" href="../src/css/global.css">
+  <link rel="stylesheet" href="../src/css/profile.css">
+</head>
+<body>
+  <!-- Navigation (injected by navbar component) -->
+
+  <!-- Main Content -->
+  <main class="profile-main">
+    <div class="container py-6">
+      <!-- Header -->
+      <div class="profile-header mb-8">
+        <h1 class="mb-2">Profile Settings</h1>
+        <p class="text-muted">Manage your account and preferences.</p>
+      </div>
+
+      <!-- Profile Tabs -->
+      <div class="profile-tabs">
+        <button class="profile-tab-btn active" data-tab="account">
+          <span>👤</span> Account
+        </button>
+        <button class="profile-tab-btn" data-tab="preferences">
+          <span>⚙️</span> Preferences
+        </button>
+        <button class="profile-tab-btn" data-tab="security">
+          <span>🔒</span> Security
+        </button>
+      </div>
+
+      <!-- Account Tab -->
+      <div class="profile-tab-content active" id="account-tab">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title mb-0">Profile Information</h3>
+              </div>
+              <div class="card-body">
+                <form id="profileForm" class="space-y-4">
+                  <div class="form-group">
+                    <label for="firstName" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="firstName" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="lastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="lastName" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" disabled>
+                    <small class="form-text">Email cannot be changed</small>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <div class="form-control" id="roleDisplay" style="background-color: var(--gray-100); cursor: not-allowed;">
+                      <span id="roleText">Loading...</span>
+                    </div>
+                    <small class="form-text">Contact an administrator to change your role</small>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary w-100">
+                    Save Changes
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title mb-0">Profile Picture</h3>
+              </div>
+              <div class="card-body text-center">
+                <div class="profile-avatar mb-4">
+                  <div id="profileAvatarBig" class="avatar-display">U</div>
+                </div>
+                <p class="text-muted small mb-4">Avatar coming soon</p>
+                <button type="button" class="btn btn-outline-primary" disabled>
+                  Upload Picture
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preferences Tab -->
+      <div class="profile-tab-content" id="preferences-tab">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title mb-0">User Preferences</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted text-center">Preference settings coming soon</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Tab -->
+      <div class="profile-tab-content" id="security-tab">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Change Password</h3>
+          </div>
+          <div class="card-body">
+            <form id="passwordForm" class="space-y-4" style="max-width: 500px;">
+              <div class="form-group">
+                <label for="currentPassword" class="form-label">Current Password</label>
+                <input type="password" class="form-control" id="currentPassword" required>
+              </div>
+
+              <div class="form-group">
+                <label for="newPassword" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="newPassword" required>
+                <small class="form-text">At least 8 characters with uppercase, lowercase, and number</small>
+              </div>
+
+              <div class="form-group">
+                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="confirmPassword" required>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                Update Password
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card mt-6">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Danger Zone</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">Irreversible actions are listed below.</p>
+            <button type="button" class="btn btn-danger" disabled>
+              Delete Account
+            </button>
+            <small class="form-text d-block mt-2">Account deletion coming soon</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { renderNavbar } from '../src/js/components/navbar.js';
+    import { requireAuth } from '../src/js/utils/router.js';
+    import { getUserMetadata, getUserFullName } from '../src/js/utils/auth.js';
+    import { showError, showSuccess, showInfo } from '../src/js/utils/ui-helpers.js';
+
+    async function init() {
+      try {
+        // Ensure user is authenticated
+        await requireAuth();
+
+        // Render navbar
+        await renderNavbar();
+
+        // Load user profile data
+        await loadProfileData();
+
+        // Setup tab switching
+        setupTabs();
+
+        // Setup form submissions
+        setupForms();
+      } catch (error) {
+        console.error('Profile page initialization error:', error);
+        showError('Failed to load profile. Please refresh the page.');
+      }
+    }
+
+    async function loadProfileData() {
+      try {
+        const metadata = await getUserMetadata();
+        const fullName = await getUserFullName();
+
+        // Populate form fields
+        document.getElementById('firstName').value = metadata.first_name || '';
+        document.getElementById('lastName').value = metadata.last_name || '';
+        document.getElementById('email').value = metadata.email || '';
+        document.getElementById('roleText').textContent = metadata.role || 'user';
+
+        // Update avatar
+        const initials = fullName
+          .split(' ')
+          .slice(0, 2)
+          .map((p) => p[0])
+          .join('')
+          .toUpperCase();
+        document.getElementById('profileAvatarBig').textContent = initials;
+      } catch (error) {
+        console.error('Error loading profile data:', error);
+        showError('Failed to load profile information.');
+      }
+    }
+
+    function setupTabs() {
+      const tabButtons = document.querySelectorAll('.profile-tab-btn');
+      const tabContents = document.querySelectorAll('.profile-tab-content');
+
+      tabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tabName = btn.getAttribute('data-tab');
+
+          // Remove active from all buttons and contents
+          tabButtons.forEach((b) => b.classList.remove('active'));
+          tabContents.forEach((c) => c.classList.remove('active'));
+
+          // Add active to clicked button and corresponding content
+          btn.classList.add('active');
+          document.getElementById(tabName + '-tab').classList.add('active');
+        });
+      });
+    }
+
+    function setupForms() {
+      const profileForm = document.getElementById('profileForm');
+      const passwordForm = document.getElementById('passwordForm');
+
+      if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          showInfo('Profile update coming in Plan 07');
+        });
+      }
+
+      if (passwordForm) {
+        passwordForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          showInfo('Password change coming in Plan 07');
+        });
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
