@@ -157,7 +157,6 @@ function renderProjectCard(project) {
 
       <div class="project-card-actions">
         <button class="btn btn-sm btn-outline-primary project-card-edit" data-project-id="${project.id}">Edit</button>
-        <button class="btn btn-sm btn-outline-danger project-card-delete" data-project-id="${project.id}">Delete</button>
       </div>
     </div>
   `;
@@ -224,16 +223,6 @@ function handleProjectCardClick(e) {
     e.stopPropagation();
     const projectId = editBtn.dataset.projectId;
     openEditModal(projectId);
-    return;
-  }
-
-  // Handle delete button click
-  const deleteBtn = e.target.closest('.project-card-delete');
-  if (deleteBtn) {
-    console.log('Delete button clicked via delegation');
-    e.stopPropagation();
-    const projectId = deleteBtn.dataset.projectId;
-    openDeleteModal(projectId);
     return;
   }
 
