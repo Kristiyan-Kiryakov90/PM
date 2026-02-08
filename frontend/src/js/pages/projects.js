@@ -3,6 +3,7 @@
  * Handles project CRUD operations and UI interactions
  */
 
+import { Modal } from 'bootstrap';
 import { renderNavbar } from '../components/navbar.js';
 import { requireAuth } from '../utils/router.js';
 import { getUserMetadata, getCurrentUser } from '../utils/auth.js';
@@ -109,7 +110,17 @@ function renderProjects() {
     .map((project) => renderProjectCard(project))
     .join('');
 
-  // Attach event listeners to cards
+  // Attach event listeners to dynamically rendered cards
+  attachProjectCardListeners();
+}
+
+/**
+ * Attach event listeners to dynamically rendered project cards
+ */
+function attachProjectCardListeners() {
+  const container = document.getElementById('projectsContainer');
+
+  // Attach event listeners to edit buttons
   container.querySelectorAll('.project-card-edit').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -118,6 +129,7 @@ function renderProjects() {
     });
   });
 
+  // Attach event listeners to delete buttons
   container.querySelectorAll('.project-card-delete').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -127,8 +139,9 @@ function renderProjects() {
   });
 
   // Attach click to open project details
-  container.querySelectorAll('[class*="project-card"]:not(.project-card-edit):not(.project-card-delete)').forEach((card) => {
+  container.querySelectorAll('[class*="project-card"]').forEach((card) => {
     card.addEventListener('click', (e) => {
+      // Don't trigger if clicking on action buttons or their containers
       if (!e.target.closest('.project-card-actions')) {
         const projectId = card.dataset.projectId;
         openProjectDetails(projectId);
@@ -211,7 +224,7 @@ function openCreateModal() {
   if (title) title.textContent = 'Create Project';
   if (submit) submit.textContent = 'Create Project';
 
-  const modal = new bootstrap.Modal(document.getElementById('projectModal'));
+  const modal = new Modal(document.getElementById('projectModal'));
   modal.show();
 }
 
@@ -236,7 +249,7 @@ function openEditModal(projectId) {
   if (title) title.textContent = 'Edit Project';
   if (submit) submit.textContent = 'Save Changes';
 
-  const modal = new bootstrap.Modal(document.getElementById('projectModal'));
+  const modal = new Modal(document.getElementById('projectModal'));
   modal.show();
 }
 
@@ -252,7 +265,7 @@ function openDeleteModal(projectId) {
   const projectName = document.getElementById('deleteProjectName');
   if (projectName) projectName.textContent = project.name;
 
-  const modal = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
+  const modal = new Modal(document.getElementById('deleteProjectModal'));
   modal.show();
 }
 
@@ -310,7 +323,7 @@ async function submitProjectForm() {
     }
 
     // Close modal and reload
-    const modal = bootstrap.Modal.getInstance(document.getElementById('projectModal'));
+    const modal = Modal.getInstance(document.getElementById('projectModal'));
     modal.hide();
 
     await loadProjects();
@@ -335,7 +348,7 @@ async function confirmDelete() {
     showSuccess('Project deleted successfully');
 
     // Close modal and reload
-    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteProjectModal'));
+    const modal = Modal.getInstance(document.getElementById('deleteProjectModal'));
     modal.hide();
 
     await loadProjects();

@@ -8,17 +8,22 @@ import { getUserCompanyId } from '@utils/auth.js';
 import { handleError } from '@utils/error-handler.js';
 
 /**
- * Get all projects for the user's company
+ * Get all projects for the user (company or personal)
  * @returns {Promise<Array>} Array of projects
  */
 export async function getProjects() {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    // If user has a company, get company projects
+    // If no company, get personal projects (where created_by = user_id and company_id is null)
+    let query = supabase
       .from('projects')
       .select(
         `
@@ -32,8 +37,15 @@ export async function getProjects() {
         tasks(count)
       `
       )
-      .eq('company_id', companyId)
       .order('created_at', { ascending: false });
+
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -55,11 +67,14 @@ export async function getProjects() {
 export async function getProject(projectId) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('projects')
       .select(
         `
@@ -73,9 +88,16 @@ export async function getProject(projectId) {
         tasks(count)
       `
       )
-      .eq('id', projectId)
-      .eq('company_id', companyId)
-      .single();
+      .eq('id', projectId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) throw error;
     if (!data) {
@@ -90,7 +112,7 @@ export async function getProject(projectId) {
 }
 
 /**
- * Create a new project
+ * Create a new project (company or personal)
  * @param {Object} projectData - { name, description, status }
  * @returns {Promise<Object>} Created project
  */
@@ -108,18 +130,21 @@ export async function createProject(projectData) {
     }
 
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
     const { data, error } = await supabase
       .from('projects')
       .insert({
-        company_id: companyId,
+        company_id: companyId || null, // null for personal projects
         name: name.trim(),
         description: description.trim() || null,
         status,
-        created_by: (await supabase.auth.getUser()).data?.user?.id,
+        created_by: userId,
       })
       .select()
       .single();
@@ -142,11 +167,14 @@ export async function createProject(projectData) {
 export async function updateProject(projectId, updates) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    // Validate the project belongs to user's company
+    // Validate the project belongs to user (company or personal)
     const existing = await getProject(projectId);
     if (!existing) {
       throw new Error('Project not found');
@@ -179,13 +207,19 @@ export async function updateProject(projectId, updates) {
 
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('projects')
       .update(updateData)
-      .eq('id', projectId)
-      .eq('company_id', companyId)
-      .select()
-      .single();
+      .eq('id', projectId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) throw error;
     if (!data) {
@@ -207,22 +241,50 @@ export async function updateProject(projectId, updates) {
 export async function deleteProject(projectId) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    // Verify project exists and belongs to user's company
+    // Verify project exists and belongs to user (company or personal)
     const project = await getProject(projectId);
     if (!project) {
       throw new Error('Project not found');
     }
 
-    // Delete will cascade to tasks (if cascade is set in database)
-    const { error } = await supabase
+    // First, delete all tasks associated with this project
+    // (RLS prevents automatic cascade, so we do it manually)
+    let deleteTasksQuery = supabase
+      .from('tasks')
+      .delete()
+      .eq('project_id', projectId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      deleteTasksQuery = deleteTasksQuery.eq('company_id', companyId);
+    } else {
+      deleteTasksQuery = deleteTasksQuery.is('company_id', null);
+    }
+
+    const { error: tasksError } = await deleteTasksQuery;
+    if (tasksError) throw new Error(`Failed to delete tasks: ${tasksError.message}`);
+
+    // Then delete the project itself
+    let projectQuery = supabase
       .from('projects')
       .delete()
-      .eq('id', projectId)
-      .eq('company_id', companyId);
+      .eq('id', projectId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      projectQuery = projectQuery.eq('company_id', companyId);
+    } else {
+      projectQuery = projectQuery.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { error } = await projectQuery;
 
     if (error) throw error;
   } catch (error) {
@@ -239,24 +301,36 @@ export async function deleteProject(projectId) {
 export async function getProjectStats(projectId) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('tasks')
       .select('status')
-      .eq('project_id', projectId)
-      .eq('company_id', companyId);
+      .eq('project_id', projectId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
+    const completed = data.filter((t) => t.status === 'completed').length;
     const stats = {
       total: data.length,
-      completed: data.filter((t) => t.status === 'completed').length,
+      completed,
       inProgress: data.filter((t) => t.status === 'in_progress').length,
       todo: data.filter((t) => t.status === 'todo').length,
-      completionPercentage: data.length > 0 ? Math.round((stats.completed / data.length) * 100) : 0,
+      completionPercentage: data.length > 0 ? Math.round((completed / data.length) * 100) : 0,
     };
 
     return stats;
