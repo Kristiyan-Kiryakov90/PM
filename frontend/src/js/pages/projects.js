@@ -116,38 +116,12 @@ function renderProjects() {
 
 /**
  * Attach event listeners to dynamically rendered project cards
+ * NOTE: Event listeners are now handled via delegation in setupEventListeners()
+ * This function is kept for backward compatibility but does nothing
  */
 function attachProjectCardListeners() {
-  const container = document.getElementById('projectsContainer');
-
-  // Attach event listeners to edit buttons
-  container.querySelectorAll('.project-card-edit').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const projectId = btn.dataset.projectId;
-      openEditModal(projectId);
-    });
-  });
-
-  // Attach event listeners to delete buttons
-  container.querySelectorAll('.project-card-delete').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const projectId = btn.dataset.projectId;
-      openDeleteModal(projectId);
-    });
-  });
-
-  // Attach click to open project details
-  container.querySelectorAll('[class*="project-card"]').forEach((card) => {
-    card.addEventListener('click', (e) => {
-      // Don't trigger if clicking on action buttons or their containers
-      if (!e.target.closest('.project-card-actions')) {
-        const projectId = card.dataset.projectId;
-        openProjectDetails(projectId);
-      }
-    });
-  });
+  // Event delegation is set up in setupEventListeners() via handleProjectCardClick
+  // No need to attach individual listeners here
 }
 
 /**
@@ -208,6 +182,47 @@ function setupEventListeners() {
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   if (confirmDeleteBtn) {
     confirmDeleteBtn.addEventListener('click', confirmDelete);
+  }
+
+  // Use event delegation for project card actions
+  const container = document.getElementById('projectsContainer');
+  if (container) {
+    container.addEventListener('click', handleProjectCardClick);
+  }
+}
+
+/**
+ * Handle clicks on project cards using event delegation
+ */
+function handleProjectCardClick(e) {
+  console.log('Project container click detected', e.target);
+
+  // Handle edit button click
+  const editBtn = e.target.closest('.project-card-edit');
+  if (editBtn) {
+    console.log('Edit button clicked via delegation');
+    e.stopPropagation();
+    const projectId = editBtn.dataset.projectId;
+    openEditModal(projectId);
+    return;
+  }
+
+  // Handle delete button click
+  const deleteBtn = e.target.closest('.project-card-delete');
+  if (deleteBtn) {
+    console.log('Delete button clicked via delegation');
+    e.stopPropagation();
+    const projectId = deleteBtn.dataset.projectId;
+    openDeleteModal(projectId);
+    return;
+  }
+
+  // Handle project card click (open details)
+  const projectCard = e.target.closest('.project-card');
+  if (projectCard && !e.target.closest('.project-card-actions')) {
+    const projectId = projectCard.dataset.projectId;
+    console.log('Opening project details for:', projectId);
+    openProjectDetails(projectId);
   }
 }
 
