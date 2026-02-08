@@ -28,7 +28,7 @@
         </div>
       </div>
 
-      <!-- Filter Bar -->
+      <!-- Filter Bar and Bulk Actions -->
       <div class="projects-filters mb-6">
         <select class="form-select" id="statusFilter">
           <option value="">All Status</option>
@@ -36,6 +36,14 @@
           <option value="paused">Paused</option>
           <option value="archived">Archived</option>
         </select>
+
+        <!-- Bulk Delete Button (shown when projects selected) -->
+        <div id="bulkActionsBar" class="bulk-actions-bar d-none">
+          <span id="selectionCount" class="me-3"></span>
+          <button class="btn btn-sm btn-danger" id="bulkDeleteBtn">
+            🗑️ Delete Selected
+          </button>
+        </div>
       </div>
 
       <!-- Projects Grid -->

@@ -102,6 +102,12 @@ function renderProjects() {
     if (emptyStateBtn) {
       emptyStateBtn.addEventListener('click', openCreateModal);
     }
+
+    // Clear bulk actions bar when no projects
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    if (bulkActionsBar) {
+      bulkActionsBar.classList.add('d-none');
+    }
     return;
   }
 
@@ -112,6 +118,9 @@ function renderProjects() {
 
   // Attach event listeners to dynamically rendered cards
   attachProjectCardListeners();
+
+  // Update bulk actions bar
+  updateBulkActionsBar();
 }
 
 /**
@@ -133,6 +142,10 @@ function renderProjectCard(project) {
 
   return `
     <div class="card project-card" data-project-id="${project.id}">
+      <div class="project-card-checkbox">
+        <input type="checkbox" class="project-checkbox" data-project-id="${project.id}" aria-label="Select ${escapeHtml(project.name)}">
+      </div>
+
       <div class="project-icon">📁</div>
       <a href="#" class="project-name">${escapeHtml(project.name)}</a>
       ${project.description ? `<p class="project-description">${escapeHtml(project.description)}</p>` : ''}
@@ -184,10 +197,17 @@ function setupEventListeners() {
     confirmDeleteBtn.addEventListener('click', confirmDelete);
   }
 
+  // Bulk delete button
+  const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener('click', bulkDeleteProjects);
+  }
+
   // Use event delegation for project card actions
   const container = document.getElementById('projectsContainer');
   if (container) {
     container.addEventListener('click', handleProjectCardClick);
+    container.addEventListener('change', handleCheckboxChange);
   }
 }
 
@@ -217,12 +237,77 @@ function handleProjectCardClick(e) {
     return;
   }
 
+  // Ignore clicks on checkboxes (handled separately)
+  if (e.target.classList.contains('project-checkbox')) {
+    return;
+  }
+
   // Handle project card click (open details)
   const projectCard = e.target.closest('.project-card');
-  if (projectCard && !e.target.closest('.project-card-actions')) {
+  if (projectCard && !e.target.closest('.project-card-actions') && !e.target.closest('.project-card-checkbox')) {
     const projectId = projectCard.dataset.projectId;
     console.log('Opening project details for:', projectId);
     openProjectDetails(projectId);
+  }
+}
+
+/**
+ * Handle checkbox changes for bulk selection
+ */
+function handleCheckboxChange(e) {
+  if (e.target.classList.contains('project-checkbox')) {
+    updateBulkActionsBar();
+  }
+}
+
+/**
+ * Update bulk actions bar visibility and selected count
+ */
+function updateBulkActionsBar() {
+  const checkboxes = document.querySelectorAll('.project-checkbox:checked');
+  const bulkActionsBar = document.getElementById('bulkActionsBar');
+  const selectionCount = document.getElementById('selectionCount');
+
+  if (checkboxes.length > 0) {
+    bulkActionsBar.classList.remove('d-none');
+    selectionCount.textContent = `${checkboxes.length} project${checkboxes.length !== 1 ? 's' : ''} selected`;
+  } else {
+    bulkActionsBar.classList.add('d-none');
+    selectionCount.textContent = '';
+  }
+}
+
+/**
+ * Bulk delete selected projects
+ */
+async function bulkDeleteProjects() {
+  const checkboxes = document.querySelectorAll('.project-checkbox:checked');
+  const selectedIds = Array.from(checkboxes).map((cb) => cb.dataset.projectId);
+
+  if (selectedIds.length === 0) return;
+
+  const confirmed = confirm(
+    `Are you sure you want to delete ${selectedIds.length} project${selectedIds.length !== 1 ? 's' : ''}?\n\n` +
+    'This action cannot be undone. All tasks in these projects will also be deleted.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    showLoading(`Deleting ${selectedIds.length} project${selectedIds.length !== 1 ? 's' : ''}...`);
+
+    // Delete each project
+    for (const projectId of selectedIds) {
+      await deleteProject(projectId);
+    }
+
+    showSuccess(`Successfully deleted ${selectedIds.length} project${selectedIds.length !== 1 ? 's' : ''}`);
+    hideLoading();
+    await loadProjects();
+  } catch (error) {
+    hideLoading();
+    console.error('Error bulk deleting projects:', error);
+    showError('Failed to delete projects. Please try again.');
   }
 }
 
