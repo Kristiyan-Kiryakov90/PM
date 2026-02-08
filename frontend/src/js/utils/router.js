@@ -1,0 +1,114 @@
+/**
+ * Router Utilities
+ * Route guards and navigation helpers
+ */
+
+import { getCurrentUser, getUserMetadata } from '@utils/auth.js';
+
+/**
+ * Require user to be authenticated
+ * Redirects to sign in page if not authenticated
+ * @returns {Promise<Object>} User session
+ */
+export async function requireAuth() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    const currentPath = window.location.pathname;
+    const returnUrl = encodeURIComponent(currentPath);
+    window.location.href = `/public/signin.html?return=${returnUrl}`;
+    throw new Error('Not authenticated');
+  }
+
+  return user;
+}
+
+/**
+ * Require user to have specific role(s)
+ * Redirects if not authenticated or doesn't have required role
+ * @param {string|string[]} roles - Required role(s)
+ * @returns {Promise<Object>} User metadata
+ */
+export async function requireRole(roles) {
+  await requireAuth();
+
+  const metadata = await getUserMetadata();
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
+  if (!allowedRoles.includes(metadata.role)) {
+    alert('Access denied. You do not have permission to view this page.');
+    window.location.href = '/public/dashboard.html';
+    throw new Error('Insufficient permissions');
+  }
+
+  return metadata;
+}
+
+/**
+ * Require user to be admin (admin or sys_admin)
+ * @returns {Promise<Object>} User metadata
+ */
+export async function requireAdmin() {
+  return await requireRole(['admin', 'sys_admin']);
+}
+
+/**
+ * Require user to be sys_admin
+ * @returns {Promise<Object>} User metadata
+ */
+export async function requireSysAdmin() {
+  return await requireRole('sys_admin');
+}
+
+/**
+ * Redirect if user is already authenticated
+ * Useful for login/signup pages
+ * @returns {Promise<boolean>} True if redirected, false otherwise
+ */
+export async function redirectIfAuthenticated() {
+  const user = await getCurrentUser();
+
+  if (user) {
+    const metadata = await getUserMetadata();
+    console.log('Redirecting authenticated user. Role:', metadata?.role);
+
+    // Redirect based on role
+    if (metadata?.role === 'sys_admin' || metadata?.role === 'admin') {
+      console.log('Redirecting to admin.html');
+      window.location.href = '/public/admin.html';
+    } else {
+      console.log('Redirecting to dashboard.html');
+      window.location.href = '/public/dashboard.html';
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Navigate to a page
+ * @param {string} url - Target URL
+ */
+export function navigate(url) {
+  window.location.href = url;
+}
+
+/**
+ * Get return URL from query parameter
+ * @returns {string} Return URL or default dashboard
+ */
+export function getReturnUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const returnUrl = params.get('return');
+  return returnUrl ? decodeURIComponent(returnUrl) : '/public/dashboard.html';
+}
+
+/**
+ * Navigate back to return URL
+ */
+export function navigateToReturnUrl() {
+  const url = getReturnUrl();
+  navigate(url);
+}

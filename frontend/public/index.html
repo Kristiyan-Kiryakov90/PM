@@ -54,12 +54,53 @@
     </div>
   </section>
 
-  <!-- Test Supabase Connection -->
-  <script type="module">
-    import { checkConnection } from '../src/js/services/supabase.js';
+  <!-- Bootstrap Modal for First Admin -->
+  <div class="modal fade" id="bootstrapModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Welcome to TaskFlow</h5>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-4">Create your company and system administrator account to get started.</p>
+          <form id="bootstrapForm">
+            <div class="mb-3">
+              <label for="bootstrapCompanyName" class="form-label">
+                Company Name <span class="badge bg-secondary">Optional</span>
+              </label>
+              <input type="text" class="form-control" id="bootstrapCompanyName">
+            </div>
+            <div class="mb-3">
+              <label for="bootstrapFirstName" class="form-label">First Name</label>
+              <input type="text" class="form-control" id="bootstrapFirstName" required>
+            </div>
+            <div class="mb-3">
+              <label for="bootstrapLastName" class="form-label">Last Name</label>
+              <input type="text" class="form-control" id="bootstrapLastName" required>
+            </div>
+            <div class="mb-3">
+              <label for="bootstrapEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="bootstrapEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="bootstrapPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="bootstrapPassword" required>
+              <div class="form-text">At least 8 characters with uppercase, lowercase, and number</div>
+            </div>
+            <div class="mb-3">
+              <label for="bootstrapConfirmPassword" class="form-label">Confirm Password</label>
+              <input type="password" class="form-control" id="bootstrapConfirmPassword" required>
+            </div>
+            <div id="bootstrapError" class="alert alert-danger d-none"></div>
+            <button type="submit" class="btn btn-primary w-100" id="bootstrapSubmit">
+              Create System Admin
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    // Test connection on page load
-    checkConnection();
-  </script>
+  <script type="module" src="../src/js/pages/index.js"></script>
 </body>
 </html>

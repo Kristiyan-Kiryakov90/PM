@@ -14,11 +14,59 @@
         <h1>TaskFlow</h1>
         <p class="text-muted">Create your account</p>
       </div>
-      <div id="signup-content">
-        <!-- Content will be added in Plan 03 -->
-        <p>Sign Up page - Coming in Plan 03</p>
-      </div>
+      <form id="signupForm">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="firstName" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="lastName" required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" required>
+          <div class="form-text">At least 8 characters with uppercase, lowercase, and number</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="confirmPassword" class="form-label">Confirm Password</label>
+          <input type="password" class="form-control" id="confirmPassword" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="companyName" class="form-label">
+            Company Name <span class="badge bg-secondary">Optional</span>
+          </label>
+          <input type="text" class="form-control" id="companyName">
+          <div class="form-text">
+            Leave blank for personal workspace, or enter a company name to create a team workspace.
+          </div>
+        </div>
+
+        <div id="signupError" class="alert alert-danger d-none"></div>
+        <div id="signupSuccess" class="alert alert-success d-none"></div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-3" id="signupSubmit">
+          Create Account
+        </button>
+
+        <div class="text-center">
+          <span class="text-muted">Already have an account?</span>
+          <a href="signin.html">Sign In</a>
+        </div>
+      </form>
     </div>
   </div>
+
+  <script type="module" src="../src/js/pages/signup.js"></script>
 </body>
 </html>

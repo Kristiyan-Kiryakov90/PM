@@ -11,6 +11,21 @@
   <div class="container-fluid">
     <h1>Dashboard</h1>
     <p>Dashboard page - Coming in Plan 09</p>
+    <p id="userInfo" class="text-muted"></p>
   </div>
+
+  <script type="module">
+    import { requireAuth } from '../src/js/utils/router.js';
+    import { getUserMetadata, signOut } from '../src/js/utils/auth.js';
+
+    async function init() {
+      await requireAuth();
+      const metadata = await getUserMetadata();
+      document.getElementById('userInfo').textContent =
+        `Logged in as: ${metadata.first_name} ${metadata.last_name} (${metadata.role})`;
+    }
+
+    init();
+  </script>
 </body>
 </html>

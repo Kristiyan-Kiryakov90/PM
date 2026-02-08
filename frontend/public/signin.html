@@ -14,11 +14,31 @@
         <h1>TaskFlow</h1>
         <p class="text-muted">Sign in to your account</p>
       </div>
-      <div id="signin-content">
-        <!-- Content will be added in Plan 03 -->
-        <p>Sign In page - Coming in Plan 03</p>
-      </div>
+      <form id="signinForm">
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" required autofocus>
+        </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" required>
+        </div>
+
+        <div id="signinError" class="alert alert-danger d-none"></div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-3" id="signinSubmit">
+          Sign In
+        </button>
+
+        <div class="text-center">
+          <span class="text-muted">Don't have an account?</span>
+          <a href="signup.html">Sign Up</a>
+        </div>
+      </form>
     </div>
   </div>
+
+  <script type="module" src="../src/js/pages/signin.js"></script>
 </body>
 </html>

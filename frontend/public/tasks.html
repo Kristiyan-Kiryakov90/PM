@@ -12,5 +12,15 @@
     <h1>Tasks</h1>
     <p>Tasks page - Coming in Plan 06</p>
   </div>
+
+  <script type="module">
+    import { requireAuth } from '../src/js/utils/router.js';
+
+    async function init() {
+      await requireAuth();
+    }
+
+    init();
+  </script>
 </body>
 </html>

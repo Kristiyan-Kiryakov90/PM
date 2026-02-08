@@ -1,6 +1,7 @@
 /**
  * Authentication Utilities
  * Helper functions for managing user authentication and session
+ * Updated to use auth.users metadata only (no public.users table)
  */
 
 import supabase from '@services/supabase.js';
@@ -17,25 +18,61 @@ export async function getCurrentUser() {
 }
 
 /**
- * Get user profile from public.users table
- * @returns {Promise<Object|null>} User profile or null
+ * Get user metadata (role, company_id, name) from profiles table
+ * @returns {Promise<Object|null>} User metadata or null
  */
-export async function getUserProfile() {
+export async function getUserMetadata() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
+  console.log('Getting metadata for user:', user.email, 'role:', user.user_metadata?.role);
+
+  // Fetch profile from database (single source of truth)
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('company_id, role')
     .eq('id', user.id)
     .single();
 
-  if (error) {
-    console.error('Error fetching user profile:', error);
-    return null;
+  if (error || !profile) {
+    console.log('Profile fetch failed or no profile found, using metadata fallback');
+    console.log('Error:', error);
+    // Fallback to metadata (for backwards compatibility)
+    const metadata = {
+      id: user.id,
+      email: user.email,
+      role: user.user_metadata?.role || 'user',
+      company_id: user.user_metadata?.company_id || null,
+      first_name: user.user_metadata?.first_name || '',
+      last_name: user.user_metadata?.last_name || '',
+      created_at: user.created_at,
+    };
+    console.log('Returning metadata:', metadata);
+    return metadata;
   }
 
-  return data;
+  console.log('Profile found:', profile);
+  return {
+    id: user.id,
+    email: user.email,
+    role: profile.role,
+    company_id: profile.company_id,
+    first_name: user.user_metadata?.first_name || '',
+    last_name: user.user_metadata?.last_name || '',
+    created_at: user.created_at,
+  };
+}
+
+/**
+ * Get user's full name from metadata
+ * @returns {Promise<string>} Full name or email
+ */
+export async function getUserFullName() {
+  const metadata = await getUserMetadata();
+  if (!metadata) return '';
+
+  const fullName = `${metadata.first_name} ${metadata.last_name}`.trim();
+  return fullName || metadata.email;
 }
 
 /**
@@ -53,8 +90,8 @@ export async function isAuthenticated() {
  * @returns {Promise<boolean>}
  */
 export async function hasRole(role) {
-  const profile = await getUserProfile();
-  return profile?.role === role;
+  const metadata = await getUserMetadata();
+  return metadata?.role === role;
 }
 
 /**
@@ -66,12 +103,21 @@ export async function isSysAdmin() {
 }
 
 /**
- * Check if user is company admin
+ * Check if user is company admin (admin or sys_admin)
  * @returns {Promise<boolean>}
  */
 export async function isCompanyAdmin() {
-  const profile = await getUserProfile();
-  return profile?.role === 'admin' || profile?.role === 'sys_admin';
+  const metadata = await getUserMetadata();
+  return metadata?.role === 'admin' || metadata?.role === 'sys_admin';
+}
+
+/**
+ * Get user's company ID from profiles table
+ * @returns {Promise<string|null>} Company ID (UUID) or null
+ */
+export async function getUserCompanyId() {
+  const metadata = await getUserMetadata();
+  return metadata?.company_id || null;
 }
 
 /**
@@ -110,6 +156,39 @@ export async function redirectIfAuthenticated() {
 }
 
 /**
+ * Require specific role (redirect if not authorized)
+ * @param {string|string[]} roles - Required role(s)
+ * @returns {Promise<void>}
+ */
+export async function requireRole(roles) {
+  await requireAuth();
+
+  const metadata = await getUserMetadata();
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
+  if (!allowedRoles.includes(metadata.role)) {
+    alert('Access denied. You do not have permission to view this page.');
+    window.location.href = '/public/dashboard.html';
+  }
+}
+
+/**
+ * Require admin role (admin or sys_admin)
+ * @returns {Promise<void>}
+ */
+export async function requireAdmin() {
+  await requireRole(['admin', 'sys_admin']);
+}
+
+/**
+ * Require sys_admin role
+ * @returns {Promise<void>}
+ */
+export async function requireSysAdmin() {
+  await requireRole('sys_admin');
+}
+
+/**
  * Listen for auth state changes
  * @param {Function} callback - Callback function to run on auth change
  * @returns {Function} Unsubscribe function
@@ -120,4 +199,23 @@ export function onAuthStateChange(callback) {
   });
 
   return data.subscription.unsubscribe;
+}
+
+/**
+ * Update user metadata (e.g., first_name, last_name)
+ * Note: Role and company_id should only be changed by admins via Admin API
+ * @param {Object} metadata - Metadata to update
+ * @returns {Promise<Object>} Updated user
+ */
+export async function updateUserMetadata(metadata) {
+  const { data, error } = await supabase.auth.updateUser({
+    data: metadata,
+  });
+
+  if (error) {
+    console.error('Update user metadata error:', error);
+    throw error;
+  }
+
+  return data.user;
 }

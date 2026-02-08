@@ -1,56 +1,53 @@
 # Plan 03: Authentication System
 
-## Objective
-Implement complete authentication: bootstrap modal for first sys_admin, standard registration, invite-based registration, and login.
+## Status: ✅ IMPLEMENTED
 
-## What's Needed
+## Overview
+Complete authentication with bootstrap (first sys_admin), registration (company + user), and login.
 
-**Files:**
-- `frontend/public/index.html` - Landing page with bootstrap modal
-- `frontend/src/js/pages/index.js` - Bootstrap modal logic
-- `frontend/public/signup.html` - Registration page (standard + invite forms)
-- `frontend/src/js/pages/signup.js` - Registration logic
-- `frontend/public/signin.html` - Login page
-- `frontend/src/js/pages/signin.js` - Login logic
-- `frontend/src/js/services/auth-service.js` - Auth business logic
-- `frontend/src/js/utils/validation.js` - Input validation functions
-- `frontend/src/js/utils/router.js` - Route guards (requireAuth, requireRole)
+## What Was Built
 
-**Functionality:**
+### Frontend Pages
+- ✅ `index.html` - Landing page with bootstrap modal (shows only if no sys_admin)
+- ✅ `signup.html` - Registration with optional company creation
+- ✅ `signin.html` - Login page
+- ✅ `dashboard.html` - User dashboard (protected)
+- ✅ `admin.html` - Admin panel (protected)
 
-**Bootstrap Flow:**
-- Check if sys_admin exists on index.html load
-- Show modal if none exists
-- Create company + first sys_admin user
-- Store role='sys_admin' and company_id in user metadata
+### Authentication Services
+- ✅ `auth-service.js` - Sign up, sign in, bootstrap logic
+- ✅ `auth.js` - User metadata, role checks, profile queries
+- ✅ `router.js` - Route guards (requireAuth, requireRole, requireAdmin)
+- ✅ `validation.js` - Email, password, field validation
 
-**Standard Registration:**
-- Create new company
-- Create user with role='user'
-- Set company_id in user metadata
+### Database & Security
+- ✅ `profiles` table - Maps users to companies (one row per company user)
+- ✅ RLS policies - Multi-tenant isolation on all tables
+- ✅ Helper functions - `user_company_id()`, `is_company_admin()`, `is_system_admin()`
+- ✅ Triggers - Auto-create profiles on user signup
 
-**Invite Registration:**
-- Validate invite token (pending, not expired)
-- Create user with role from invite
-- Mark invite as accepted
+### Backend Services
+- ✅ Edge Function `admin-create-user` - Create users with service role
+- ✅ RPC Functions:
+  - `signup_with_optional_company()` - Company creation during signup
+  - `validate_admin_can_create_user()` - Admin permission validation
+  - `rollback_company_creation()` - Cleanup on signup failure
 
-**Login:**
-- Sign in with email/password
-- Redirect based on role (admin → admin.html, user → dashboard.html)
+## Flows
 
-**Route Guards:**
-- requireAuth - redirect to signin if not logged in
-- requireRole - redirect if user doesn't have required role
+**Bootstrap:** No sys_admin → Show modal → Create company + sys_admin user
 
-## Testing
-- Bootstrap modal shows only when no sys_admin exists
-- Can create sys_admin with company
-- Standard signup creates company + user
-- Invite signup validates token and assigns correct role
-- Login redirects based on role
-- Route guards block unauthorized access
-- Session persists after page refresh
+**Signup:** Enter company name (optional) → Create user → Auto-login → Redirect to dashboard
+
+**Signin:** Email/password → Establish session → Redirect to dashboard
+
+**Session:** Auto-restore from localStorage on page load
+
+## Not Implemented
+- Invite-based registration (future enhancement)
+- Email verification workflow (skipped for local dev)
+- Password reset flow
 
 ## Dependencies
-- Plan 01 (Database Setup)
-- Plan 02 (Build System & Configuration)
+- Plan 01 (Database)
+- Plan 02 (Build System)
