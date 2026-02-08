@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth Diagnostic - TaskFlow</title>
+  <link rel="stylesheet" href="../src/css/global.css">
+  <style>
+    body {
+      background-color: var(--gray-50);
+      padding: var(--space-8);
+      font-family: var(--font-mono);
+    }
+    .diagnostic-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: var(--space-8);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+    pre {
+      background-color: var(--gray-900);
+      color: #0f0;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      font-size: var(--text-sm);
+    }
+    .success {
+      color: var(--success);
+    }
+    .error {
+      color: var(--danger);
+    }
+    .warning {
+      color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <div class="diagnostic-container">
+    <h1>🔍 Auth Diagnostic</h1>
+    <p class="text-muted">This page helps diagnose authentication and database setup issues.</p>
+
+    <button class="btn btn-primary" id="runDiagnosticBtn">Run Diagnostic</button>
+    <button class="btn btn-secondary" id="clearConsoleBtn">Clear Console</button>
+
+    <h3 class="mt-6">Console Output:</h3>
+    <pre id="console"></pre>
+
+    <div class="mt-6">
+      <h3>Quick Fixes:</h3>
+      <ul>
+        <li><strong>If sys_admin not recognized:</strong> Check that user_metadata.role is set to 'sys_admin'</li>
+        <li><strong>If no users/profiles table:</strong> Run the appropriate migration from backend/database/</li>
+        <li><strong>If company_id is null:</strong> Check the bootstrap process created a company</li>
+      </ul>
+    </div>
+
+    <div class="mt-4">
+      <h3>Database Checks:</h3>
+      <ul>
+        <li>✅ = Working</li>
+        <li>❌ = Not available/Error</li>
+        <li>⚠️ = Fallback mode</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="module">
+    import { runAuthDiagnostic } from '../src/js/utils/auth-diagnostic.js';
+    import supabase from '../src/js/services/supabase.js';
+
+    const consoleDiv = document.getElementById('console');
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    // Capture console output
+    function captureConsole() {
+      console.log = function(...args) {
+        consoleDiv.textContent += args.join(' ') + '\n';
+        originalLog.apply(console, args);
+      };
+
+      console.error = function(...args) {
+        consoleDiv.textContent += 'ERROR: ' + args.join(' ') + '\n';
+        originalError.apply(console, args);
+      };
+    }
+
+    function restoreConsole() {
+      console.log = originalLog;
+      console.error = originalError;
+    }
+
+    document.getElementById('runDiagnosticBtn').addEventListener('click', async () => {
+      consoleDiv.textContent = '';
+      captureConsole();
+
+      try {
+        await runAuthDiagnostic();
+
+        // Additional checks
+        console.log('\n=== ADDITIONAL CHECKS ===\n');
+
+        // Check current session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('✅ Session active');
+          console.log('  Access Token:', session.access_token ? 'Present' : 'Missing');
+          console.log('  Expires:', new Date(session.expires_at * 1000).toLocaleString());
+        } else {
+          console.log('❌ No active session');
+        }
+
+        // Check companies table
+        try {
+          const { data: companies, error } = await supabase
+            .from('companies')
+            .select('id, name')
+            .limit(5);
+
+          if (!error && companies) {
+            console.log('\n✅ Companies table accessible');
+            console.log('  Companies:', companies.length);
+            companies.forEach(c => console.log('    -', c.name, '(' + c.id + ')'));
+          } else {
+            console.log('\n❌ Companies table error:', error?.message);
+          }
+        } catch (e) {
+          console.log('\n❌ Companies table not accessible:', e.message);
+        }
+
+      } catch (error) {
+        console.error('Diagnostic failed:', error);
+      } finally {
+        restoreConsole();
+      }
+    });
+
+    document.getElementById('clearConsoleBtn').addEventListener('click', () => {
+      consoleDiv.textContent = '';
+    });
+
+    // Auto-run on load
+    console.log('Diagnostic page loaded. Click "Run Diagnostic" to check auth state.');
+  </script>
+</body>
+</html>

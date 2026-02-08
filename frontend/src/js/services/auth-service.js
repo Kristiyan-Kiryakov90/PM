@@ -6,25 +6,25 @@
 import supabase from '@services/supabase.js';
 
 /**
- * Check if current user is sys_admin or if any sys_admin exists in the system
+ * Check if any sys_admin exists in the system
+ * Uses a SECURITY DEFINER RPC function that queries auth.users
  * @returns {Promise<boolean>}
  */
 export async function sysAdminExists() {
   try {
-    // First, check if current user is already authenticated and is sys_admin
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase.rpc('check_sys_admin_exists');
 
-    if (user && user.user_metadata?.role === 'sys_admin') {
-      return true; // Current user is sys_admin
+    if (error) {
+      console.error('Error checking sys_admin:', error);
+      // If the RPC fails, fall back to checking current user metadata
+      const { data: { user } } = await supabase.auth.getUser();
+      return !!(user && user.user_metadata?.role === 'sys_admin');
     }
 
-    // If not authenticated, try to check if ANY sys_admin exists by attempting an RPC call
-    // that only sys_admin can call
-    // For now, assume if we got here and user is not sys_admin, we need to bootstrap
-    return false;
+    return data === true;
   } catch (error) {
     console.error('Error checking sys_admin:', error);
-    return false; // If error, show bootstrap (safer than hiding it)
+    return false;
   }
 }
 

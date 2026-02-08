@@ -18,49 +18,77 @@ export async function getCurrentUser() {
 }
 
 /**
- * Get user metadata (role, company_id, name) from profiles table
+ * Get user metadata (role, company_id, name) from database or metadata
+ * Tries multiple sources in order: users table, profiles table, then user_metadata
  * @returns {Promise<Object|null>} User metadata or null
  */
 export async function getUserMetadata() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  console.log('Getting metadata for user:', user.email, 'role:', user.user_metadata?.role);
+  console.log('Getting metadata for user:', user.email);
 
-  // Fetch profile from database (single source of truth)
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('company_id, role')
-    .eq('id', user.id)
-    .single();
+  // Try 1: Check users table (preferred)
+  try {
+    const { data: userRecord, error: usersError } = await supabase
+      .from('users')
+      .select('company_id, role, first_name, last_name')
+      .eq('id', user.id)
+      .maybeSingle();
 
-  if (error || !profile) {
-    console.log('Profile fetch failed or no profile found, using metadata fallback');
-    console.log('Error:', error);
-    // Fallback to metadata (for backwards compatibility)
-    const metadata = {
-      id: user.id,
-      email: user.email,
-      role: user.user_metadata?.role || 'user',
-      company_id: user.user_metadata?.company_id || null,
-      first_name: user.user_metadata?.first_name || '',
-      last_name: user.user_metadata?.last_name || '',
-      created_at: user.created_at,
-    };
-    console.log('Returning metadata:', metadata);
-    return metadata;
+    if (!usersError && userRecord) {
+      console.log('✅ Found in users table:', userRecord);
+      return {
+        id: user.id,
+        email: user.email,
+        role: userRecord.role,
+        company_id: userRecord.company_id,
+        first_name: userRecord.first_name || '',
+        last_name: userRecord.last_name || '',
+        created_at: user.created_at,
+      };
+    }
+  } catch (e) {
+    console.log('Users table not available:', e.message);
   }
 
-  console.log('Profile found:', profile);
-  return {
+  // Try 2: Check profiles table (fallback)
+  try {
+    const { data: profile, error: profilesError } = await supabase
+      .from('profiles')
+      .select('company_id, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profilesError && profile) {
+      console.log('✅ Found in profiles table:', profile);
+      return {
+        id: user.id,
+        email: user.email,
+        role: profile.role,
+        company_id: profile.company_id,
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        created_at: user.created_at,
+      };
+    }
+  } catch (e) {
+    console.log('Profiles table not available:', e.message);
+  }
+
+  // Try 3: Fallback to user_metadata (for bootstrapping and backward compatibility)
+  console.log('⚠️ Using user_metadata fallback');
+  const metadata = {
     id: user.id,
     email: user.email,
-    role: profile.role,
-    company_id: profile.company_id,
+    role: user.user_metadata?.role || 'user',
+    company_id: user.user_metadata?.company_id || null,
     first_name: user.user_metadata?.first_name || '',
     last_name: user.user_metadata?.last_name || '',
     created_at: user.created_at,
   };
+  console.log('Returning metadata:', metadata);
+  return metadata;
 }
 
 /**
@@ -130,7 +158,12 @@ export async function signOut() {
     console.error('Sign out error:', error);
     throw error;
   }
-  window.location.href = '/public/index.html';
+  // Clear any cached data
+  sessionStorage.clear();
+  localStorage.removeItem('supabase.auth.token');
+
+  // Redirect to signin page
+  window.location.href = '/public/signin.html';
 }
 
 /**
