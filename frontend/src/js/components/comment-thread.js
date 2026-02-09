@@ -100,6 +100,7 @@ function renderComments(comments, companyUsers, container) {
     <div class="comment-thread">
       <div class="comment-list">
         ${rootComments.map((c) => renderComment(commentMap.get(c.id), companyUsers, 0)).join('')}
+        ${rootComments.length === 0 ? '<div class="text-center text-muted py-4"><i class="bi bi-chat-dots me-2"></i>No comments yet. Be the first to comment!</div>' : ''}
       </div>
 
       <div class="comment-form mt-3">
@@ -108,9 +109,13 @@ function renderComments(comments, companyUsers, container) {
           rows="3"
           placeholder="Write a comment... (use @name to mention)"
         ></textarea>
-        <div class="d-flex justify-content-end align-items-center mt-2 gap-2">
-          <button class="btn btn-sm btn-secondary cancel-comment-btn d-none">Cancel</button>
-          <button class="btn btn-sm btn-primary post-comment-btn">Post Comment</button>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <small class="text-muted comment-char-count">
+            <span class="current-chars">0</span> characters
+          </small>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary post-comment-btn" disabled>Post Comment</button>
+          </div>
         </div>
       </div>
     </div>
@@ -225,6 +230,56 @@ function setupEventListeners(container) {
       await handleDeleteComment(container, commentId);
     }
   });
+
+  // Handle textarea input for dynamic button state
+  container.addEventListener('input', (e) => {
+    const textarea = e.target.closest('.comment-input');
+    if (textarea) {
+      handleTextareaInput(container, textarea);
+    }
+  });
+
+  // Initialize button state
+  setTimeout(() => {
+    const textarea = container.querySelector('.comment-input');
+    const postBtn = container.querySelector('.post-comment-btn');
+    if (textarea && postBtn) {
+      postBtn.disabled = !textarea.value.trim();
+    }
+  }, 0);
+}
+
+/**
+ * Handle textarea input to update button state
+ * @param {HTMLElement} container - Container element
+ * @param {HTMLTextAreaElement} textarea - Textarea element
+ */
+function handleTextareaInput(container, textarea) {
+  const postBtn = container.querySelector('.post-comment-btn');
+  const charCount = container.querySelector('.current-chars');
+
+  const content = textarea.value.trim();
+  const charLength = textarea.value.length;
+  const hasContent = content.length > 0;
+
+  // Enable/disable button based on content
+  if (postBtn) {
+    postBtn.disabled = !hasContent;
+  }
+
+  // Update character count
+  if (charCount) {
+    charCount.textContent = charLength;
+    const countContainer = container.querySelector('.comment-char-count');
+    if (countContainer) {
+      countContainer.style.opacity = charLength > 0 ? '1' : '0.5';
+    }
+  }
+
+  // Auto-resize textarea based on content
+  textarea.style.height = 'auto';
+  const newHeight = Math.max(80, Math.min(textarea.scrollHeight, 200));
+  textarea.style.height = newHeight + 'px';
 }
 
 /**
@@ -234,9 +289,16 @@ function setupEventListeners(container) {
 async function handlePostComment(container) {
   const taskId = parseInt(container.dataset.taskId);
   const input = container.querySelector('.comment-input');
+  const postBtn = container.querySelector('.post-comment-btn');
   const content = input.value.trim();
 
   if (!content) return;
+
+  // Disable button during submission
+  if (postBtn) {
+    postBtn.disabled = true;
+    postBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Posting...';
+  }
 
   try {
     await createComment({
@@ -247,12 +309,19 @@ async function handlePostComment(container) {
 
     // Clear form
     input.value = '';
+    input.style.height = 'auto';
 
     // Reload comments
     await loadComments(taskId, container);
   } catch (error) {
     console.error('Failed to post comment:', error);
     alert('Failed to post comment. Please try again.');
+
+    // Re-enable button on error
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.textContent = 'Post Comment';
+    }
   }
 }
 

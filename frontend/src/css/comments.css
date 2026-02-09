@@ -24,10 +24,12 @@
 }
 
 .comment-list {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0.5rem;
+  min-height: 0;
+  max-height: 100%;
 }
 
 .comment-item {
@@ -93,21 +95,26 @@
 
 .comment-form {
   flex-shrink: 0;
+  flex-grow: 0;
   padding: 1rem;
   background: var(--bs-light);
   border-radius: 8px;
   border: 1px solid var(--bs-border-color);
-  margin-top: auto;
+  margin-top: 0.75rem;
   margin-bottom: 0;
+  min-height: fit-content;
 }
 
 .comment-input {
   border: 1px solid var(--bs-border-color);
   border-radius: 6px;
-  resize: vertical;
+  resize: none;
   min-height: 80px;
+  max-height: 200px;
   font-size: 0.9rem;
   width: 100%;
+  transition: height 0.2s ease, border-color 0.2s ease;
+  overflow-y: auto;
 }
 
 .comment-input:focus {
@@ -122,6 +129,28 @@
 .post-comment-btn,
 .cancel-comment-btn {
   min-width: 80px;
+  transition: all 0.2s ease;
+}
+
+.post-comment-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.post-comment-btn .spinner-border {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
+
+.comment-char-count {
+  transition: opacity 0.2s ease;
+  opacity: 0.5;
+}
+
+.comment-char-count .current-chars {
+  font-weight: 600;
+  color: var(--bs-primary);
 }
 
 /* Action Item Styles */
@@ -159,12 +188,14 @@
   position: fixed !important;
 }
 
+/* Keep proper overflow for scrolling */
 .comment-thread {
-  overflow: visible !important;
+  overflow: hidden;
 }
 
 .comment-list {
-  overflow: visible !important;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Reply Form */
@@ -186,15 +217,7 @@
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
 }
 
-/* Empty State */
-.comment-list:empty::before {
-  content: 'No comments yet. Be the first to comment!';
-  display: block;
-  text-align: center;
-  color: var(--bs-secondary);
-  padding: 2rem;
-  font-style: italic;
-}
+/* Empty State - handled in JS now */
 
 /* Animations */
 @keyframes fadeIn {

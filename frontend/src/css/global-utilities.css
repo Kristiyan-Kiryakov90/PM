@@ -1,0 +1,66 @@
+/**
+ * Global Utility Classes
+ * Spacing, display, visibility, truncation utilities
+ */
+
+/* Utility Classes */
+.full-height {
+  min-height: 100vh;
+}
+
+.center-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: var(--container-max-width);
+}
+
+/* Spacing Utilities */
+.space-y-2 > * + * { margin-top: var(--space-2); }
+.space-y-4 > * + * { margin-top: var(--space-4); }
+.space-y-6 > * + * { margin-top: var(--space-6); }
+.space-y-8 > * + * { margin-top: var(--space-8); }
+
+.space-x-2 > * + * { margin-left: var(--space-2); }
+.space-x-4 > * + * { margin-left: var(--space-4); }
+.space-x-6 > * + * { margin-left: var(--space-6); }
+
+/* Display & Visibility */
+.transition {
+  transition: all var(--transition-speed) var(--ease-in-out);
+}
+
+.transition-fast {
+  transition: all 0.15s var(--ease-in-out);
+}
+
+.transition-slow {
+  transition: all 0.5s var(--ease-in-out);
+}
+
+.card-shadow {
+  box-shadow: var(--shadow-sm);
+}
+
+.card-shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Truncation */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+

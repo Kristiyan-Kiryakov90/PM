@@ -1,0 +1,44 @@
+/**
+ * Tasks Base Styles
+ * Layout, header, and fundamental task page structure
+ */
+
+/**
+ * Tasks Page Styles
+ * Modern Kanban board with Linear/Notion-level polish
+ */
+
+/* Layout with sidebar */
+.tasks-layout {
+  display: flex;
+  min-height: 100vh;
+  padding-top: var(--header-height);
+}
+
+.tasks-main {
+  flex: 1;
+  min-width: 0; /* Prevent flex item overflow */
+  min-height: 100vh;
+  background-color: var(--gray-50);
+  padding-top: 0;
+}
+
+.tasks-header {
+  margin-bottom: var(--space-8);
+}
+
+.tasks-header h1 {
+  margin-bottom: var(--space-2);
+  color: var(--gray-900);
+}
+
+.tasks-header p {
+  color: var(--gray-600);
+}
+
+/* Project column text styling */
+#listViewTableBody td:nth-child(2) span {
+  color: #1f2937;
+  font-weight: 500;
+}
+

@@ -1,0 +1,94 @@
+/**
+ * Global Resets & Typography
+ * Base styles, resets, and typographic scale
+ */
+
+/* Global Resets */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  line-height: var(--leading-normal);
+  color: var(--gray-700);
+  background-color: var(--gray-50);
+  font-size: var(--text-base);
+}
+
+/* Typography Scale */
+h1 {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+  color: var(--gray-900);
+}
+
+h2 {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+  color: var(--gray-900);
+}
+
+h3 {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--gray-900);
+}
+
+h4 {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--gray-900);
+}
+
+h5 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--gray-900);
+}
+
+h6 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--gray-900);
+}
+
+p {
+  margin-bottom: var(--space-4);
+  color: var(--gray-700);
+}
+
+small, .text-sm {
+  font-size: var(--text-sm);
+  color: var(--gray-600);
+}
+
+.text-muted {
+  color: var(--gray-500);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--gray-100);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--gray-800);
+}
+

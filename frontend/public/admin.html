@@ -17,15 +17,12 @@
       <!-- Header -->
       <div class="admin-header mb-8">
         <h1 class="mb-2">Admin Panel</h1>
-        <p class="text-muted">Manage company settings, invites, and team members.</p>
+        <p class="text-muted">Manage team members, tags, and company settings.</p>
       </div>
 
       <!-- Admin Tabs -->
       <div class="admin-tabs">
-        <button class="admin-tab-btn active" data-tab="invites">
-          <span>📧</span> Invitations
-        </button>
-        <button class="admin-tab-btn" data-tab="team">
+        <button class="admin-tab-btn active" data-tab="team">
           <span>👥</span> Team Members
         </button>
         <button class="admin-tab-btn" data-tab="tags">
@@ -34,27 +31,13 @@
         <button class="admin-tab-btn" data-tab="company">
           <span>🏢</span> Company Settings
         </button>
-      </div>
-
-      <!-- Invitations Tab -->
-      <div class="admin-tab-content active" id="invites-tab">
-        <div class="card">
-          <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-              <h3 class="card-title mb-0">Send Invitations</h3>
-              <button class="btn btn-primary btn-sm" id="newInviteBtn">
-                <span>➕</span> Invite User
-              </button>
-            </div>
-          </div>
-          <div class="card-body" id="invitesContainer">
-            <p class="text-muted text-center">No pending invitations yet.</p>
-          </div>
-        </div>
+        <button class="admin-tab-btn" data-tab="sysadmin" id="sysadminTab" style="display: none;">
+          <span>⚙️</span> System Admin
+        </button>
       </div>
 
       <!-- Team Tab -->
-      <div class="admin-tab-content" id="team-tab">
+      <div class="admin-tab-content active" id="team-tab">
         <div class="card">
           <div class="card-header">
             <h3 class="card-title mb-0">Team Members</h3>
@@ -89,6 +72,19 @@
           </div>
         </div>
       </div>
+
+      <!-- System Admin Tab (sys_admin only) -->
+      <div class="admin-tab-content" id="sysadmin-tab">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title mb-0">System Administration</h3>
+            <p class="text-muted mb-0 mt-2" style="font-size: 0.875rem;">Full access to all users and companies across the system.</p>
+          </div>
+          <div class="card-body" id="sysadminContainer">
+            <p class="text-muted text-center">Loading system admin panel...</p>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -98,8 +94,14 @@
     import { getUserMetadata } from '../src/js/utils/auth.js';
     import { showError, showInfo } from '../src/js/utils/ui-helpers.js';
     import { renderTagManager } from '../src/js/components/tag-manager-admin.js';
+    import { renderTeamMemberManager } from '../src/js/components/team-manager-admin.js';
+    import { renderSystemAdminManager } from '../src/js/components/system-admin-manager.js';
+    import supabase from '../src/js/services/supabase.js';
 
     let tagManagerInitialized = false;
+    let teamManagerInitialized = false;
+    let sysadminManagerInitialized = false;
+    let isSysAdmin = false;
 
     async function init() {
       try {
@@ -109,9 +111,12 @@
         // Render navbar
         await renderNavbar();
 
-        // Load user info
+        // Load user info and check for sys_admin
         const metadata = await getUserMetadata();
         console.log('Admin user:', metadata);
+
+        // Check if user is sys_admin
+        await checkSysAdmin();
 
         // Setup tab switching
         setupTabs();
@@ -124,13 +129,40 @@
       }
     }
 
+    async function checkSysAdmin() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        isSysAdmin = profile?.role === 'sys_admin';
+
+        // Show/hide sys_admin tab
+        const sysadminTab = document.getElementById('sysadminTab');
+        if (sysadminTab && isSysAdmin) {
+          sysadminTab.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error checking sys_admin status:', error);
+      }
+    }
+
     function setupTabs() {
       const tabButtons = document.querySelectorAll('.admin-tab-btn');
       const tabContents = document.querySelectorAll('.admin-tab-content');
 
+      console.log('Setting up tabs:', tabButtons.length, 'buttons found');
+      console.log('Tab contents:', tabContents.length, 'content areas found');
+
       tabButtons.forEach((btn) => {
         btn.addEventListener('click', async () => {
           const tabName = btn.getAttribute('data-tab');
+          console.log('Tab clicked:', tabName);
 
           // Remove active from all buttons and contents
           tabButtons.forEach((b) => b.classList.remove('active'));
@@ -138,21 +170,58 @@
 
           // Add active to clicked button and corresponding content
           btn.classList.add('active');
-          document.getElementById(tabName + '-tab').classList.add('active');
+          const tabContent = document.getElementById(tabName + '-tab');
+          if (tabContent) {
+            tabContent.classList.add('active');
+            console.log('Activated tab content:', tabName + '-tab');
+          } else {
+            console.error('Tab content not found:', tabName + '-tab');
+          }
 
           // Load tab-specific content
-          if (tabName === 'tags' && !tagManagerInitialized) {
+          if (tabName === 'team' && !teamManagerInitialized) {
+            console.log('Loading team manager...');
+            await loadTeamManager();
+          } else if (tabName === 'tags' && !tagManagerInitialized) {
+            console.log('Loading tag manager...');
             await loadTagManager();
+          } else if (tabName === 'sysadmin' && !sysadminManagerInitialized) {
+            console.log('Loading system admin manager...');
+            await loadSysAdminManager();
           }
         });
       });
 
-      // Setup invite button
-      const newInviteBtn = document.getElementById('newInviteBtn');
-      if (newInviteBtn) {
-        newInviteBtn.addEventListener('click', () => {
-          showInfo('Invite functionality coming in Plan 08');
-        });
+      // Load team manager by default on page load
+      console.log('Loading team manager on page load...');
+      loadTeamManager();
+    }
+
+    async function loadTeamManager() {
+      const teamContainer = document.getElementById('teamContainer');
+      console.log('loadTeamManager - container found:', !!teamContainer);
+
+      if (!teamContainer) {
+        console.error('Team container not found!');
+        return;
+      }
+
+      teamContainer.innerHTML = '<p class="text-center">Loading team members...</p>';
+
+      try {
+        console.log('Calling renderTeamMemberManager...');
+        await renderTeamMemberManager(teamContainer);
+        teamManagerInitialized = true;
+        console.log('Team manager loaded successfully');
+      } catch (error) {
+        console.error('Failed to load team manager:', error);
+        teamContainer.innerHTML = `
+          <div class="alert alert-danger">
+            <h5>Failed to load team manager</h5>
+            <p>${error.message || 'Unknown error'}</p>
+            <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+          </div>
+        `;
       }
     }
 
@@ -168,6 +237,33 @@
         tagsContainer.innerHTML = `
           <div class="text-center text-danger">
             <p>Failed to load tag manager</p>
+            <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadSysAdminManager() {
+      const sysadminContainer = document.getElementById('sysadminContainer');
+      if (!sysadminContainer) return;
+
+      if (!isSysAdmin) {
+        sysadminContainer.innerHTML = `
+          <div class="alert alert-danger">
+            <p>Access denied. System admin privileges required.</p>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        await renderSystemAdminManager(sysadminContainer);
+        sysadminManagerInitialized = true;
+      } catch (error) {
+        console.error('Failed to load system admin manager:', error);
+        sysadminContainer.innerHTML = `
+          <div class="text-center text-danger">
+            <p>Failed to load system admin manager</p>
             <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
           </div>
         `;

@@ -1,0 +1,67 @@
+/**
+ * Tasks Kanban Board Styles
+ * Kanban columns, board layout, and drag-drop areas
+ */
+
+/* Kanban Board */
+.task-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.task-column {
+  background-color: var(--gray-100);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.task-column-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--gray-200);
+  background-color: white;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-column-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.task-column-count {
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.task-column-content {
+  padding: var(--space-3);
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+}
+
+.task-column-empty {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--gray-400);
+  font-size: var(--text-sm);
+}
+

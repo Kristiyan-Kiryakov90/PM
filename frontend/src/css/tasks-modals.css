@@ -1,0 +1,334 @@
+/**
+ * Task Modal Styles
+ * View/edit modals, forms, attachments, checklists
+ */
+
+/* Status Badge (for view modal) */
+.task-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+  line-height: 1.5;
+}
+
+.task-status.todo {
+  background-color: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.task-status.in_progress {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.task-status.done {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+/* View Task Modal Styles */
+.view-task-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.view-task-section h6 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-900);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.view-task-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.detail-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--gray-600);
+  min-width: 100px;
+}
+
+.attachments-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--gray-50);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.attachment-icon {
+  font-size: var(--text-lg);
+}
+
+.attachment-name {
+  flex: 1;
+  color: var(--gray-900);
+  font-weight: 500;
+}
+
+.attachment-size {
+  color: var(--gray-500);
+  font-size: var(--text-xs);
+}
+
+/* Attachment Upload Area (Edit Modal) */
+.attachment-upload-area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.attachments-list-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.attachment-item-edit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  transition: all 0.2s var(--ease-out);
+}
+
+.attachment-item-edit:hover {
+  background-color: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+.attachment-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.attachment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.attachment-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--gray-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-meta {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+}
+
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: all 0.2s var(--ease-out);
+}
+
+.btn-icon-sm:hover {
+  background-color: var(--gray-100);
+  border-color: var(--gray-400);
+  transform: scale(1.05);
+}
+
+.btn-danger-icon {
+  border-color: var(--gray-300);
+}
+
+.btn-danger-icon:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+/* Attachment List (View Modal) */
+.attachments-list-view {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.attachment-item-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  transition: all 0.2s var(--ease-out);
+}
+
+.attachment-item-view:hover {
+  background-color: white;
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.attachment-actions {
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-out);
+}
+
+.attachment-item-view:hover .attachment-actions {
+  opacity: 1;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: var(--space-6);
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state-message {
+  color: var(--gray-600);
+  margin-bottom: var(--space-6);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Spacing utilities */
+.py-6 {
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-12);
+}
+
+.mb-2 {
+  margin-bottom: var(--space-2);
+}
+
+.mb-4 {
+  margin-bottom: var(--space-4);
+}
+
+.mb-8 {
+  margin-bottom: var(--space-8);
+}
+
+.g-3 > * {
+  padding-right: var(--space-3);
+  padding-left: var(--space-3);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .task-board {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .task-column {
+    min-height: auto;
+  }
+
+  .task-column-content {
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .tasks-main {
+    padding-top: var(--header-height);
+  }
+
+  .task-column-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .task-column-content {
+    padding: var(--space-3);
+  }
+
+  .task-card {
+    padding: var(--space-3);
+  }
+
+  .task-card-actions {
+    opacity: 1;
+  }
+
+  .detail-label {
+    min-width: 80px;
+    font-size: var(--text-xs);
+  }
+
+  .attachment-actions {
+    opacity: 1;
+  }
+
+  .attachment-item-edit,
+  .attachment-item-view {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .attachment-upload-area {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

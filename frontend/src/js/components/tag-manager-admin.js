@@ -23,6 +23,7 @@ export async function renderTagManager(container) {
 
   let tags = [];
   let editingTagId = null;
+  let listenersAttached = false;
 
   async function render() {
     tags = await getTags();
@@ -37,9 +38,8 @@ export async function renderTagManager(container) {
 
     container.innerHTML = `
       <div class="tag-manager-admin">
-        <div class="tag-manager-header">
-          <h3>Manage Tags</h3>
-          <button class="btn btn-primary btn-sm" id="createTagBtn">
+        <div class="tag-manager-header mb-4">
+          <button class="btn btn-primary" id="createTagBtn">
             ➕ Create Tag
           </button>
         </div>
@@ -78,40 +78,50 @@ export async function renderTagManager(container) {
       </div>
     `;
 
-    setupEventListeners();
+    // Only attach event listeners once
+    if (!listenersAttached) {
+      setupEventListeners();
+      listenersAttached = true;
+    }
   }
 
   function setupEventListeners() {
-    // Create tag button
-    const createBtn = container.querySelector('#createTagBtn');
-    if (createBtn) {
-      createBtn.addEventListener('click', () => showTagForm());
-    }
+    // Use event delegation for create button
+    container.addEventListener('click', async (e) => {
+      // Create tag button
+      const createBtn = e.target.closest('#createTagBtn');
+      if (createBtn) {
+        e.preventDefault();
+        console.log('Create tag button clicked');
+        showTagForm();
+        return;
+      }
 
-    // Edit buttons
-    container.addEventListener('click', (e) => {
+      // Edit buttons
       const editBtn = e.target.closest('.edit');
       if (editBtn) {
+        e.preventDefault();
         const tagId = parseInt(editBtn.dataset.tagId, 10);
         showTagForm(tagId);
+        return;
       }
-    });
 
-    // Delete buttons
-    container.addEventListener('click', async (e) => {
+      // Delete buttons
       const deleteBtn = e.target.closest('.delete');
       if (deleteBtn) {
+        e.preventDefault();
         const tagId = parseInt(deleteBtn.dataset.tagId, 10);
         await handleDeleteTag(tagId);
+        return;
       }
-    });
 
-    // Color preview click
-    container.addEventListener('click', (e) => {
+      // Color preview click
       const colorPreview = e.target.closest('.tag-manager-color-preview');
       if (colorPreview) {
+        e.preventDefault();
         const tagId = parseInt(colorPreview.closest('.tag-manager-item').dataset.tagId, 10);
         showColorPicker(tagId);
+        return;
       }
     });
   }
@@ -119,6 +129,12 @@ export async function renderTagManager(container) {
   function showTagForm(tagId = null) {
     const tag = tagId ? tags.find(t => t.id === tagId) : null;
     editingTagId = tagId;
+
+    // Remove any existing modals first
+    const existingOverlay = document.getElementById('tagFormOverlay');
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
 
     const formHtml = `
       <div class="modal-overlay" id="tagFormOverlay">

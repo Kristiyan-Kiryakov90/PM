@@ -79,7 +79,7 @@ export async function initGanttChart(container, options = {}) {
             <p class="mb-1"><strong>End:</strong> ${formatDate(task._end)}</p>
             <p class="mb-1"><strong>Progress:</strong> ${task.progress}%</p>
             ${task.assignee ? `<p class="mb-0"><strong>Assignee:</strong> ${task.assignee}</p>` : ''}
-            <p class="mb-0 mt-2 text-muted" style="font-size: 0.75rem;">💡 Click and drag task bar vertically to reorder</p>
+            <p class="mb-0 mt-2 text-muted" style="font-size: 0.7rem;">Drag left/right to change dates. Drag up/down to reorder.</p>
           </div>
         `;
       },
