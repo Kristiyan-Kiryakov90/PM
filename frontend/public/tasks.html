@@ -7,18 +7,16 @@
   <link rel="stylesheet" href="../src/css/global.css">
   <link rel="stylesheet" href="../src/css/tasks.css">
   <link rel="stylesheet" href="../src/css/comments.css">
-  <link rel="stylesheet" href="../src/css/sidebar.css">
+  <link rel="stylesheet" href="../src/css/tags.css">
+  <!-- Frappe Gantt Library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
 
-  <!-- Layout with Sidebar -->
-  <div class="tasks-layout">
-    <!-- Sidebar Container (injected by sidebar component) -->
-    <div id="sidebarContainer"></div>
-
-    <!-- Main Content -->
-    <main class="tasks-main">
+  <!-- Main Content -->
+  <main class="tasks-main">
     <div class="container py-6">
       <!-- Header with Filters -->
       <div class="tasks-header mb-8">
@@ -31,6 +29,24 @@
             <button class="btn btn-primary" id="newTaskBtn">
               <span>➕</span> New Task
             </button>
+          </div>
+        </div>
+
+        <!-- View Mode Toggle -->
+        <div class="d-flex align-items-center mb-3 gap-3 flex-wrap">
+          <div class="view-mode-toggle btn-group" role="group">
+            <button class="btn btn-outline-secondary active" data-view="kanban">📋 Kanban</button>
+            <button class="btn btn-outline-secondary" data-view="list">📄 List</button>
+            <button class="btn btn-outline-secondary" data-view="gantt">📊 Gantt</button>
+          </div>
+
+          <!-- Gantt Controls (hidden by default) -->
+          <div class="gantt-controls d-none">
+            <div class="btn-group" role="group">
+              <button class="btn btn-sm btn-outline-secondary gantt-view-btn active" data-mode="Day">Day</button>
+              <button class="btn btn-sm btn-outline-secondary gantt-view-btn" data-mode="Week">Week</button>
+              <button class="btn btn-sm btn-outline-secondary gantt-view-btn" data-mode="Month">Month</button>
+            </div>
           </div>
         </div>
 
@@ -50,18 +66,49 @@
             </select>
           </div>
           <div class="col-md-3">
-            <input type="search" class="form-control" id="searchTasks" placeholder="Search tasks...">
+            <select class="form-select" id="filterTag">
+              <option value="">All Tags</option>
+            </select>
           </div>
         </div>
       </div>
 
       <!-- Kanban Board -->
-      <div id="tasksContainer">
+      <div id="tasksContainer" class="kanban-view">
         <!-- Kanban columns will be rendered here by JS -->
+      </div>
+
+      <!-- List View (hidden by default) -->
+      <div class="list-view" style="display: none;">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Due Date</th>
+                <th>Assignee</th>
+              </tr>
+            </thead>
+            <tbody id="listViewTableBody">
+              <!-- List view rows will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gantt View (hidden by default) -->
+      <div class="gantt-view" style="display: none;">
+        <div class="gantt-container" id="ganttChart"></div>
+        <div class="gantt-empty" style="display: none;">
+          <p>No scheduled tasks. Tasks need start date and due date to appear on Gantt chart.</p>
+          <button class="btn btn-primary" id="autoScheduleAllBtn">Auto-Schedule Tasks</button>
+        </div>
       </div>
     </div>
   </main>
-  </div><!-- End .tasks-layout -->
 
   <!-- Create/Edit Task Modal -->
   <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalTitle" aria-hidden="true">
@@ -104,8 +151,33 @@
               </div>
 
               <div class="col-md-6 mb-3">
-                <label for="taskDueDate" class="form-label">Due Date</label>
-                <input type="date" class="form-control" id="taskDueDate">
+                <label for="taskStartDate" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="taskStartDate">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="taskDueDate" class="form-label">Due Date</label>
+              <input type="date" class="form-control" id="taskDueDate">
+            </div>
+
+            <!-- Dependencies Section (only shown when editing) -->
+            <div id="taskDependenciesSection" style="display: none;">
+              <div class="mb-3">
+                <label class="form-label">Dependencies</label>
+                <div id="taskDependencies">
+                  <!-- Dependencies will be rendered here -->
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addDependencyBtn">
+                  + Add Dependency
+                </button>
+              </div>
+            </div>
+
+            <!-- Tags Section (only shown when editing) -->
+            <div id="taskTagsSection" style="display: none;">
+              <div id="taskTagPicker">
+                <!-- Tag picker will be rendered here -->
               </div>
             </div>
 
@@ -172,6 +244,31 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" class="btn btn-danger" id="confirmDeleteTaskBtn">Delete Task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Dependency Modal -->
+  <div class="modal fade" id="dependencyModal" tabindex="-1" aria-labelledby="dependencyModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="dependencyModalTitle">Add Dependency</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">This task cannot start until the selected task is completed.</p>
+          <div class="mb-3">
+            <label class="form-label">Blocking Task</label>
+            <select class="form-select" id="dependencyTaskSelect">
+              <option value="">Select a task...</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmAddDependency">Add Dependency</button>
         </div>
       </div>
     </div>

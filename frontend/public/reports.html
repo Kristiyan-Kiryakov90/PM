@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports & Analytics - TaskFlow</title>
+  <link rel="stylesheet" href="../src/css/global.css">
+  <link rel="stylesheet" href="../src/css/reports.css">
+</head>
+<body>
+  <!-- Navigation (injected by navbar component) -->
+
+  <!-- Main Content -->
+  <main class="reports-main">
+      <div class="reports-container">
+        <!-- Header -->
+        <div class="reports-header">
+          <h1>📊 Reports & Analytics</h1>
+          <p>Track team performance, task completion, and time metrics</p>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="reports-filters">
+          <h3>Filters</h3>
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="filterProject">Project</label>
+              <select class="form-select" id="filterProject">
+                <option value="">All Projects</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filterUser">Team Member</label>
+              <select class="form-select" id="filterUser">
+                <option value="">All Members</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filterStartDate">Start Date</label>
+              <input type="date" class="form-control" id="filterStartDate">
+            </div>
+            <div class="filter-group">
+              <label for="filterEndDate">End Date</label>
+              <input type="date" class="form-control" id="filterEndDate">
+            </div>
+          </div>
+
+          <!-- Date Range Presets -->
+          <div class="filter-presets">
+            <button class="filter-preset-btn" data-preset="today">Today</button>
+            <button class="filter-preset-btn" data-preset="last7Days">Last 7 Days</button>
+            <button class="filter-preset-btn active" data-preset="last30Days">Last 30 Days</button>
+            <button class="filter-preset-btn" data-preset="thisMonth">This Month</button>
+            <button class="filter-preset-btn" data-preset="lastMonth">Last Month</button>
+            <button class="filter-preset-btn" data-preset="thisYear">This Year</button>
+            <button class="filter-preset-btn" data-preset="all">All Time</button>
+          </div>
+        </div>
+
+        <!-- Metrics Overview -->
+        <div class="metrics-grid" id="metricsGrid">
+          <!-- Metrics will be rendered here -->
+        </div>
+
+        <!-- Task Completion Report -->
+        <div class="report-section">
+          <div class="report-section-header">
+            <h2 class="report-section-title">Task Completion</h2>
+          </div>
+          <div id="taskCompletionContent">
+            <!-- Content will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Status Distribution Report -->
+        <div class="report-section">
+          <div class="report-section-header">
+            <h2 class="report-section-title">Status Distribution</h2>
+          </div>
+          <div id="statusDistributionContent">
+            <!-- Content will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Priority Distribution Report -->
+        <div class="report-section">
+          <div class="report-section-header">
+            <h2 class="report-section-title">Priority Breakdown</h2>
+          </div>
+          <div id="priorityDistributionContent">
+            <!-- Content will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Team Productivity (Company users only) -->
+        <div class="report-section" id="teamProductivitySection" style="display: none;">
+          <div class="report-section-header">
+            <h2 class="report-section-title">Team Productivity</h2>
+          </div>
+          <div id="teamProductivityContent">
+            <!-- Content will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Overdue Tasks Report -->
+        <div class="report-section">
+          <div class="report-section-header">
+            <h2 class="report-section-title">Overdue Tasks</h2>
+          </div>
+          <div id="overdueTasksContent">
+            <!-- Content will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Export Button -->
+        <div class="export-pdf-container">
+          <button class="btn btn-primary btn-lg" id="exportPdfBtn">
+            <span>📄</span> Export Full Report as PDF
+          </button>
+        </div>
+      </div>
+    </main>
+
+  <!-- jsPDF library for direct PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script type="module" src="../src/js/pages/reports.js"></script>
+</body>
+</html>

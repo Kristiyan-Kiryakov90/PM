@@ -1,0 +1,267 @@
+/**
+ * Time Tracker Component Styles
+ * Phase 3A: Time Tracking
+ */
+
+.time-tracker {
+  padding: 1.5rem;
+  background-color: var(--gray-50);
+  border-radius: 8px;
+}
+
+/* Header */
+.time-tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.time-tracker-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.time-tracker-title h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.time-tracker-icon {
+  font-size: 1.5rem;
+}
+
+.time-tracker-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.time-tracker-total-label {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.time-tracker-total-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Timer Section */
+.time-tracker-timer {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+}
+
+.timer-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.timer-display {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: var(--primary);
+  letter-spacing: 2px;
+}
+
+.timer-blocked {
+  text-align: center;
+}
+
+.timer-blocked p {
+  font-size: 0.875rem;
+}
+
+/* Manual Entry */
+.time-tracker-manual {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+}
+
+.manual-entry-form {
+  margin-top: 1rem;
+}
+
+/* Time Entries */
+.time-tracker-entries {
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+  padding: 1rem;
+}
+
+.time-tracker-entries-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+}
+
+.time-tracker-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.time-tracker-empty p {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+/* Time Entry Item */
+.time-entry {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--gray-100);
+  transition: background-color 0.2s;
+}
+
+.time-entry:last-child {
+  border-bottom: none;
+}
+
+.time-entry:hover {
+  background-color: var(--gray-50);
+}
+
+.time-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.time-entry-date {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-transform: uppercase;
+}
+
+.time-entry-actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.time-entry:hover .time-entry-actions {
+  opacity: 1;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: transform 0.2s;
+}
+
+.btn-icon:hover {
+  transform: scale(1.1);
+}
+
+.time-entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.time-entry-duration {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: var(--gray-900);
+}
+
+.time-entry-time {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.time-entry-description {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.time-entry .badge {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+}
+
+/* Error State */
+.time-tracker-error {
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .time-tracker {
+    padding: 1rem;
+  }
+
+  .timer-display {
+    font-size: 2rem;
+  }
+
+  .time-entry-duration {
+    font-size: 1rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .time-tracker {
+    background-color: var(--gray-800);
+  }
+
+  .time-tracker-header {
+    border-bottom-color: var(--gray-700);
+  }
+
+  .time-tracker-title h4 {
+    color: var(--gray-100);
+  }
+
+  .time-tracker-timer,
+  .time-tracker-manual,
+  .time-tracker-entries {
+    background-color: var(--gray-900);
+    border-color: var(--gray-700);
+  }
+
+  .time-entry {
+    border-bottom-color: var(--gray-800);
+  }
+
+  .time-entry:hover {
+    background-color: var(--gray-800);
+  }
+
+  .time-entry-duration {
+    color: var(--gray-100);
+  }
+}

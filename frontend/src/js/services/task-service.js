@@ -158,6 +158,7 @@ export async function createTask(taskData) {
       priority = 'medium',
       project_id,
       assigned_to = null,
+      start_date = null,
       due_date = null,
     } = taskData;
 
@@ -190,6 +191,7 @@ export async function createTask(taskData) {
         priority,
         project_id,
         assigned_to: assigned_to || null,
+        start_date: start_date || null,
         due_date: due_date || null,
         created_by: userId,
       })
@@ -266,6 +268,10 @@ export async function updateTask(taskId, updates) {
 
     if (updates.assigned_to !== undefined) {
       updateData.assigned_to = updates.assigned_to || null;
+    }
+
+    if (updates.start_date !== undefined) {
+      updateData.start_date = updates.start_date || null;
     }
 
     if (updates.due_date !== undefined) {

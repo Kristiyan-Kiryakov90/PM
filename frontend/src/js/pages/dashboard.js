@@ -4,7 +4,6 @@
  */
 
 import { renderNavbar } from '../components/navbar.js';
-import { renderSidebar } from '../components/sidebar.js';
 import { requireAuth } from '../utils/router.js';
 import { getCurrentUser } from '../utils/auth.js';
 import { showError, showLoading, hideLoading } from '../utils/ui-helpers.js';
@@ -29,9 +28,6 @@ async function init() {
 
     // Render navbar
     await renderNavbar();
-
-    // Render sidebar
-    await renderSidebar();
 
     // Load current user
     currentUser = await getCurrentUser();

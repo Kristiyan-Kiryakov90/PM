@@ -33,6 +33,7 @@ export async function renderNavbar() {
           <a href="/public/dashboard.html" class="navbar-link">Dashboard</a>
           <a href="/public/projects.html" class="navbar-link">Projects</a>
           <a href="/public/tasks.html" class="navbar-link">Tasks</a>
+          <a href="/public/reports.html" class="navbar-link">Reports</a>
           ${isAdmin ? `<a href="/public/admin.html" class="navbar-link navbar-link-admin">Admin</a>` : ''}
         </div>
 

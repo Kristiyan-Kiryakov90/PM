@@ -6,6 +6,7 @@
   <title>Admin Panel - TaskFlow</title>
   <link rel="stylesheet" href="../src/css/global.css">
   <link rel="stylesheet" href="../src/css/admin.css">
+  <link rel="stylesheet" href="../src/css/tags.css">
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
@@ -26,6 +27,9 @@
         </button>
         <button class="admin-tab-btn" data-tab="team">
           <span>👥</span> Team Members
+        </button>
+        <button class="admin-tab-btn" data-tab="tags">
+          <span>🏷️</span> Tags
         </button>
         <button class="admin-tab-btn" data-tab="company">
           <span>🏢</span> Company Settings
@@ -61,6 +65,19 @@
         </div>
       </div>
 
+      <!-- Tags Tab -->
+      <div class="admin-tab-content" id="tags-tab">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Manage Tags</h3>
+            <p class="text-muted mb-0 mt-2" style="font-size: 0.875rem;">Create and manage tags for your team. Users can assign these tags to tasks.</p>
+          </div>
+          <div class="card-body" id="tagsContainer">
+            <p class="text-muted text-center">Loading tags...</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Company Settings Tab -->
       <div class="admin-tab-content" id="company-tab">
         <div class="card">
@@ -80,6 +97,9 @@
     import { requireAdmin } from '../src/js/utils/router.js';
     import { getUserMetadata } from '../src/js/utils/auth.js';
     import { showError, showInfo } from '../src/js/utils/ui-helpers.js';
+    import { renderTagManager } from '../src/js/components/tag-manager-admin.js';
+
+    let tagManagerInitialized = false;
 
     async function init() {
       try {
@@ -96,7 +116,8 @@
         // Setup tab switching
         setupTabs();
 
-        // TODO: Load actual admin data in Plan 08
+        // Load tags on first load (since invites tab is active by default)
+        // Tags will be loaded when user clicks the Tags tab
       } catch (error) {
         console.error('Admin page initialization error:', error);
         showError('Failed to load admin panel. Please refresh the page.');
@@ -108,7 +129,7 @@
       const tabContents = document.querySelectorAll('.admin-tab-content');
 
       tabButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const tabName = btn.getAttribute('data-tab');
 
           // Remove active from all buttons and contents
@@ -118,6 +139,11 @@
           // Add active to clicked button and corresponding content
           btn.classList.add('active');
           document.getElementById(tabName + '-tab').classList.add('active');
+
+          // Load tab-specific content
+          if (tabName === 'tags' && !tagManagerInitialized) {
+            await loadTagManager();
+          }
         });
       });
 
@@ -127,6 +153,24 @@
         newInviteBtn.addEventListener('click', () => {
           showInfo('Invite functionality coming in Plan 08');
         });
+      }
+    }
+
+    async function loadTagManager() {
+      const tagsContainer = document.getElementById('tagsContainer');
+      if (!tagsContainer) return;
+
+      try {
+        await renderTagManager(tagsContainer);
+        tagManagerInitialized = true;
+      } catch (error) {
+        console.error('Failed to load tag manager:', error);
+        tagsContainer.innerHTML = `
+          <div class="text-center text-danger">
+            <p>Failed to load tag manager</p>
+            <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+          </div>
+        `;
       }
     }
 
