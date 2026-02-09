@@ -28,31 +28,7 @@ export async function getUserMetadata() {
 
   console.log('Getting metadata for user:', user.email);
 
-  // Try 1: Check users table (preferred)
-  try {
-    const { data: userRecord, error: usersError } = await supabase
-      .from('users')
-      .select('company_id, role, first_name, last_name')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!usersError && userRecord) {
-      console.log('✅ Found in users table:', userRecord);
-      return {
-        id: user.id,
-        email: user.email,
-        role: userRecord.role,
-        company_id: userRecord.company_id,
-        first_name: userRecord.first_name || '',
-        last_name: userRecord.last_name || '',
-        created_at: user.created_at,
-      };
-    }
-  } catch (e) {
-    console.log('Users table not available:', e.message);
-  }
-
-  // Try 2: Check profiles table (fallback)
+  // Get user metadata from profiles table
   try {
     const { data: profile, error: profilesError } = await supabase
       .from('profiles')
@@ -73,10 +49,10 @@ export async function getUserMetadata() {
       };
     }
   } catch (e) {
-    console.log('Profiles table not available:', e.message);
+    console.error('Error fetching profile:', e.message);
   }
 
-  // Try 3: Fallback to user_metadata (for bootstrapping and backward compatibility)
+  // Fallback to user_metadata (for bootstrapping and backward compatibility)
   console.log('⚠️ Using user_metadata fallback');
   const metadata = {
     id: user.id,
@@ -162,8 +138,8 @@ export async function signOut() {
   sessionStorage.clear();
   localStorage.removeItem('supabase.auth.token');
 
-  // Redirect to signin page
-  window.location.href = '/public/signin.html';
+  // Redirect to main landing page
+  window.location.href = '/index.html';
 }
 
 /**

@@ -29,8 +29,8 @@
           <div class="card">
             <div class="card-body">
               <div class="stats-label">Total Projects</div>
-              <div class="stats-number" id="totalProjects">0</div>
-              <div class="stats-trend text-success small">View all</div>
+              <div class="stats-number" id="statTotalProjects">0</div>
+              <div class="stats-trend text-success small">All projects</div>
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@
           <div class="card">
             <div class="card-body">
               <div class="stats-label">Active Tasks</div>
-              <div class="stats-number" id="activeTasks">0</div>
+              <div class="stats-number" id="statActiveTasks">0</div>
               <div class="stats-trend text-primary small">In progress</div>
             </div>
           </div>
@@ -49,8 +49,8 @@
           <div class="card">
             <div class="card-body">
               <div class="stats-label">Completed This Week</div>
-              <div class="stats-number" id="completedThisWeek">0</div>
-              <div class="stats-trend text-success small">On track</div>
+              <div class="stats-number" id="statCompletedWeek">0</div>
+              <div class="stats-trend text-success small">Last 7 days</div>
             </div>
           </div>
         </div>
@@ -58,41 +58,70 @@
         <div class="col-md-3">
           <div class="card">
             <div class="card-body">
-              <div class="stats-label">Team Members</div>
-              <div class="stats-number" id="teamMembers">0</div>
-              <div class="stats-trend text-info small">In company</div>
+              <div class="stats-label">Overdue Tasks</div>
+              <div class="stats-number" id="statOverdue">0</div>
+              <div class="stats-trend text-danger small">Needs attention</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Recent Activity Section -->
-      <div class="row">
-        <div class="col-lg-8">
+      <!-- Dashboard Content Grid -->
+      <div class="row g-4 mb-4">
+        <!-- My Tasks -->
+        <div class="col-lg-6">
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title mb-0">Recent Tasks</h3>
+              <h3 class="card-title mb-0">My Tasks</h3>
             </div>
-            <div class="card-body" id="recentTasksContainer">
-              <p class="text-muted text-center">No recent tasks. Create one to get started!</p>
+            <div class="card-body" id="myTasksContainer">
+              <div class="empty-state-small">
+                <p>Loading tasks...</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="col-lg-4">
+        <!-- Upcoming Deadlines -->
+        <div class="col-lg-6">
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title mb-0">Quick Actions</h3>
+              <h3 class="card-title mb-0">Upcoming Deadlines</h3>
             </div>
-            <div class="card-body space-y-2">
-              <a href="/public/projects.html" class="btn btn-primary w-100">
-                <span>➕</span>
-                <span>New Project</span>
-              </a>
-              <a href="/public/tasks.html" class="btn btn-outline-primary w-100">
-                <span>✓</span>
-                <span>Create Task</span>
-              </a>
+            <div class="card-body" id="upcomingDeadlinesContainer">
+              <div class="empty-state-small">
+                <p>Loading deadlines...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Project Progress -->
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title mb-0">Project Progress</h3>
+            </div>
+            <div class="card-body" id="projectProgressContainer">
+              <div class="empty-state-small">
+                <p>Loading progress...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title mb-0">Recent Activity</h3>
+            </div>
+            <div class="card-body" id="recentActivityContainer">
+              <div class="empty-state-small">
+                <p>Loading activity...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -100,37 +129,6 @@
     </div>
   </main>
 
-  <script type="module">
-    import { renderNavbar } from '../src/js/components/navbar.js';
-    import { requireAuth } from '../src/js/utils/router.js';
-    import { getUserMetadata } from '../src/js/utils/auth.js';
-    import { showError } from '../src/js/utils/ui-helpers.js';
-
-    async function init() {
-      try {
-        // Ensure user is authenticated
-        await requireAuth();
-
-        // Render navbar
-        await renderNavbar();
-
-        // Load dashboard data
-        const metadata = await getUserMetadata();
-        console.log('User metadata:', metadata);
-
-        // TODO: Load actual data from API in Plan 09
-        // For now, display placeholder stats
-        document.getElementById('totalProjects').textContent = '0';
-        document.getElementById('activeTasks').textContent = '0';
-        document.getElementById('completedThisWeek').textContent = '0';
-        document.getElementById('teamMembers').textContent = '0';
-      } catch (error) {
-        console.error('Dashboard initialization error:', error);
-        showError('Failed to load dashboard. Please refresh the page.');
-      }
-    }
-
-    init();
-  </script>
+  <script type="module" src="../src/js/pages/dashboard.js"></script>
 </body>
 </html>

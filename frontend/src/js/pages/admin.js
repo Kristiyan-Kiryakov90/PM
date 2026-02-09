@@ -3,6 +3,7 @@
  * Company admin functions: manage users, view company settings
  */
 
+import { Modal } from 'bootstrap';
 import supabase from '@services/supabase.js';
 import { requireAdmin, getUserMetadata } from '@utils/auth.js';
 
@@ -140,7 +141,7 @@ function showCreateUserModal() {
   const modal = document.getElementById('createUserModal');
   if (modal) {
     // Use Bootstrap modal or custom modal logic
-    const bsModal = new bootstrap.Modal(modal);
+    const bsModal = new Modal(modal);
     bsModal.show();
   }
 }
@@ -193,7 +194,7 @@ async function handleCreateUser(e) {
     document.getElementById('createUserForm').reset();
 
     // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+    const modal = Modal.getInstance(document.getElementById('createUserModal'));
     if (modal) modal.hide();
 
   } catch (error) {

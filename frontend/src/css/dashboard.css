@@ -105,15 +105,21 @@
   margin-bottom: var(--space-6);
 }
 
-/* Task List */
-.task-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Empty State Small */
+.empty-state-small {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--gray-500);
 }
 
+.empty-state-small p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* Task Items (My Tasks) */
 .task-item {
-  padding: var(--space-4);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--gray-200);
   transition: background-color var(--transition-speed);
 }
@@ -126,17 +132,191 @@
   background-color: var(--gray-50);
 }
 
-.task-title {
+.task-item-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.task-item-priority {
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.task-item-priority.priority-low {
+  opacity: 0.5;
+}
+
+.task-item-priority.priority-high,
+.task-item-priority.priority-urgent {
+  opacity: 1;
+}
+
+.task-item-title {
   font-weight: 500;
+  color: var(--gray-900);
+  text-decoration: none;
+  flex: 1;
+}
+
+.task-item-title:hover {
+  color: var(--primary);
+}
+
+.task-item-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+}
+
+.task-item-project {
+  color: var(--gray-600);
+}
+
+.task-item-due {
+  color: var(--gray-600);
+}
+
+.task-item-due.overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Deadline Items */
+.deadline-item {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.deadline-item:last-child {
+  border-bottom: none;
+}
+
+.deadline-title {
+  font-weight: 500;
+  color: var(--gray-900);
+  text-decoration: none;
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.deadline-title:hover {
+  color: var(--primary);
+}
+
+.deadline-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+}
+
+.deadline-project {
+  color: var(--gray-600);
+}
+
+.deadline-date {
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+/* Progress Items */
+.progress-item {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.progress-item:last-child {
+  border-bottom: none;
+}
+
+.progress-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.progress-icon {
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.progress-name {
+  font-weight: 500;
+  color: var(--gray-900);
+  flex: 1;
+}
+
+.progress-percentage {
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: var(--text-sm);
+}
+
+.progress-bar-container {
+  height: 8px;
+  background-color: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progress-meta {
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+}
+
+/* Activity Items */
+.activity-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  font-size: var(--text-xl);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-description {
+  font-size: var(--text-sm);
   color: var(--gray-900);
   margin-bottom: var(--space-1);
 }
 
-.task-meta {
+.activity-meta {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-2);
   font-size: var(--text-xs);
   color: var(--gray-600);
+}
+
+.activity-project {
+  color: var(--gray-600);
+}
+
+.activity-time {
+  color: var(--gray-500);
 }
 
 /* Responsive */

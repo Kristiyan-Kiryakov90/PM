@@ -7,7 +7,7 @@ import supabase from './supabase.js';
 import { getCurrentUser } from '../utils/auth.js';
 
 const STORAGE_BUCKET = 'task-attachments';
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB limit
 
 /**
  * Upload attachment to a task
@@ -17,9 +17,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
  */
 export async function uploadAttachment(taskId, file) {
   try {
-    // Validate file size
+    // Validate file size (1MB limit)
     if (file.size > MAX_FILE_SIZE) {
-      throw new Error(`File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+      throw new Error(`File size exceeds maximum of 1MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
     }
 
     const user = await getCurrentUser();
@@ -29,11 +29,11 @@ export async function uploadAttachment(taskId, file) {
 
     const companyId = user.user_metadata?.company_id || null;
 
-    // Generate unique file path
+    // Generate unique file path (bucket name NOT included in path)
     const fileExt = file.name.split('.').pop();
     const fileName = file.name;
     const randomId = Math.random().toString(36).substring(2, 15);
-    const filePath = `task-attachments/${taskId}/${randomId}.${fileExt}`;
+    const filePath = `${taskId}/${randomId}.${fileExt}`;
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage

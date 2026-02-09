@@ -19,14 +19,27 @@ const subscriptions = new Map();
 export async function subscribeToTasks(onInsert, onUpdate, onDelete) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
     // Create unique subscription ID
-    const subscriptionId = `tasks_${companyId}_${Date.now()}`;
+    const subscriptionId = companyId
+      ? `tasks_company_${companyId}_${Date.now()}`
+      : `tasks_personal_${userId}_${Date.now()}`;
 
-    // Subscribe to tasks channel filtered by company
+    // For company users: filter by company_id
+    // For personal users: filter by created_by (RLS will handle NULL company_id)
+    const filter = companyId
+      ? `company_id=eq.${companyId}`
+      : `created_by=eq.${userId}`;
+
+    console.log('Setting up realtime subscription:', { companyId, userId, filter });
+
+    // Subscribe to tasks channel
     const channel = supabase
       .channel(subscriptionId)
       .on(
@@ -35,7 +48,7 @@ export async function subscribeToTasks(onInsert, onUpdate, onDelete) {
           event: 'INSERT',
           schema: 'public',
           table: 'tasks',
-          filter: `company_id=eq.${companyId}`,
+          filter: filter,
         },
         (payload) => {
           console.log('Task inserted:', payload);
@@ -50,7 +63,7 @@ export async function subscribeToTasks(onInsert, onUpdate, onDelete) {
           event: 'UPDATE',
           schema: 'public',
           table: 'tasks',
-          filter: `company_id=eq.${companyId}`,
+          filter: filter,
         },
         (payload) => {
           console.log('Task updated:', payload);
@@ -65,7 +78,7 @@ export async function subscribeToTasks(onInsert, onUpdate, onDelete) {
           event: 'DELETE',
           schema: 'public',
           table: 'tasks',
-          filter: `company_id=eq.${companyId}`,
+          filter: filter,
         },
         (payload) => {
           console.log('Task deleted:', payload);

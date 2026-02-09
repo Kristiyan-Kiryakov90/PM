@@ -78,9 +78,9 @@
             </div>
 
             <div class="mb-3">
-              <label for="taskProject" class="form-label">Project *</label>
-              <select class="form-select" id="taskProject" required>
-                <option value="">Select project...</option>
+              <label for="taskProject" class="form-label">Project (Optional)</label>
+              <select class="form-select" id="taskProject">
+                <option value="">No Project</option>
               </select>
             </div>
 
@@ -109,7 +109,7 @@
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="taskAttachmentBtn">
                   <span>📎</span> Add Attachment
                 </button>
-                <span class="text-muted ms-2" style="font-size: 0.875rem;">Max 10MB per file</span>
+                <span class="text-muted ms-2" style="font-size: 0.875rem;">Max 1MB per file</span>
               </div>
               <div id="taskAttachmentsList" class="attachments-list-edit mt-3">
                 <!-- Attachments will be rendered here -->
@@ -140,6 +140,9 @@
           </div>
         </div>
         <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="viewTaskDeleteBtn">Delete Task</button>
+          <div style="flex: 1;"></div>
+          <button type="button" class="btn btn-primary" id="viewTaskEditBtn">Edit Task</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
       </div>

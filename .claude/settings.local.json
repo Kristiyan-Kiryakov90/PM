@@ -52,7 +52,19 @@
       "Bash(SUPABASE_URL=\"https://zuupemhuaovzqqhyyocz.supabase.co\":*)",
       "Bash(SERVICE_ROLE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1dXBlbWh1YW92enFxaHl5b2N6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTUyMzA3NSwiZXhwIjoyMDg1MDk5MDc1fQ.5-ySCLm8pfFPBMjPzo5vM90-mAoJmlQap6xcIjIUKpQ\")",
       "Bash(git reset:*)",
-      "WebFetch(domain:docs.claude.com)"
+      "WebFetch(domain:docs.claude.com)",
+      "Bash(timeout 30 bash -c 'until curl -s http://localhost:5173 > /dev/null; do sleep 1; done && echo \"\"Server is ready\"\"')",
+      "Bash(npm test:*)",
+      "Bash(psql:*)",
+      "Bash(npm search:*)",
+      "Bash(npm view:*)",
+      "Bash(tee:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout /t 2)",
+      "Bash(timeout /t 5:*)",
+      "WebFetch(domain:clickup.com)",
+      "mcp__supabase__list_extensions",
+      "Bash(find:*)"
     ]
   },
   "enabledMcpjsonServers": [

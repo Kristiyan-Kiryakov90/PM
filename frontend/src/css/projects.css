@@ -3,10 +3,18 @@
  * Modern project management view
  */
 
+/* Layout with sidebar */
+.projects-layout {
+  display: flex;
+  min-height: 100vh;
+  padding-top: var(--header-height);
+}
+
 .projects-main {
+  flex: 1;
+  min-width: 0; /* Prevent flex item overflow */
   min-height: 100vh;
   background-color: var(--gray-50);
-  padding-top: var(--header-height);
 }
 
 .projects-header {

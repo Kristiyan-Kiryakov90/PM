@@ -5,6 +5,7 @@
 
 import { Modal } from 'bootstrap';
 import { renderNavbar } from '../components/navbar.js';
+import { renderSidebar, refreshSidebar } from '../components/sidebar.js';
 import { requireAuth } from '../utils/router.js';
 import { getUserMetadata, getCurrentUser } from '../utils/auth.js';
 import {
@@ -40,6 +41,17 @@ async function init() {
 
     // Render navbar
     await renderNavbar();
+
+    // Render sidebar
+    await renderSidebar({
+      onProjectClick: (projectId) => {
+        // Navigate to tasks page for this project
+        window.location.href = `/public/tasks.html?project=${projectId}`;
+      },
+      onSpaceClick: (spaceId) => {
+        console.log('Space clicked:', spaceId);
+      },
+    });
 
     // Load current user
     currentUser = await getCurrentUser();
@@ -416,6 +428,7 @@ async function submitProjectForm() {
     modal.hide();
 
     await loadProjects();
+    await refreshSidebar(); // Refresh sidebar to show updated project list
     enableButton(submitBtn);
   } catch (error) {
     console.error('Error submitting project form:', error);
@@ -441,6 +454,7 @@ async function confirmDelete() {
     modal.hide();
 
     await loadProjects();
+    await refreshSidebar(); // Refresh sidebar to show updated project list
     enableButton(confirmBtn);
   } catch (error) {
     console.error('Error deleting project:', error);

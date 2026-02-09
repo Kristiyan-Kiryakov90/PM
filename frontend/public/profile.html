@@ -156,7 +156,8 @@
     import { renderNavbar } from '../src/js/components/navbar.js';
     import { requireAuth } from '../src/js/utils/router.js';
     import { getUserMetadata, getUserFullName } from '../src/js/utils/auth.js';
-    import { showError, showSuccess, showInfo } from '../src/js/utils/ui-helpers.js';
+    import { showError, showSuccess, showInfo, disableButton, enableButton } from '../src/js/utils/ui-helpers.js';
+    import { updateProfile, changePassword } from '../src/js/services/profile-service.js';
 
     async function init() {
       try {
@@ -231,15 +232,71 @@
       if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
           e.preventDefault();
-          showInfo('Profile update coming in Plan 07');
+          await handleProfileUpdate();
         });
       }
 
       if (passwordForm) {
         passwordForm.addEventListener('submit', async (e) => {
           e.preventDefault();
-          showInfo('Password change coming in Plan 07');
+          await handlePasswordChange();
         });
+      }
+    }
+
+    async function handleProfileUpdate() {
+      const submitBtn = document.querySelector('#profileForm button[type="submit"]');
+
+      try {
+        disableButton(submitBtn, 'Saving...');
+
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+
+        await updateProfile({
+          first_name: firstName,
+          last_name: lastName,
+        });
+
+        showSuccess('Profile updated successfully');
+
+        // Reload profile data to refresh UI
+        await loadProfileData();
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showError(error.message || 'Failed to update profile');
+      } finally {
+        enableButton(submitBtn);
+      }
+    }
+
+    async function handlePasswordChange() {
+      const submitBtn = document.querySelector('#passwordForm button[type="submit"]');
+
+      try {
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+          showError('New password and confirmation do not match');
+          return;
+        }
+
+        disableButton(submitBtn, 'Updating...');
+
+        await changePassword(newPassword);
+
+        showSuccess('Password changed successfully');
+
+        // Clear form
+        document.getElementById('passwordForm').reset();
+      } catch (error) {
+        console.error('Error changing password:', error);
+        showError(error.message || 'Failed to change password');
+      } finally {
+        enableButton(submitBtn);
       }
     }
 

@@ -3,6 +3,8 @@
  * Handles task CRUD operations, Kanban board, and real-time updates
  */
 
+import { Modal } from 'bootstrap';
+import supabase from '../services/supabase.js';
 import { renderNavbar } from '../components/navbar.js';
 import { requireAuth } from '../utils/router.js';
 import { getCurrentUser } from '../utils/auth.js';
@@ -23,6 +25,7 @@ import {
   deleteTask,
 } from '../services/task-service.js';
 import { getProjects } from '../services/project-service.js';
+import { getProjectStatuses, getDefaultStatus } from '../services/status-service.js';
 import { subscribeToTasks, unsubscribeAll } from '../services/realtime-service.js';
 import {
   uploadAttachment,
@@ -30,10 +33,20 @@ import {
   deleteAttachment,
   downloadAttachment,
 } from '../services/attachment-service.js';
+import {
+  getTaskChecklists,
+  createChecklist,
+  deleteChecklist,
+  createChecklistItem,
+  updateChecklistItem,
+  deleteChecklistItem,
+  toggleChecklistItem,
+} from '../services/checklist-service.js';
 
 // State
 let tasks = [];
 let projects = [];
+let statuses = []; // Dynamic statuses for current project
 let currentFilters = {
   project_id: '',
   status: '',
@@ -139,7 +152,7 @@ async function loadTasks() {
 
     tasks = await getTasks(filters);
     hideLoading();
-    renderKanbanBoard();
+    await renderKanbanBoard();
   } catch (error) {
     hideLoading();
     console.error('Error loading tasks:', error);
@@ -150,8 +163,29 @@ async function loadTasks() {
 /**
  * Render Kanban board
  */
-function renderKanbanBoard() {
+async function renderKanbanBoard() {
   const container = document.getElementById('tasksContainer');
+
+  // Load statuses for filtered project (or first project if none selected)
+  const projectId = currentFilters.project_id || (projects.length > 0 ? projects[0].id : null);
+
+  if (!projectId) {
+    container.innerHTML = '<div class="empty-state"><p>No projects available. Please create a project first.</p></div>';
+    return;
+  }
+
+  try {
+    // Load dynamic statuses
+    statuses = await getProjectStatuses(projectId);
+  } catch (error) {
+    console.error('Error loading statuses:', error);
+    // Fallback to default statuses
+    statuses = [
+      { slug: 'todo', name: 'To Do', color: '#94a3b8', sort_order: 0 },
+      { slug: 'in_progress', name: 'In Progress', color: '#3b82f6', sort_order: 1 },
+      { slug: 'done', name: 'Done', color: '#10b981', sort_order: 2 },
+    ];
+  }
 
   // Apply search filter
   let filteredTasks = tasks;
@@ -164,17 +198,15 @@ function renderKanbanBoard() {
     );
   }
 
-  // Group tasks by status
-  const todoTasks = filteredTasks.filter((t) => t.status === 'todo');
-  const inProgressTasks = filteredTasks.filter((t) => t.status === 'in_progress');
-  const doneTasks = filteredTasks.filter((t) => t.status === 'done');
+  // Render Kanban columns dynamically
+  const columns = statuses.map(status => {
+    const statusTasks = filteredTasks.filter((t) => t.status === status.slug);
+    return renderKanbanColumn(status.slug, status.name, statusTasks, status.color);
+  }).join('');
 
-  // Render Kanban columns
   container.innerHTML = `
     <div class="task-board">
-      ${renderKanbanColumn('todo', 'To Do', todoTasks)}
-      ${renderKanbanColumn('in_progress', 'In Progress', inProgressTasks)}
-      ${renderKanbanColumn('done', 'Done', doneTasks)}
+      ${columns}
     </div>
   `;
 
@@ -185,14 +217,14 @@ function renderKanbanBoard() {
 /**
  * Render a Kanban column
  */
-function renderKanbanColumn(status, title, tasks) {
+function renderKanbanColumn(status, title, tasks, color = '#6b7280') {
   const isEmpty = tasks.length === 0;
 
   return `
     <div class="task-column" data-status="${status}">
-      <div class="task-column-header">
+      <div class="task-column-header" style="border-top: 3px solid ${color}">
         <h3 class="task-column-title">${title}</h3>
-        <span class="task-column-count">${tasks.length}</span>
+        <span class="task-column-count" style="background-color: ${color}20; color: ${color}">${tasks.length}</span>
       </div>
       <div class="task-column-content">
         ${
@@ -252,33 +284,41 @@ function renderTaskCard(task) {
 }
 
 /**
- * Render status change buttons
+ * Render status change buttons (dynamic based on project statuses)
  */
 function renderStatusButtons(task) {
   const buttons = [];
 
-  if (task.status !== 'todo') {
+  // Find current status in the statuses array
+  const currentIndex = statuses.findIndex(s => s.slug === task.status);
+  if (currentIndex === -1) return ''; // Status not found
+
+  const currentStatus = statuses[currentIndex];
+  const nextStatus = statuses[currentIndex + 1];
+  const prevStatus = statuses[currentIndex - 1];
+
+  // Back button (move to previous status)
+  if (prevStatus) {
     buttons.push(
-      `<button class="btn-status btn-status-todo" data-task-id="${task.id}" data-new-status="todo" title="Move to To Do">⬅️</button>`
+      `<button class="btn-status btn-status-back" data-task-id="${task.id}" data-new-status="${prevStatus.slug}" title="Move to ${prevStatus.name}">⬅️</button>`
     );
   }
 
-  if (task.status === 'todo') {
+  // Next/Forward button (move to next status)
+  if (nextStatus) {
+    const icon = nextStatus.is_done ? '✅' : '▶️';
+    const title = nextStatus.is_done ? 'Complete' : `Move to ${nextStatus.name}`;
     buttons.push(
-      `<button class="btn-status btn-status-progress" data-task-id="${task.id}" data-new-status="in_progress" title="Start">▶️</button>`
+      `<button class="btn-status btn-status-next" data-task-id="${task.id}" data-new-status="${nextStatus.slug}" title="${title}">${icon}</button>`
     );
-  }
-
-  if (task.status === 'in_progress') {
-    buttons.push(
-      `<button class="btn-status btn-status-done" data-task-id="${task.id}" data-new-status="done" title="Complete">✅</button>`
-    );
-  }
-
-  if (task.status === 'done') {
-    buttons.push(
-      `<button class="btn-status btn-status-progress" data-task-id="${task.id}" data-new-status="in_progress" title="Reopen">🔄</button>`
-    );
+  } else if (currentStatus.is_done) {
+    // If already at the last status (done), show reopen button to first non-done status
+    const firstNonDone = statuses.find(s => !s.is_done);
+    if (firstNonDone) {
+      buttons.push(
+        `<button class="btn-status btn-status-reopen" data-task-id="${task.id}" data-new-status="${firstNonDone.slug}" title="Reopen">🔄</button>`
+      );
+    }
   }
 
   return buttons.join('');
@@ -423,7 +463,7 @@ function openCreateModal() {
   // Hide attachments section for new tasks
   if (attachmentsSection) attachmentsSection.style.display = 'none';
 
-  const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+  const modal = new Modal(document.getElementById('taskModal'));
   modal.show();
 }
 
@@ -466,7 +506,7 @@ async function openEditModal(taskId) {
       await loadTaskAttachments(taskId);
     }
 
-    const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+    const modal = new Modal(document.getElementById('taskModal'));
     modal.show();
   } catch (error) {
     hideLoading();
@@ -481,8 +521,11 @@ async function openEditModal(taskId) {
 async function openViewModal(taskId) {
   try {
     showLoading('Loading task...');
-    const task = await getTask(taskId);
-    const attachments = await getAttachments(taskId);
+    const [task, attachments, checklists] = await Promise.all([
+      getTask(taskId),
+      getAttachments(taskId),
+      getTaskChecklists(taskId),
+    ]);
     hideLoading();
 
     const modalTitle = document.getElementById('viewTaskModalTitle');
@@ -506,27 +549,38 @@ async function openViewModal(taskId) {
         attachments && attachments.length > 0
           ? attachments
               .map(
-                (att) => `
+                (att) => {
+                  const isImage = att.mime_type?.startsWith('image/');
+                  const isPDF = att.mime_type === 'application/pdf';
+                  const canPreview = isImage || isPDF;
+
+                  return `
           <li class="attachment-item-view">
             <div class="attachment-info">
-              <span class="attachment-icon">📎</span>
+              <span class="attachment-icon">${isImage ? '🖼️' : isPDF ? '📄' : '📎'}</span>
               <div class="attachment-details">
                 <span class="attachment-name">${escapeHtml(att.file_name)}</span>
                 <span class="attachment-meta">${formatFileSize(att.file_size)} · ${formatDate(att.created_at)}</span>
               </div>
             </div>
             <div class="attachment-actions">
+              ${canPreview ? `
+                <button class="btn-icon-sm" onclick="window.viewAttachment(${att.id}, '${att.mime_type}')" title="View">
+                  <span>👁️</span>
+                </button>
+              ` : ''}
               <button class="btn-icon-sm" onclick="window.downloadAttachment(${att.id})" title="Download">
                 <span>⬇️</span>
               </button>
-              ${att.uploaded_by === '${currentUser?.id}' ? `
+              ${att.uploaded_by === currentUser?.id ? `
                 <button class="btn-icon-sm btn-danger-icon" onclick="window.deleteViewAttachment(${att.id}, ${taskId})" title="Delete">
                   <span>🗑️</span>
                 </button>
               ` : ''}
             </div>
           </li>
-        `
+        `;
+                }
               )
               .join('')
           : '<li class="text-muted" style="padding: 1rem;">No attachments</li>';
@@ -566,20 +620,216 @@ async function openViewModal(taskId) {
               ${attachmentsList}
             </ul>
           </div>
+
+          ${renderChecklistsSection(checklists || [])}
         </div>
       `;
 
-      // Store attachments for download/delete handlers
+      // Store attachments and checklists for handlers
       window._viewAttachments = attachments;
+      window._viewChecklists = checklists;
+
+      // Setup checklist event listeners
+      setupChecklistHandlers(taskId);
+
+      // Setup Edit and Delete button handlers
+      const editBtn = document.getElementById('viewTaskEditBtn');
+      const deleteBtn = document.getElementById('viewTaskDeleteBtn');
+
+      if (editBtn) {
+        editBtn.onclick = () => {
+          const modal = Modal.getInstance(document.getElementById('viewTaskModal'));
+          modal.hide();
+          setTimeout(() => openEditModal(taskId), 300);
+        };
+      }
+
+      if (deleteBtn) {
+        deleteBtn.onclick = () => {
+          // Close view modal first
+          const viewModal = Modal.getInstance(document.getElementById('viewTaskModal'));
+          if (viewModal) {
+            viewModal.hide();
+          }
+          // Small delay to ensure modal is closed
+          setTimeout(() => {
+            currentDeletingTaskId = taskId;
+            const taskName = document.getElementById('deleteTaskName');
+            if (taskName) taskName.textContent = task.title;
+            const deleteModal = new Modal(document.getElementById('deleteTaskModal'));
+            deleteModal.show();
+          }, 300);
+        };
+      }
     }
 
-    const modal = new bootstrap.Modal(document.getElementById('viewTaskModal'));
+    const modal = new Modal(document.getElementById('viewTaskModal'));
     modal.show();
   } catch (error) {
     hideLoading();
     console.error('Error loading task:', error);
     showError('Failed to load task details');
   }
+}
+
+/**
+ * Render checklists section
+ */
+function renderChecklistsSection(checklists) {
+  const checklistsContent = checklists.length > 0
+    ? checklists.map(checklist => renderChecklist(checklist)).join('')
+    : '<p class="text-muted" style="padding: 1rem; text-align: center;">No checklists yet. Click "Add Checklist" to create one.</p>';
+
+  return `
+    <div class="view-task-section">
+      <div class="section-header-with-action">
+        <h6>Checklists</h6>
+        <button class="btn-sm btn-outline-primary" onclick="window.addNewChecklist()">
+          <span>➕</span>
+          <span>Add Checklist</span>
+        </button>
+      </div>
+      <div class="checklists-container">
+        ${checklistsContent}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render a single checklist with items
+ */
+function renderChecklist(checklist) {
+  const items = checklist.checklist_items || [];
+  const totalItems = items.length;
+  const completedItems = items.filter(item => item.is_completed).length;
+  const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+  return `
+    <div class="checklist-block" data-checklist-id="${checklist.id}">
+      <div class="checklist-header">
+        <div class="checklist-title-row">
+          <h6 class="checklist-title">${escapeHtml(checklist.title)}</h6>
+          <div class="checklist-header-actions">
+            <span class="checklist-progress-text">${completedItems}/${totalItems}</span>
+            <button
+              class="btn-icon-xs checklist-delete-checklist-btn"
+              onclick="window.deleteChecklistHandler(${checklist.id})"
+              title="Delete checklist"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+        <div class="checklist-progress-bar">
+          <div class="checklist-progress-fill" style="width: ${percentage}%"></div>
+        </div>
+      </div>
+      <ul class="checklist-items-list">
+        ${items.map(item => renderChecklistItem(item)).join('')}
+        <li class="checklist-add-item">
+          <button class="btn-link-sm" onclick="window.addChecklistItem(${checklist.id})">
+            + Add item
+          </button>
+        </li>
+      </ul>
+    </div>
+  `;
+}
+
+/**
+ * Render a single checklist item
+ */
+function renderChecklistItem(item) {
+  return `
+    <li class="checklist-item ${item.is_completed ? 'completed' : ''}" data-item-id="${item.id}">
+      <input
+        type="checkbox"
+        class="checklist-checkbox"
+        ${item.is_completed ? 'checked' : ''}
+        onchange="window.toggleChecklistItemHandler(${item.id})"
+      />
+      <span class="checklist-item-content">${escapeHtml(item.content)}</span>
+      <button
+        class="btn-icon-xs checklist-delete-btn"
+        onclick="window.deleteChecklistItemHandler(${item.id})"
+        title="Delete item"
+      >
+        ✕
+      </button>
+    </li>
+  `;
+}
+
+/**
+ * Setup checklist event handlers
+ */
+function setupChecklistHandlers(taskId) {
+  // Global handlers for checklist operations
+  window.toggleChecklistItemHandler = async (itemId) => {
+    try {
+      await toggleChecklistItem(itemId);
+      // Refresh modal
+      setTimeout(() => openViewModal(taskId), 100);
+    } catch (error) {
+      console.error('Error toggling checklist item:', error);
+      showError('Failed to update checklist item');
+    }
+  };
+
+  window.deleteChecklistItemHandler = async (itemId) => {
+    if (!confirm('Delete this checklist item?')) return;
+    try {
+      await deleteChecklistItem(itemId);
+      showSuccess('Checklist item deleted');
+      // Refresh modal
+      setTimeout(() => openViewModal(taskId), 100);
+    } catch (error) {
+      console.error('Error deleting checklist item:', error);
+      showError('Failed to delete checklist item');
+    }
+  };
+
+  window.addChecklistItem = async (checklistId) => {
+    const content = prompt('Enter checklist item:');
+    if (!content || !content.trim()) return;
+    try {
+      await createChecklistItem({ checklist_id: checklistId, content: content.trim() });
+      showSuccess('Item added');
+      // Refresh modal
+      setTimeout(() => openViewModal(taskId), 100);
+    } catch (error) {
+      console.error('Error adding checklist item:', error);
+      showError('Failed to add item');
+    }
+  };
+
+  window.addNewChecklist = async () => {
+    const title = prompt('Enter checklist name:');
+    if (!title || !title.trim()) return;
+    try {
+      await createChecklist({ task_id: taskId, title: title.trim() });
+      showSuccess('Checklist created');
+      // Refresh modal
+      setTimeout(() => openViewModal(taskId), 100);
+    } catch (error) {
+      console.error('Error creating checklist:', error);
+      showError('Failed to create checklist');
+    }
+  };
+
+  window.deleteChecklistHandler = async (checklistId) => {
+    if (!confirm('Delete this entire checklist? All items will be removed.')) return;
+    try {
+      await deleteChecklist(checklistId);
+      showSuccess('Checklist deleted');
+      // Refresh modal
+      setTimeout(() => openViewModal(taskId), 100);
+    } catch (error) {
+      console.error('Error deleting checklist:', error);
+      showError('Failed to delete checklist');
+    }
+  };
 }
 
 /**
@@ -592,7 +842,7 @@ function openDeleteModal(taskId) {
   currentDeletingTaskId = taskId;
 
   // Close edit modal if open
-  const editModal = bootstrap.Modal.getInstance(document.getElementById('taskModal'));
+  const editModal = Modal.getInstance(document.getElementById('taskModal'));
   if (editModal) {
     editModal.hide();
   }
@@ -600,7 +850,7 @@ function openDeleteModal(taskId) {
   const taskName = document.getElementById('deleteTaskName');
   if (taskName) taskName.textContent = task.title;
 
-  const modal = new bootstrap.Modal(document.getElementById('deleteTaskModal'));
+  const modal = new Modal(document.getElementById('deleteTaskModal'));
   modal.show();
 }
 
@@ -627,9 +877,7 @@ async function submitTaskForm() {
       errors.title = 'Task title must be 200 characters or less';
     }
 
-    if (!projectInput.value) {
-      errors.project = 'Project is required';
-    }
+    // Project is optional - tasks can exist without a project
 
     if (Object.keys(errors).length > 0) {
       showFormErrors(errors);
@@ -642,7 +890,7 @@ async function submitTaskForm() {
     const taskData = {
       title: titleInput.value.trim(),
       description: descInput.value.trim(),
-      project_id: projectInput.value,
+      project_id: projectInput.value || null, // Allow null for tasks without projects
       priority: priorityInput.value,
       due_date: dueDateInput.value || null,
     };
@@ -658,7 +906,7 @@ async function submitTaskForm() {
     }
 
     // Close modal and reload
-    const modal = bootstrap.Modal.getInstance(document.getElementById('taskModal'));
+    const modal = Modal.getInstance(document.getElementById('taskModal'));
     modal.hide();
 
     await loadTasks();
@@ -683,7 +931,7 @@ async function confirmDelete() {
     showSuccess('Task deleted successfully');
 
     // Close modal and reload
-    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteTaskModal'));
+    const modal = Modal.getInstance(document.getElementById('deleteTaskModal'));
     modal.hide();
 
     await loadTasks();
@@ -781,20 +1029,36 @@ function renderTaskAttachments() {
 
   attachmentsList.innerHTML = currentTaskAttachments
     .map(
-      (att) => `
+      (att) => {
+        const isImage = att.mime_type?.startsWith('image/');
+        const isPDF = att.mime_type === 'application/pdf';
+        const canPreview = isImage || isPDF;
+
+        return `
     <div class="attachment-item-edit" data-attachment-id="${att.id}">
       <div class="attachment-info">
-        <span class="attachment-icon">📎</span>
+        <span class="attachment-icon">${isImage ? '🖼️' : isPDF ? '📄' : '📎'}</span>
         <div class="attachment-details">
           <span class="attachment-name">${escapeHtml(att.file_name)}</span>
           <span class="attachment-meta">${formatFileSize(att.file_size)} · ${formatDate(att.created_at)}</span>
         </div>
       </div>
-      <button class="btn-icon-sm btn-danger-icon" onclick="window.deleteEditAttachment(${att.id})" title="Delete">
-        <span>🗑️</span>
-      </button>
+      <div class="attachment-actions">
+        ${canPreview ? `
+          <button class="btn-icon-sm" onclick="window.viewAttachment(${att.id}, '${att.mime_type}')" title="View">
+            <span>👁️</span>
+          </button>
+        ` : ''}
+        <button class="btn-icon-sm" onclick="window.downloadAttachment(${att.id})" title="Download">
+          <span>⬇️</span>
+        </button>
+        <button class="btn-icon-sm btn-danger-icon" onclick="window.deleteEditAttachment(${att.id})" title="Delete">
+          <span>🗑️</span>
+        </button>
+      </div>
     </div>
-  `
+  `;
+      }
     )
     .join('');
 }
@@ -808,6 +1072,19 @@ async function handleAttachmentUpload(event) {
 
   if (!currentEditingTaskId) {
     showError('Please save the task before uploading attachments');
+    event.target.value = '';
+    return;
+  }
+
+  // Validate file sizes (1MB limit per file)
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+  const oversizedFiles = Array.from(files).filter(file => file.size > MAX_FILE_SIZE);
+
+  if (oversizedFiles.length > 0) {
+    const fileNames = oversizedFiles.map(f =>
+      `${f.name} (${(f.size / 1024 / 1024).toFixed(2)}MB)`
+    ).join(', ');
+    showError(`File(s) exceed 1MB limit: ${fileNames}`);
     event.target.value = '';
     return;
   }
@@ -874,7 +1151,7 @@ window.deleteViewAttachment = async function (attachmentId, taskId) {
     showSuccess('Attachment deleted successfully');
 
     // Close and reopen modal to refresh
-    const modal = bootstrap.Modal.getInstance(document.getElementById('viewTaskModal'));
+    const modal = Modal.getInstance(document.getElementById('viewTaskModal'));
     if (modal) {
       modal.hide();
     }
@@ -945,6 +1222,91 @@ function formatDate(dateString) {
     month: 'short',
     day: 'numeric',
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  });
+}
+
+/**
+ * View attachment (preview images/PDFs)
+ */
+window.viewAttachment = async function (attachmentId, mimeType) {
+  try {
+    showLoading('Loading preview...');
+
+    // Find attachment in current list or fetch it
+    let attachment = currentTaskAttachments?.find(a => a.id === attachmentId);
+    if (!attachment && window._viewAttachments) {
+      attachment = window._viewAttachments.find(a => a.id === attachmentId);
+    }
+
+    if (!attachment) {
+      throw new Error('Attachment not found');
+    }
+
+    // Get public URL from Supabase Storage
+    const { data } = await supabase.storage
+      .from('task-attachments')
+      .createSignedUrl(attachment.file_path, 3600); // 1 hour expiry
+
+    hideLoading();
+
+    if (!data?.signedUrl) {
+      throw new Error('Failed to get file URL');
+    }
+
+    const isImage = mimeType?.startsWith('image/');
+    const isPDF = mimeType === 'application/pdf';
+
+    if (isImage) {
+      // Show image in modal
+      showImagePreview(data.signedUrl, attachment.file_name);
+    } else if (isPDF) {
+      // Open PDF in new tab
+      window.open(data.signedUrl, '_blank');
+    }
+  } catch (error) {
+    hideLoading();
+    console.error('Error viewing attachment:', error);
+    showError(error.message || 'Failed to view attachment');
+  }
+};
+
+/**
+ * Show image preview in modal
+ */
+function showImagePreview(imageUrl, fileName) {
+  // Create modal dynamically
+  const existingModal = document.getElementById('imagePreviewModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const modalHtml = `
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">${escapeHtml(fileName)}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body text-center" style="max-height: 80vh; overflow: auto;">
+            <img src="${imageUrl}" alt="${escapeHtml(fileName)}" style="max-width: 100%; height: auto;">
+          </div>
+          <div class="modal-footer">
+            <a href="${imageUrl}" download="${escapeHtml(fileName)}" class="btn btn-primary">Download</a>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  const modal = new Modal(document.getElementById('imagePreviewModal'));
+  modal.show();
+
+  // Clean up when closed
+  document.getElementById('imagePreviewModal').addEventListener('hidden.bs.modal', function () {
+    this.remove();
   });
 }
 

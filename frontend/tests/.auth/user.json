@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "sb-zuupemhuaovzqqhyyocz-auth-token",
+          "value": "{\"access_token\":\"eyJhbGciOiJFUzI1NiIsImtpZCI6IjQxYzJlNjYxLTgyOTctNDA1NS05ODRhLThmOTg3Y2NjMWRjOSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3p1dXBlbWh1YW92enFxaHl5b2N6LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI5ZTk1NzZjNC03ZGZkLTQ1N2ItOTBlOS1jMWU3YTYxYTY2MjEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzcwNTgzMjc0LCJpYXQiOjE3NzA1Nzk2NzQsImVtYWlsIjoicGxheXdyaWdodC50ZXN0QHRhc2tmbG93LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWwiOiJwbGF5d3JpZ2h0LnRlc3RAdGFza2Zsb3cuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImZpcnN0X25hbWUiOiJUZXN0X3VwZGF0ZWRfdXBkYXRlZF91cGRhdGVkX3VwZGF0ZWRfdXBkYXRlZCIsImxhc3RfbmFtZSI6IlVzZXIiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInJvbGUiOiJ1c2VyIiwic3ViIjoiOWU5NTc2YzQtN2RmZC00NTdiLTkwZTktYzFlN2E2MWE2NjIxIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NzA1Nzk2NzR9XSwic2Vzc2lvbl9pZCI6IjFlYjI5NjJkLTU5OGItNGVjYS04MGZmLWI2ZDY4ZTc1MWViOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.zRSBD937daJov5j81uO9RN2lLld5aBRQ5wa_L4KMxEj6xPG9cl9IBnqRJitJ3UDIL8o3sgVPKvjufeoq-WAsuA\",\"token_type\":\"bearer\",\"expires_in\":3600,\"expires_at\":1770583274,\"refresh_token\":\"posdsnlx2lbn\",\"user\":{\"id\":\"9e9576c4-7dfd-457b-90e9-c1e7a61a6621\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"playwright.test@taskflow.com\",\"email_confirmed_at\":\"2026-02-08T13:04:12.914467Z\",\"phone\":\"\",\"confirmed_at\":\"2026-02-08T13:04:12.914467Z\",\"last_sign_in_at\":\"2026-02-08T19:41:14.087276535Z\",\"app_metadata\":{\"provider\":\"email\",\"providers\":[\"email\"]},\"user_metadata\":{\"email\":\"playwright.test@taskflow.com\",\"email_verified\":true,\"first_name\":\"Test_updated_updated_updated_updated_updated\",\"last_name\":\"User\",\"phone_verified\":false,\"role\":\"user\",\"sub\":\"9e9576c4-7dfd-457b-90e9-c1e7a61a6621\"},\"identities\":[{\"identity_id\":\"b145377a-2fa6-431f-acde-38a7ae02cda9\",\"id\":\"9e9576c4-7dfd-457b-90e9-c1e7a61a6621\",\"user_id\":\"9e9576c4-7dfd-457b-90e9-c1e7a61a6621\",\"identity_data\":{\"company_id\":null,\"email\":\"playwright.test@taskflow.com\",\"email_verified\":false,\"first_name\":\"Test\",\"last_name\":\"User\",\"phone_verified\":false,\"role\":\"user\",\"sub\":\"9e9576c4-7dfd-457b-90e9-c1e7a61a6621\"},\"provider\":\"email\",\"last_sign_in_at\":\"2026-02-08T13:04:12.906759Z\",\"created_at\":\"2026-02-08T13:04:12.907248Z\",\"updated_at\":\"2026-02-08T13:04:12.907248Z\",\"email\":\"playwright.test@taskflow.com\"}],\"created_at\":\"2026-02-08T13:04:12.87565Z\",\"updated_at\":\"2026-02-08T19:41:14.09145Z\",\"is_anonymous\":false},\"weak_password\":null}"
+        }
+      ]
+    }
+  ]
+}

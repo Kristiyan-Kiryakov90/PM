@@ -8,15 +8,18 @@ import { getUserCompanyId } from '@utils/auth.js';
 import { handleError } from '@utils/error-handler.js';
 
 /**
- * Get all tasks for the user's company with optional filters
+ * Get all tasks for the user (company or personal) with optional filters
  * @param {Object} filters - { project_id, status, assignee_id }
  * @returns {Promise<Array>} Array of tasks
  */
 export async function getTasks(filters = {}) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
     let query = supabase
@@ -40,8 +43,14 @@ export async function getTasks(filters = {}) {
         )
       `
       )
-      .eq('company_id', companyId)
       .order('created_at', { ascending: false });
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
 
     // Apply filters
     if (filters.project_id) {
@@ -78,11 +87,14 @@ export async function getTasks(filters = {}) {
 export async function getTask(taskId) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('tasks')
       .select(
         `
@@ -101,7 +113,7 @@ export async function getTask(taskId) {
           id,
           name
         ),
-        attachments (
+        attachments!attachments_task_id_fkey (
           id,
           file_name,
           file_size,
@@ -109,9 +121,16 @@ export async function getTask(taskId) {
         )
       `
       )
-      .eq('id', taskId)
-      .eq('company_id', companyId)
-      .single();
+      .eq('id', taskId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) throw error;
     if (!data) {
@@ -126,7 +145,7 @@ export async function getTask(taskId) {
 }
 
 /**
- * Create a new task
+ * Create a new task (company or personal)
  * @param {Object} taskData - { title, description, status, priority, project_id, assignee_id, due_date }
  * @returns {Promise<Object>} Created task
  */
@@ -151,19 +170,20 @@ export async function createTask(taskData) {
       throw new Error('Task title must be 200 characters or less');
     }
 
-    if (!project_id) {
-      throw new Error('Project is required');
-    }
+    // Project is optional - tasks can exist without a project
 
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
     const { data, error } = await supabase
       .from('tasks')
       .insert({
-        company_id: companyId,
+        company_id: companyId || null, // null for personal tasks
         title: title.trim(),
         description: description.trim() || null,
         status,
@@ -171,7 +191,7 @@ export async function createTask(taskData) {
         project_id,
         assigned_to: assigned_to || null,
         due_date: due_date || null,
-        created_by: (await supabase.auth.getUser()).data?.user?.id,
+        created_by: userId,
       })
       .select()
       .single();
@@ -194,11 +214,14 @@ export async function createTask(taskData) {
 export async function updateTask(taskId, updates) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    // Validate the task belongs to user's company
+    // Validate the task belongs to user (company or personal)
     const existing = await getTask(taskId);
     if (!existing) {
       throw new Error('Task not found');
@@ -251,13 +274,19 @@ export async function updateTask(taskId, updates) {
 
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('tasks')
       .update(updateData)
-      .eq('id', taskId)
-      .eq('company_id', companyId)
-      .select()
-      .single();
+      .eq('id', taskId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) throw error;
     if (!data) {
@@ -279,22 +308,33 @@ export async function updateTask(taskId, updates) {
 export async function deleteTask(taskId) {
   try {
     const companyId = await getUserCompanyId();
-    if (!companyId) {
-      throw new Error('User does not belong to any company');
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
 
-    // Verify task exists and belongs to user's company
+    // Verify task exists and belongs to user (company or personal)
     const task = await getTask(taskId);
     if (!task) {
       throw new Error('Task not found');
     }
 
     // Delete will cascade to attachments (if cascade is set in database)
-    const { error } = await supabase
+    let query = supabase
       .from('tasks')
       .delete()
-      .eq('id', taskId)
-      .eq('company_id', companyId);
+      .eq('id', taskId);
+
+    // Filter by company or personal ownership
+    if (companyId) {
+      query = query.eq('company_id', companyId);
+    } else {
+      query = query.is('company_id', null).eq('created_by', userId);
+    }
+
+    const { error } = await query;
 
     if (error) throw error;
   } catch (error) {
@@ -305,13 +345,16 @@ export async function deleteTask(taskId) {
 
 /**
  * Get all company users for assignee dropdown
+ * Returns empty array for personal users (no company)
  * @returns {Promise<Array>} Array of users
  */
 export async function getCompanyUsers() {
   try {
     const companyId = await getUserCompanyId();
+
+    // Personal users can't assign tasks to others
     if (!companyId) {
-      throw new Error('User does not belong to any company');
+      return [];
     }
 
     // Note: Since user data is in auth.users metadata, we need to query auth
