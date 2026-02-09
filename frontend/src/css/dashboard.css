@@ -3,10 +3,19 @@
  * Modern, clean dashboard with card-based layout
  */
 
+/* Layout with sidebar */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  padding-top: var(--header-height);
+}
+
 .dashboard-main {
+  flex: 1;
+  min-width: 0; /* Prevent flex item overflow */
   min-height: 100vh;
   background-color: var(--gray-50);
-  padding-top: var(--header-height);
+  padding-top: 0;
 }
 
 .dashboard-header {

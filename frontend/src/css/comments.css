@@ -1,0 +1,243 @@
+/**
+ * Comments Component Styles
+ */
+
+/* Ensure tab pane has proper height */
+#comments-tab-pane {
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+#task-comments-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.comment-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+}
+
+.comment-item {
+  position: relative;
+}
+
+.comment-card {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 8px;
+  background: var(--bs-body-bg);
+  transition: border-color 0.2s ease;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.comment-card:hover {
+  border-color: var(--bs-primary);
+}
+
+.comment-card .card-body {
+  padding: 0;
+}
+
+.comment-author {
+  color: var(--bs-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.comment-card .text-muted.small {
+  font-size: 0.8rem;
+}
+
+.comment-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.4;
+  color: var(--bs-body-color);
+  margin: 0.25rem 0 0 0;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.comment-replies {
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.comment-replies::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--bs-border-color);
+  border-radius: 2px;
+}
+
+.comment-item {
+  margin-bottom: 0.5rem;
+}
+
+.comment-form {
+  flex-shrink: 0;
+  padding: 1rem;
+  background: var(--bs-light);
+  border-radius: 8px;
+  border: 1px solid var(--bs-border-color);
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.comment-input {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 80px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.comment-input:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+.action-item-checkbox {
+  cursor: pointer;
+}
+
+.post-comment-btn,
+.cancel-comment-btn {
+  min-width: 80px;
+}
+
+/* Action Item Styles */
+.badge.bg-warning {
+  font-weight: 500;
+}
+
+/* Mention Styles */
+.badge.bg-info {
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+/* Dropdown Menu */
+.comment-card .dropdown-toggle {
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+}
+
+.comment-card .dropdown-toggle:hover {
+  background: var(--bs-light);
+  border-radius: 4px;
+}
+
+.comment-card .dropdown-menu {
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 9999 !important;
+  position: absolute !important;
+  will-change: transform;
+}
+
+/* Ensure dropdown is above modal content */
+.modal-body .comment-card .dropdown-menu {
+  position: fixed !important;
+}
+
+.comment-thread {
+  overflow: visible !important;
+}
+
+.comment-list {
+  overflow: visible !important;
+}
+
+/* Reply Form */
+.reply-form,
+.edit-form {
+  animation: fadeIn 0.2s ease;
+}
+
+.reply-form .reply-input,
+.edit-form .edit-input {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.reply-form .reply-input:focus,
+.edit-form .edit-input:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+/* Empty State */
+.comment-list:empty::before {
+  content: 'No comments yet. Be the first to comment!';
+  display: block;
+  text-align: center;
+  color: var(--bs-secondary);
+  padding: 2rem;
+  font-style: italic;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .comment-item.ms-4 {
+    margin-left: 1rem !important;
+  }
+
+  .comment-form {
+    padding: 0.75rem;
+  }
+
+  .comment-list {
+    max-height: 400px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .comment-card {
+    background: var(--bs-dark);
+    border-color: var(--bs-secondary);
+  }
+
+  .comment-form {
+    background: var(--bs-dark);
+    border-color: var(--bs-secondary);
+  }
+
+  .comment-input {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-secondary);
+  }
+}

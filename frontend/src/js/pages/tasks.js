@@ -6,6 +6,7 @@
 import { Modal } from 'bootstrap';
 import supabase from '../services/supabase.js';
 import { renderNavbar } from '../components/navbar.js';
+import { renderSidebar } from '../components/sidebar.js';
 import { requireAuth } from '../utils/router.js';
 import { getCurrentUser } from '../utils/auth.js';
 import {
@@ -27,6 +28,7 @@ import {
 import { getProjects } from '../services/project-service.js';
 import { getProjectStatuses, getDefaultStatus } from '../services/status-service.js';
 import { subscribeToTasks, unsubscribeAll } from '../services/realtime-service.js';
+import { initCommentThread, destroyCommentThread } from '../components/comment-thread.js';
 import {
   uploadAttachment,
   getAttachments,
@@ -69,6 +71,9 @@ async function init() {
 
     // Render navbar
     await renderNavbar();
+
+    // Render sidebar
+    await renderSidebar();
 
     // Load current user
     currentUser = await getCurrentUser();
@@ -586,42 +591,65 @@ async function openViewModal(taskId) {
           : '<li class="text-muted" style="padding: 1rem;">No attachments</li>';
 
       modalContent.innerHTML = `
-        <div class="view-task-content">
-          <div class="view-task-section">
-            <h6>Description</h6>
-            <p>${task.description ? escapeHtml(task.description) : '<span class="text-muted">No description</span>'}</p>
-          </div>
+        <ul class="nav nav-tabs mb-3" id="taskDetailTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab" aria-controls="details-tab-pane" aria-selected="true">
+              <i class="bi bi-info-circle me-1"></i> Details
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments-tab-pane" type="button" role="tab" aria-controls="comments-tab-pane" aria-selected="false">
+              <i class="bi bi-chat-dots me-1"></i> Comments
+            </button>
+          </li>
+        </ul>
 
-          <div class="view-task-section">
-            <h6>Details</h6>
-            <div class="view-task-details">
-              <div class="detail-item">
-                <span class="detail-label">Status:</span>
-                <span class="task-status ${task.status}">${capitalizeFirst(task.status.replace('_', ' '))}</span>
+        <div class="tab-content" id="taskDetailTabContent">
+          <!-- Details Tab -->
+          <div class="tab-pane fade show active" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+            <div class="view-task-content">
+              <div class="view-task-section">
+                <h6>Description</h6>
+                <p>${task.description ? escapeHtml(task.description) : '<span class="text-muted">No description</span>'}</p>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Priority:</span>
-                <span class="task-priority ${task.priority}">${capitalizeFirst(task.priority)}</span>
+
+              <div class="view-task-section">
+                <h6>Details</h6>
+                <div class="view-task-details">
+                  <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="task-status ${task.status}">${capitalizeFirst(task.status.replace('_', ' '))}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Priority:</span>
+                    <span class="task-priority ${task.priority}">${capitalizeFirst(task.priority)}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Project:</span>
+                    <span>📁 ${escapeHtml(projectName)}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Due Date:</span>
+                    <span>📅 ${dueDateDisplay}</span>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Project:</span>
-                <span>📁 ${escapeHtml(projectName)}</span>
+
+              <div class="view-task-section">
+                <h6>Attachments</h6>
+                <ul class="attachments-list-view">
+                  ${attachmentsList}
+                </ul>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Due Date:</span>
-                <span>📅 ${dueDateDisplay}</span>
-              </div>
+
+              ${renderChecklistsSection(checklists || [])}
             </div>
           </div>
 
-          <div class="view-task-section">
-            <h6>Attachments</h6>
-            <ul class="attachments-list-view">
-              ${attachmentsList}
-            </ul>
+          <!-- Comments Tab -->
+          <div class="tab-pane fade" id="comments-tab-pane" role="tabpanel" aria-labelledby="comments-tab" tabindex="0">
+            <div id="task-comments-container"></div>
           </div>
-
-          ${renderChecklistsSection(checklists || [])}
         </div>
       `;
 
@@ -631,6 +659,18 @@ async function openViewModal(taskId) {
 
       // Setup checklist event listeners
       setupChecklistHandlers(taskId);
+
+      // Setup Comments tab initialization
+      const commentsTab = document.getElementById('comments-tab');
+      if (commentsTab) {
+        commentsTab.addEventListener('shown.bs.tab', async () => {
+          const commentsContainer = document.getElementById('task-comments-container');
+          if (commentsContainer && !commentsContainer.dataset.initialized) {
+            await initCommentThread(taskId, commentsContainer);
+            commentsContainer.dataset.initialized = 'true';
+          }
+        });
+      }
 
       // Setup Edit and Delete button handlers
       const editBtn = document.getElementById('viewTaskEditBtn');
@@ -664,6 +704,17 @@ async function openViewModal(taskId) {
     }
 
     const modal = new Modal(document.getElementById('viewTaskModal'));
+
+    // Cleanup comments subscription when modal is hidden
+    const modalElement = document.getElementById('viewTaskModal');
+    modalElement.addEventListener('hidden.bs.modal', () => {
+      const commentsContainer = document.getElementById('task-comments-container');
+      if (commentsContainer) {
+        destroyCommentThread(commentsContainer);
+        delete commentsContainer.dataset.initialized;
+      }
+    }, { once: true });
+
     modal.show();
   } catch (error) {
     hideLoading();
@@ -1309,6 +1360,9 @@ function showImagePreview(imageUrl, fileName) {
     this.remove();
   });
 }
+
+// Expose openViewModal to window for comment-thread component
+window.openViewModal = openViewModal;
 
 // Initialize on page load
 init();

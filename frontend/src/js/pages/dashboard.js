@@ -4,6 +4,7 @@
  */
 
 import { renderNavbar } from '../components/navbar.js';
+import { renderSidebar } from '../components/sidebar.js';
 import { requireAuth } from '../utils/router.js';
 import { getCurrentUser } from '../utils/auth.js';
 import { showError, showLoading, hideLoading } from '../utils/ui-helpers.js';
@@ -12,8 +13,8 @@ import {
   getMyTasks,
   getUpcomingDeadlines,
   getProjectProgress,
-  getRecentActivity,
 } from '../services/dashboard-service.js';
+import { initActivityFeed } from '../components/activity-feed.js';
 
 // State
 let currentUser = null;
@@ -28,6 +29,9 @@ async function init() {
 
     // Render navbar
     await renderNavbar();
+
+    // Render sidebar
+    await renderSidebar();
 
     // Load current user
     currentUser = await getCurrentUser();
@@ -48,12 +52,11 @@ async function loadDashboard() {
     showLoading('Loading dashboard...');
 
     // Load data in parallel
-    const [stats, myTasks, upcomingDeadlines, projectProgress, recentActivity] = await Promise.all([
+    const [stats, myTasks, upcomingDeadlines, projectProgress] = await Promise.all([
       getDashboardStats(),
       getMyTasks(),
       getUpcomingDeadlines(),
       getProjectProgress(),
-      getRecentActivity(),
     ]);
 
     hideLoading();
@@ -63,7 +66,15 @@ async function loadDashboard() {
     renderMyTasks(myTasks);
     renderUpcomingDeadlines(upcomingDeadlines);
     renderProjectProgress(projectProgress);
-    renderRecentActivity(recentActivity);
+
+    // Initialize activity feed with real-time updates
+    const activityContainer = document.getElementById('recentActivityContainer');
+    if (activityContainer) {
+      await initActivityFeed(activityContainer, {
+        limit: 10,
+        realtime: true,
+      });
+    }
   } catch (error) {
     hideLoading();
     console.error('Error loading dashboard:', error);
@@ -201,38 +212,10 @@ function renderProjectProgress(projects) {
 }
 
 /**
- * Render recent activity
+ * Render recent activity - now handled by activity-feed.js component
+ * Kept for reference but not used
  */
-function renderRecentActivity(activities) {
-  const container = document.getElementById('recentActivityContainer');
-  if (!container) return;
-
-  if (activities.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state-small">
-        <p>No recent activity</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = activities
-    .map(
-      (activity) => `
-    <div class="activity-item">
-      <div class="activity-icon">${getActivityIcon(activity.type)}</div>
-      <div class="activity-content">
-        <div class="activity-description">${escapeHtml(activity.description)}</div>
-        <div class="activity-meta">
-          <span class="activity-project">${escapeHtml(activity.project_name)}</span>
-          <span class="activity-time">${formatRelativeTime(activity.created_at)}</span>
-        </div>
-      </div>
-    </div>
-  `
-    )
-    .join('');
-}
+// function renderRecentActivity(activities) { ... }
 
 /**
  * Utility functions

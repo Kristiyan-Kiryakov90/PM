@@ -6,12 +6,19 @@
   <title>Dashboard - TaskFlow</title>
   <link rel="stylesheet" href="../src/css/global.css">
   <link rel="stylesheet" href="../src/css/dashboard.css">
+  <link rel="stylesheet" href="../src/css/activity.css">
+  <link rel="stylesheet" href="../src/css/sidebar.css">
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
 
-  <!-- Main Content -->
-  <main class="dashboard-main">
+  <!-- Layout with Sidebar -->
+  <div class="dashboard-layout">
+    <!-- Sidebar Container (injected by sidebar component) -->
+    <div id="sidebarContainer"></div>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
     <div class="container py-6">
       <!-- Header -->
       <div class="dashboard-header mb-8">
@@ -128,6 +135,7 @@
       </div>
     </div>
   </main>
+  </div><!-- End .dashboard-layout -->
 
   <script type="module" src="../src/js/pages/dashboard.js"></script>
 </body>

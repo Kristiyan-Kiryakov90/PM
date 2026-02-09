@@ -371,11 +371,11 @@ function openDeleteModal(projectId) {
 }
 
 /**
- * Open project details (future: navigate to project page)
+ * Open project details - Navigate to tasks page for this project
  */
 function openProjectDetails(projectId) {
-  // TODO: Implement project details page
-  showError('Project details coming soon');
+  // Navigate to tasks page filtered by this project
+  window.location.href = `/public/tasks.html?project=${projectId}`;
 }
 
 /**

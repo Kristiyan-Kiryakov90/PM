@@ -4,6 +4,7 @@
  */
 
 import { getUserMetadata, signOut, getUserFullName } from '@utils/auth.js';
+import { NotificationCenter } from './notification-center.js';
 
 /**
  * Render navbar HTML and inject into page
@@ -37,6 +38,9 @@ export async function renderNavbar() {
 
         <!-- User Menu -->
         <div class="navbar-user">
+          <!-- Notification Center -->
+          <div id="notificationCenter"></div>
+
           <div class="user-profile-dropdown">
             <button class="user-profile-button" id="userMenuToggle">
               <span class="user-avatar">${getInitials(userFullName)}</span>
@@ -80,8 +84,19 @@ export async function renderNavbar() {
     document.head.appendChild(navbarCSS);
   }
 
+  // Add notification CSS if not already loaded
+  if (!document.querySelector('link[href*="notifications.css"]')) {
+    const notificationCSS = document.createElement('link');
+    notificationCSS.rel = 'stylesheet';
+    notificationCSS.href = '/src/css/notifications.css';
+    document.head.appendChild(notificationCSS);
+  }
+
   // Setup event listeners
   setupNavbarEvents();
+
+  // Initialize notification center
+  new NotificationCenter('notificationCenter');
 }
 
 /**
