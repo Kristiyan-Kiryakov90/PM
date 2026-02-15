@@ -259,6 +259,7 @@ export async function renderTeamMemberManager(container) {
 
     const fullName = member?.full_name || '';
     const role = member?.role || 'user';
+    const isEditingSelf = member && member.id === currentUserId;
 
     // Parse first and last name if editing
     const nameParts = fullName.split(' ');
@@ -298,6 +299,19 @@ export async function renderTeamMemberManager(container) {
                     />
                   </div>
                 `}
+
+                ${member ? `
+                  <div class="form-group mb-3">
+                    <label class="form-label">Company</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      value="${escapeHtml(member.company_name || 'Personal User')}"
+                      disabled
+                    />
+                    <small class="form-text text-muted">User's company affiliation (cannot be changed)</small>
+                  </div>
+                ` : ''}
 
                 <div class="row">
                   <div class="col-md-6">
@@ -341,13 +355,41 @@ export async function renderTeamMemberManager(container) {
                     />
                     <small class="form-text text-muted">Minimum 8 characters</small>
                   </div>
-                ` : isSysAdmin ? `
-                  <div class="alert alert-info mb-3" style="font-size: 0.875rem;">
-                    <strong>Password Reset:</strong> Use the "🔑 Reset Password" button on the user card to change their password.
-                  </div>
                 ` : `
-                  <div class="alert alert-info mb-3" style="font-size: 0.875rem;">
-                    <strong>Password Reset:</strong> Users can reset their own password using the "Forgot Password" link on the sign-in page.
+                  <div class="form-group mb-3">
+                    <label class="form-label">Password</label>
+                    <div class="d-flex align-items-center gap-2">
+                      <input
+                        type="password"
+                        class="form-control"
+                        value="••••••••••••"
+                        disabled
+                      />
+                      ${isSysAdmin ? `
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-primary"
+                          id="resetPasswordInlineBtn"
+                          style="white-space: nowrap;"
+                        >
+                          🔑 Reset
+                        </button>
+                      ` : `
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-primary"
+                          id="sendPasswordResetEmailBtn"
+                          style="white-space: nowrap;"
+                        >
+                          📧 Send Reset Email
+                        </button>
+                      `}
+                    </div>
+                    <small class="form-text text-muted">
+                      ${isSysAdmin
+                        ? 'Click "🔑 Reset" to set a new password for this user'
+                        : 'Send a password reset link to the user\'s email address'}
+                    </small>
                   </div>
                 `}
 
@@ -377,6 +419,11 @@ export async function renderTeamMemberManager(container) {
                     <select class="form-control" disabled>
                       <option selected>System Admin</option>
                     </select>
+                  ` : isEditingSelf && role === 'admin' ? `
+                    <input type="hidden" id="memberRoleInput" value="admin" />
+                    <select class="form-control" disabled>
+                      <option value="admin" selected>Company Admin</option>
+                    </select>
                   ` : `
                     <select class="form-control" id="memberRoleInput">
                       <option value="user" ${role === 'user' ? 'selected' : ''}>User</option>
@@ -387,6 +434,8 @@ export async function renderTeamMemberManager(container) {
                   <small class="form-text text-muted">
                     ${member && role === 'sys_admin' ? `
                       <strong>⚠️ System Administrator:</strong> This user has full system access. The sys_admin role cannot be changed or reassigned by regular admins.
+                    ` : isEditingSelf && role === 'admin' ? `
+                      <strong>⚠️ Cannot change your own role:</strong> You cannot downgrade yourself from admin. Ask another admin to change your role if needed.
                     ` : `
                       <strong>User:</strong> Can manage tasks and projects<br>
                       <strong>Company Admin:</strong> Can manage team members and company settings
@@ -417,6 +466,8 @@ export async function renderTeamMemberManager(container) {
     const passwordInput = document.getElementById('memberPasswordInput');
     const roleInput = document.getElementById('memberRoleInput');
     const saveBtn = document.getElementById('saveMemberBtn');
+    const resetPasswordInlineBtn = document.getElementById('resetPasswordInlineBtn');
+    const sendPasswordResetEmailBtn = document.getElementById('sendPasswordResetEmailBtn');
 
     // Create and show Bootstrap modal
     const modal = new Modal(modalElement);
@@ -430,6 +481,40 @@ export async function renderTeamMemberManager(container) {
     // Focus first input when modal is shown
     modalElement.addEventListener('shown.bs.modal', () => {
       (emailInput || firstNameInput)?.focus();
+    });
+
+    // Reset password inline button (sys_admin only)
+    resetPasswordInlineBtn?.addEventListener('click', () => {
+      if (existingMember) {
+        const fullName = existingMember.full_name || existingMember.email;
+        showPasswordResetModal(existingMember.id, fullName);
+      }
+    });
+
+    // Send password reset email button (regular admin)
+    sendPasswordResetEmailBtn?.addEventListener('click', async () => {
+      if (!existingMember) return;
+
+      const fullName = existingMember.full_name || existingMember.email;
+      const email = existingMember.email;
+
+      if (!confirm(`Send password reset email to ${fullName} (${email})?`)) {
+        return;
+      }
+
+      sendPasswordResetEmailBtn.disabled = true;
+      sendPasswordResetEmailBtn.textContent = 'Sending...';
+
+      try {
+        await sendPasswordResetEmail(email);
+        showSuccess(`Password reset email sent to ${email}`);
+      } catch (error) {
+        console.error('Error sending password reset email:', error);
+        showError(error.message || 'Failed to send password reset email');
+      } finally {
+        sendPasswordResetEmailBtn.disabled = false;
+        sendPasswordResetEmailBtn.textContent = '📧 Send Reset Email';
+      }
     });
 
     // Save button
@@ -501,7 +586,20 @@ export async function renderTeamMemberManager(container) {
         try {
           // Don't allow changing sys_admin role
           const memberToUpdate = allMembers.find(m => m.id === editingMemberId);
-          const finalRole = memberToUpdate?.role === 'sys_admin' ? 'sys_admin' : role;
+          let finalRole = memberToUpdate?.role === 'sys_admin' ? 'sys_admin' : role;
+
+          // Prevent admin from downgrading their own role
+          if (editingMemberId === currentUserId && memberToUpdate?.role === 'admin' && role !== 'admin') {
+            showError('You cannot change your own role. Ask another admin to change your role if needed.');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Update Member';
+            return;
+          }
+
+          // Keep admin role if editing self
+          if (editingMemberId === currentUserId && memberToUpdate?.role === 'admin') {
+            finalRole = 'admin';
+          }
 
           console.log('Updating member:', editingMemberId, { full_name: fullName, role: finalRole });
           await updateMember(editingMemberId, { full_name: fullName, role: finalRole });
@@ -737,6 +835,30 @@ async function getAllCompanies() {
  */
 async function getTeamMembers() {
   try {
+    // Get current user's company info
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+
+    let companyName = null;
+    const companyId = profile?.company_id;
+
+    // Get company name if user has a company
+    if (companyId) {
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', companyId)
+        .single();
+
+      companyName = company?.name;
+    }
+
     const members = await teamService.getTeamMembers();
 
     // Transform to expected format and filter out sys_admin users
@@ -748,8 +870,8 @@ async function getTeamMembers() {
         full_name: member.full_name || member.email,
         role: member.role,
         status: member.status,
-        company_id: null,
-        company_name: null
+        company_id: companyId,
+        company_name: companyName
       }));
   } catch (error) {
     console.error('Error getting team members:', error);
@@ -917,6 +1039,26 @@ async function deleteMember(memberId) {
     console.log('User deleted successfully from both auth and profiles tables');
   } catch (error) {
     console.error('Error in deleteMember:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send password reset email to user
+ */
+async function sendPasswordResetEmail(email) {
+  console.log('Sending password reset email to:', email);
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password.html`,
+    });
+
+    if (error) throw error;
+
+    console.log('Password reset email sent successfully');
+  } catch (error) {
+    console.error('Error in sendPasswordResetEmail:', error);
     throw error;
   }
 }

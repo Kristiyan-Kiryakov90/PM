@@ -60,12 +60,12 @@ function createSettingsModal() {
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="kanbanSettingsTitle">
-              <span>⚙️</span> Kanban Board Settings
+              <span>⚙️</span> Workflow Settings
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p class="text-muted mb-3">Customize your Kanban board columns. Drag to reorder.</p>
+            <p class="text-muted mb-3">Customize your workflow status columns. Drag to reorder.</p>
 
             <!-- Status list -->
             <div id="statusList" class="status-list mb-3">

@@ -8,10 +8,12 @@
   <link rel="stylesheet" href="../src/css/tasks.css">
   <link rel="stylesheet" href="../src/css/comments.css">
   <link rel="stylesheet" href="../src/css/tags.css">
-  <link rel="stylesheet" href="../src/css/kanban-settings.css">
   <!-- Frappe Gantt Library -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
   <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+  <!-- Flatpickr Date Picker -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
@@ -40,11 +42,6 @@
             <button class="btn btn-outline-secondary" data-view="list">📄 List</button>
             <button class="btn btn-outline-secondary" data-view="gantt">📊 Gantt</button>
           </div>
-
-          <!-- Kanban Settings Button -->
-          <button class="btn btn-outline-secondary btn-sm" id="kanbanSettingsBtn" title="Customize Kanban Board">
-            <span>⚙️</span> Board Settings
-          </button>
 
           <!-- Gantt Controls (hidden by default) -->
           <div class="gantt-controls d-none">
@@ -182,12 +179,12 @@
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label for="taskStartDate" class="form-label">Start Date</label>
-                <input type="date" class="form-control" id="taskStartDate">
+                <input type="text" class="form-control" id="taskStartDate" placeholder="DD-MM-YYYY" pattern="\d{2}-\d{2}-\d{4}">
               </div>
 
               <div class="col-md-6 mb-3">
                 <label for="taskDueDate" class="form-label">Due Date</label>
-                <input type="date" class="form-control" id="taskDueDate">
+                <input type="text" class="form-control" id="taskDueDate" placeholder="DD-MM-YYYY" pattern="\d{2}-\d{2}-\d{4}">
               </div>
             </div>
 

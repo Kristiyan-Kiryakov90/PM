@@ -82,6 +82,26 @@ export function formatDate(dateString) {
 }
 
 /**
+ * Convert date from YYYY-MM-DD to DD-MM-YYYY
+ */
+export function formatDateDMY(dateString) {
+  if (!dateString) return '';
+  const parts = dateString.split('T')[0].split('-');
+  if (parts.length !== 3) return dateString;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+/**
+ * Convert date from DD-MM-YYYY to YYYY-MM-DD
+ */
+export function parseDateDMY(dateString) {
+  if (!dateString) return null;
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return null;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+/**
  * Calculate task age (time since creation) in days
  */
 export function getTaskAge(createdAt) {

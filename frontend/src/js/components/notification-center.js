@@ -22,7 +22,8 @@ export class NotificationCenter {
 
     async init() {
         this.render();
-        await this.loadNotifications();
+        this.notificationsLoaded = false; // Track if notifications have been loaded
+        // Only load unread count initially (fast), defer full load until user clicks
         await this.loadUnreadCount();
         this.setupRealtimeSubscription();
         this.setupEventListeners();
@@ -180,11 +181,17 @@ export class NotificationCenter {
         });
     }
 
-    toggleDropdown() {
+    async toggleDropdown() {
         this.isOpen = !this.isOpen;
         const dropdown = this.container.querySelector('.notification-dropdown');
         if (dropdown) {
             dropdown.classList.toggle('show', this.isOpen);
+        }
+
+        // Lazy load notifications on first open
+        if (this.isOpen && !this.notificationsLoaded) {
+            await this.loadNotifications();
+            this.notificationsLoaded = true;
         }
     }
 

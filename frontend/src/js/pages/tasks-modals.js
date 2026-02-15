@@ -32,7 +32,7 @@ import {
 } from './tasks-attachments.js';
 import { renderChecklistsSection, setupChecklistHandlers } from './tasks-checklists.js';
 import { renderTaskDependencies } from './tasks-dependencies.js';
-import { escapeHtml, capitalizeFirst, getTaskAge, formatFileSize, formatDate, formatStatus, getStatusBadgeClass } from './tasks-utils.js';
+import { escapeHtml, capitalizeFirst, getTaskAge, formatFileSize, formatDate, formatStatus, getStatusBadgeClass, formatDateDMY, parseDateDMY } from './tasks-utils.js';
 import { renderTagBadges } from '../components/tag-picker.js';
 
 // Modal state
@@ -41,6 +41,8 @@ let currentDeletingTaskId = null;
 let currentTagPickerInstance = null;
 let currentUser = null;
 let teamMembers = [];
+let startDatePicker = null;
+let dueDatePicker = null;
 
 /**
  * Initialize modals module
@@ -98,6 +100,41 @@ export function getCurrentEditingTaskId() {
 }
 
 /**
+ * Initialize date pickers for task form
+ */
+function initDatePickers() {
+  // Destroy existing instances
+  if (startDatePicker) {
+    startDatePicker.destroy();
+    startDatePicker = null;
+  }
+  if (dueDatePicker) {
+    dueDatePicker.destroy();
+    dueDatePicker = null;
+  }
+
+  // Initialize start date picker
+  const startDateInput = document.getElementById('taskStartDate');
+  if (startDateInput && typeof flatpickr !== 'undefined') {
+    startDatePicker = flatpickr(startDateInput, {
+      dateFormat: 'd-m-Y',
+      allowInput: true,
+      altInput: false,
+    });
+  }
+
+  // Initialize due date picker
+  const dueDateInput = document.getElementById('taskDueDate');
+  if (dueDateInput && typeof flatpickr !== 'undefined') {
+    dueDatePicker = flatpickr(dueDateInput, {
+      dateFormat: 'd-m-Y',
+      allowInput: true,
+      altInput: false,
+    });
+  }
+}
+
+/**
  * Open create task modal
  */
 export function openCreateModal() {
@@ -115,6 +152,9 @@ export function openCreateModal() {
 
   // Hide attachments section for new tasks
   if (attachmentsSection) attachmentsSection.style.display = 'none';
+
+  // Initialize date pickers
+  initDatePickers();
 
   const modal = new Modal(document.getElementById('taskModal'));
   modal.show();
@@ -153,14 +193,18 @@ export async function openEditModal(taskId) {
     if (projectInput) projectInput.value = task.project_id || '';
     if (priorityInput) priorityInput.value = task.priority;
     if (assigneeInput) assigneeInput.value = task.assigned_to || '';
-    if (startDateInput) startDateInput.value = task.start_date || '';
-    if (dueDateInput) dueDateInput.value = task.due_date || '';
+    // Format dates to DD-MM-YYYY for display
+    if (startDateInput) startDateInput.value = formatDateDMY(task.start_date);
+    if (dueDateInput) dueDateInput.value = formatDateDMY(task.due_date);
     if (title) title.textContent = 'Edit Task';
     if (submit) submit.textContent = 'Save Changes';
     if (deleteBtn) {
       deleteBtn.style.display = 'inline-flex';
       deleteBtn.onclick = () => openDeleteModal(taskId);
     }
+
+    // Initialize date pickers after setting values
+    initDatePickers();
 
     // Show tags section and initialize tag picker
     if (tagsSection) {
@@ -499,10 +543,22 @@ export async function submitTaskForm(reloadTasks) {
 
     // Validate date range if both dates provided
     if (startDateInput.value && dueDateInput.value) {
-      const startDate = new Date(startDateInput.value);
-      const dueDate = new Date(dueDateInput.value);
-      if (dueDate < startDate) {
-        errors.due_date = 'Due date must be after start date';
+      const startDateISO = parseDateDMY(startDateInput.value);
+      const dueDateISO = parseDateDMY(dueDateInput.value);
+      if (startDateISO && dueDateISO) {
+        const startDate = new Date(startDateISO);
+        const dueDate = new Date(dueDateISO);
+        if (dueDate < startDate) {
+          errors.due_date = 'Due date must be after start date';
+        }
+      } else {
+        // Invalid date format
+        if (startDateInput.value && !startDateISO) {
+          errors.start_date = 'Invalid date format. Use DD-MM-YYYY';
+        }
+        if (dueDateInput.value && !dueDateISO) {
+          errors.due_date = 'Invalid date format. Use DD-MM-YYYY';
+        }
       }
     }
 
@@ -522,8 +578,8 @@ export async function submitTaskForm(reloadTasks) {
       project_id: projectInput.value || null, // Allow null for tasks without projects
       priority: priorityInput.value,
       assigned_to: assigneeInput.value || null,
-      start_date: startDateInput.value || null,
-      due_date: dueDateInput.value || null,
+      start_date: parseDateDMY(startDateInput.value),
+      due_date: parseDateDMY(dueDateInput.value),
     };
 
     if (currentEditingTaskId) {
@@ -615,6 +671,16 @@ export function resetTaskForm() {
   const tagPickerContainer = document.getElementById('taskTagPicker');
   if (tagPickerContainer) {
     tagPickerContainer.innerHTML = '';
+  }
+
+  // Cleanup date pickers
+  if (startDatePicker) {
+    startDatePicker.destroy();
+    startDatePicker = null;
+  }
+  if (dueDatePicker) {
+    dueDatePicker.destroy();
+    dueDatePicker = null;
   }
 }
 

@@ -37,6 +37,10 @@
           <option value="archived">Archived</option>
         </select>
 
+        <select class="form-select" id="yearFilter">
+          <option value="">All Years</option>
+        </select>
+
         <!-- Bulk Delete Button (shown when projects selected) -->
         <div id="bulkActionsBar" class="bulk-actions-bar d-none">
           <span id="selectionCount" class="me-3"></span>
@@ -100,8 +104,35 @@
               <select class="form-select" id="projectStatus">
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
-                <option value="archived">Archived</option>
+                <option value="archived" id="archivedOption">Archived</option>
               </select>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="projectStartYear" class="form-label">Start Year</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="projectStartYear"
+                  name="start_year"
+                  placeholder="2024"
+                  min="2000"
+                  max="2100"
+                >
+              </div>
+              <div class="col-md-6">
+                <label for="projectEndYear" class="form-label">End Year</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="projectEndYear"
+                  name="end_year"
+                  placeholder="2025"
+                  min="2000"
+                  max="2100"
+                >
+              </div>
             </div>
 
             <div id="projectFormErrors"></div>

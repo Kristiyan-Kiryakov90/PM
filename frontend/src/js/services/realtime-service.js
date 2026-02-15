@@ -87,8 +87,14 @@ export async function subscribeToTasks(onInsert, onUpdate, onDelete) {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Tasks realtime subscription ACTIVE:', subscriptionId);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Tasks realtime subscription ERROR:', err);
+        } else {
+          console.log('📡 Tasks realtime subscription status:', status);
+        }
       });
 
     // Store subscription
@@ -130,6 +136,104 @@ export async function unsubscribeAll() {
     console.log('Unsubscribed from all channels');
   } catch (error) {
     console.error('Error unsubscribing from all:', error);
+  }
+}
+
+/**
+ * Subscribe to projects table changes
+ * @param {Function} onInsert - Callback when project is inserted
+ * @param {Function} onUpdate - Callback when project is updated
+ * @param {Function} onDelete - Callback when project is deleted
+ * @returns {Promise<string>} Subscription ID
+ */
+export async function subscribeToProjects(onInsert, onUpdate, onDelete) {
+  try {
+    const companyId = await getUserCompanyId();
+    const user = await supabase.auth.getUser();
+    const userId = user.data?.user?.id;
+
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    // Create unique subscription ID
+    const subscriptionId = companyId
+      ? `projects_company_${companyId}_${Date.now()}`
+      : `projects_personal_${userId}_${Date.now()}`;
+
+    // For company users: filter by company_id
+    // For personal users: filter by created_by
+    const filter = companyId
+      ? `company_id=eq.${companyId}`
+      : `created_by=eq.${userId}`;
+
+    console.log('Setting up projects realtime subscription:', { companyId, userId, filter });
+
+    // Subscribe to projects channel
+    const channel = supabase
+      .channel(subscriptionId)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'projects',
+          filter: filter,
+        },
+        (payload) => {
+          console.log('📡 Project inserted:', payload.new);
+          if (onInsert) {
+            onInsert(payload.new);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'projects',
+          filter: filter,
+        },
+        (payload) => {
+          console.log('📡 Project updated:', payload.new);
+          if (onUpdate) {
+            onUpdate(payload.new, payload.old);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'projects',
+          filter: filter,
+        },
+        (payload) => {
+          console.log('📡 Project deleted:', payload.old);
+          if (onDelete) {
+            onDelete(payload.old);
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Projects realtime subscription ACTIVE:', subscriptionId);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Projects realtime subscription ERROR:', err);
+        } else {
+          console.log('📡 Projects realtime subscription status:', status);
+        }
+      });
+
+    // Store subscription
+    subscriptions.set(subscriptionId, channel);
+
+    return subscriptionId;
+  } catch (error) {
+    console.error('Error subscribing to projects:', error);
+    throw error;
   }
 }
 

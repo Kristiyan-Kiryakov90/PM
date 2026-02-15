@@ -6,7 +6,7 @@
 import { Modal } from 'bootstrap';
 import { renderNavbar } from '../components/navbar.js';
 import { requireAuth } from '../utils/router.js';
-import { getUserMetadata, getCurrentUser } from '../utils/auth.js';
+import { getUserMetadata, getCurrentUser, isCompanyAdmin } from '../utils/auth.js';
 import {
   showError,
   showSuccess,
@@ -23,12 +23,15 @@ import {
   deleteProject,
   getProjectStats,
 } from '../services/project-service.js';
+import { subscribeToProjects, unsubscribeAll } from '../services/realtime-service.js';
 
 // State
 let projects = [];
 let currentEditingProjectId = null;
 let currentDeletingProjectId = null;
 let currentUser = null;
+let isAdmin = false;
+let realtimeSubscriptionId = null;
 
 /**
  * Initialize the projects page
@@ -44,11 +47,20 @@ async function init() {
     // Load current user
     currentUser = await getCurrentUser();
 
+    // Check if user is admin
+    isAdmin = await isCompanyAdmin();
+
     // Load projects
     await loadProjects();
 
     // Setup event listeners
     setupEventListeners();
+
+    // Populate year filter
+    populateYearFilter();
+
+    // Subscribe to real-time updates
+    await setupRealtimeSubscription();
   } catch (error) {
     console.error('Projects page initialization error:', error);
     showError('Failed to load projects page. Please refresh.');
@@ -61,7 +73,8 @@ async function init() {
 async function loadProjects() {
   try {
     showLoading('Loading projects...');
-    projects = await getProjects();
+    // Request task counts for the projects page
+    projects = await getProjects({ includeTaskCounts: true });
     hideLoading();
     renderProjects();
   } catch (error) {
@@ -77,11 +90,25 @@ async function loadProjects() {
 function renderProjects() {
   const container = document.getElementById('projectsContainer');
   const filterStatus = document.getElementById('statusFilter').value;
+  const filterYear = document.getElementById('yearFilter').value;
 
   // Filter projects
   let filteredProjects = projects;
   if (filterStatus) {
-    filteredProjects = projects.filter((p) => p.status === filterStatus);
+    filteredProjects = filteredProjects.filter((p) => p.status === filterStatus);
+  }
+  if (filterYear) {
+    const year = parseInt(filterYear);
+    filteredProjects = filteredProjects.filter((p) => {
+      // Show project if year falls within its range
+      const hasStartYear = p.start_year && p.start_year <= year;
+      const hasEndYear = p.end_year && p.end_year >= year;
+      const noStartYear = !p.start_year;
+      const noEndYear = !p.end_year;
+
+      // Include if year is within range or if years are not set
+      return (noStartYear || hasStartYear) && (noEndYear || hasEndYear);
+    });
   }
 
   // Show empty state if no projects
@@ -94,12 +121,12 @@ function renderProjects() {
           ${filterStatus ? 'No projects with this status. ' : ''}
           Create your first project to get started.
         </p>
-        <button class="btn btn-primary" id="emptyStateCreateBtn">Create Project</button>
+        ${isAdmin ? '<button class="btn btn-primary" id="emptyStateCreateBtn">Create Project</button>' : ''}
       </div>
     `;
 
     const emptyStateBtn = document.getElementById('emptyStateCreateBtn');
-    if (emptyStateBtn) {
+    if (emptyStateBtn && isAdmin) {
       emptyStateBtn.addEventListener('click', openCreateModal);
     }
 
@@ -139,25 +166,33 @@ function attachProjectCardListeners() {
 function renderProjectCard(project) {
   const statusBadgeClass = `project-status ${project.status}`;
   const taskCount = project.tasks?.[0]?.count || 0;
+  const yearDisplay = project.start_year || project.end_year
+    ? `${project.start_year || '?'} - ${project.end_year || '?'}`
+    : '';
 
   return `
     <div class="card project-card" data-project-id="${project.id}">
+      ${isAdmin ? `
       <div class="project-card-checkbox">
         <input type="checkbox" class="project-checkbox" data-project-id="${project.id}" aria-label="Select ${escapeHtml(project.name)}">
       </div>
+      ` : ''}
 
       <div class="project-icon">📁</div>
-      <a href="#" class="project-name">${escapeHtml(project.name)}</a>
+      <div class="project-name">${escapeHtml(project.name)}</div>
       ${project.description ? `<p class="project-description">${escapeHtml(project.description)}</p>` : ''}
+      ${yearDisplay ? `<p class="project-years">📅 ${yearDisplay}</p>` : ''}
 
       <div class="project-meta">
         <span class="project-status ${project.status}">${capitalizeFirst(project.status)}</span>
         <span class="project-tasks">${taskCount} task${taskCount !== 1 ? 's' : ''}</span>
       </div>
 
+      ${isAdmin ? `
       <div class="project-card-actions">
-        <button class="btn btn-sm btn-outline-primary project-card-edit" data-project-id="${project.id}">Edit</button>
+        <button type="button" class="btn btn-sm btn-outline-primary project-card-edit" data-project-id="${project.id}">Edit</button>
       </div>
+      ` : ''}
     </div>
   `;
 }
@@ -166,16 +201,27 @@ function renderProjectCard(project) {
  * Setup event listeners
  */
 function setupEventListeners() {
-  // New project button
+  // New project button (admin only)
   const newProjectBtn = document.getElementById('newProjectBtn');
   if (newProjectBtn) {
-    newProjectBtn.addEventListener('click', openCreateModal);
+    if (isAdmin) {
+      newProjectBtn.addEventListener('click', openCreateModal);
+    } else {
+      // Hide the button for non-admins
+      newProjectBtn.style.display = 'none';
+    }
   }
 
   // Status filter
   const statusFilter = document.getElementById('statusFilter');
   if (statusFilter) {
     statusFilter.addEventListener('change', renderProjects);
+  }
+
+  // Year filter
+  const yearFilter = document.getElementById('yearFilter');
+  if (yearFilter) {
+    yearFilter.addEventListener('change', renderProjects);
   }
 
   // Project form submission
@@ -196,10 +242,12 @@ function setupEventListeners() {
     confirmDeleteBtn.addEventListener('click', confirmDelete);
   }
 
-  // Bulk delete button
+  // Bulk delete button (admin only)
   const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
   if (bulkDeleteBtn) {
-    bulkDeleteBtn.addEventListener('click', bulkDeleteProjects);
+    if (isAdmin) {
+      bulkDeleteBtn.addEventListener('click', bulkDeleteProjects);
+    }
   }
 
   // Use event delegation for project card actions
@@ -214,14 +262,12 @@ function setupEventListeners() {
  * Handle clicks on project cards using event delegation
  */
 function handleProjectCardClick(e) {
-  console.log('Project container click detected', e.target);
-
-  // Handle edit button click
+  // Handle edit button click (admin only)
   const editBtn = e.target.closest('.project-card-edit');
-  if (editBtn) {
-    console.log('Edit button clicked via delegation');
+  if (editBtn && isAdmin) {
+    e.preventDefault();
     e.stopPropagation();
-    const projectId = editBtn.dataset.projectId;
+    const projectId = parseInt(editBtn.dataset.projectId, 10);
     openEditModal(projectId);
     return;
   }
@@ -234,8 +280,7 @@ function handleProjectCardClick(e) {
   // Handle project card click (open details)
   const projectCard = e.target.closest('.project-card');
   if (projectCard && !e.target.closest('.project-card-actions') && !e.target.closest('.project-card-checkbox')) {
-    const projectId = projectCard.dataset.projectId;
-    console.log('Opening project details for:', projectId);
+    const projectId = parseInt(projectCard.dataset.projectId, 10);
     openProjectDetails(projectId);
   }
 }
@@ -247,6 +292,35 @@ function handleCheckboxChange(e) {
   if (e.target.classList.contains('project-checkbox')) {
     updateBulkActionsBar();
   }
+}
+
+/**
+ * Populate year filter dropdown with available years from projects
+ */
+function populateYearFilter() {
+  const yearFilter = document.getElementById('yearFilter');
+  if (!yearFilter) return;
+
+  // Get all unique years from projects
+  const years = new Set();
+  projects.forEach((project) => {
+    if (project.start_year) years.add(project.start_year);
+    if (project.end_year) years.add(project.end_year);
+  });
+
+  // Convert to sorted array
+  const sortedYears = Array.from(years).sort((a, b) => b - a);
+
+  // Clear existing options except the first "All Years"
+  yearFilter.innerHTML = '<option value="">All Years</option>';
+
+  // Add year options
+  sortedYears.forEach((year) => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    yearFilter.appendChild(option);
+  });
 }
 
 /**
@@ -271,7 +345,7 @@ function updateBulkActionsBar() {
  */
 async function bulkDeleteProjects() {
   const checkboxes = document.querySelectorAll('.project-checkbox:checked');
-  const selectedIds = Array.from(checkboxes).map((cb) => cb.dataset.projectId);
+  const selectedIds = Array.from(checkboxes).map((cb) => parseInt(cb.dataset.projectId, 10));
 
   if (selectedIds.length === 0) return;
 
@@ -309,9 +383,13 @@ function openCreateModal() {
 
   const title = document.getElementById('projectModalTitle');
   const submit = document.getElementById('projectFormSubmit');
+  const archivedOption = document.getElementById('archivedOption');
 
   if (title) title.textContent = 'Create Project';
   if (submit) submit.textContent = 'Create Project';
+
+  // Hide archived option when creating new project
+  if (archivedOption) archivedOption.style.display = 'none';
 
   const modal = new Modal(document.getElementById('projectModal'));
   modal.show();
@@ -329,14 +407,22 @@ function openEditModal(projectId) {
   const nameInput = document.getElementById('projectName');
   const descInput = document.getElementById('projectDescription');
   const statusInput = document.getElementById('projectStatus');
+  const startYearInput = document.getElementById('projectStartYear');
+  const endYearInput = document.getElementById('projectEndYear');
   const title = document.getElementById('projectModalTitle');
   const submit = document.getElementById('projectFormSubmit');
+  const archivedOption = document.getElementById('archivedOption');
 
   if (nameInput) nameInput.value = project.name;
   if (descInput) descInput.value = project.description || '';
   if (statusInput) statusInput.value = project.status;
+  if (startYearInput) startYearInput.value = project.start_year || '';
+  if (endYearInput) endYearInput.value = project.end_year || '';
   if (title) title.textContent = 'Edit Project';
   if (submit) submit.textContent = 'Save Changes';
+
+  // Show archived option when editing
+  if (archivedOption) archivedOption.style.display = '';
 
   const modal = new Modal(document.getElementById('projectModal'));
   modal.show();
@@ -395,10 +481,15 @@ async function submitProjectForm() {
     const submitBtn = document.getElementById('projectFormSubmit');
     disableButton(submitBtn, 'Saving...');
 
+    const startYearInput = document.getElementById('projectStartYear');
+    const endYearInput = document.getElementById('projectEndYear');
+
     const projectData = {
       name: nameInput.value.trim(),
       description: descInput.value.trim(),
       status: statusInput.value,
+      start_year: startYearInput.value || null,
+      end_year: endYearInput.value || null,
     };
 
     if (currentEditingProjectId) {
@@ -486,6 +577,43 @@ function escapeHtml(text) {
 function capitalizeFirst(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+/**
+ * Setup realtime subscription for projects
+ */
+async function setupRealtimeSubscription() {
+  try {
+    console.log('📡 Setting up projects realtime subscription...');
+    realtimeSubscriptionId = await subscribeToProjects(
+      // On insert
+      (newProject) => {
+        console.log('📡 New project created:', newProject);
+        loadProjects();
+      },
+      // On update
+      (updatedProject, oldProject) => {
+        console.log('📡 Project updated:', updatedProject);
+        loadProjects();
+      },
+      // On delete
+      (deletedProject) => {
+        console.log('📡 Project deleted:', deletedProject);
+        loadProjects();
+      }
+    );
+    console.log('✅ Projects realtime subscription active:', realtimeSubscriptionId);
+  } catch (error) {
+    console.error('❌ Error setting up projects realtime subscription:', error);
+  }
+}
+
+/**
+ * Cleanup on page unload
+ */
+window.addEventListener('beforeunload', () => {
+  console.log('🧹 Cleaning up projects realtime subscription...');
+  unsubscribeAll();
+});
 
 // Initialize on page load
 init();

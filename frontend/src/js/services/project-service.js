@@ -9,10 +9,14 @@ import { handleError } from '@utils/error-handler.js';
 
 /**
  * Get all projects for the user (company or personal)
+ * @param {Object} options - Filter options
+ * @param {string} options.status - Filter by status (active, paused, archived)
+ * @param {boolean} options.includeTaskCounts - Whether to include task counts (slower)
  * @returns {Promise<Array>} Array of projects
  */
-export async function getProjects() {
+export async function getProjects(options = {}) {
   try {
+    const { status, includeTaskCounts = false } = options;
     const companyId = await getUserCompanyId();
     const user = await supabase.auth.getUser();
     const userId = user.data?.user?.id;
@@ -25,18 +29,17 @@ export async function getProjects() {
     // If no company, get personal projects (where created_by = user_id and company_id is null)
     let query = supabase
       .from('projects')
-      .select(
-        `
+      .select(`
         id,
         name,
         description,
         status,
+        start_year,
+        end_year,
         created_by,
         created_at,
-        updated_at,
-        tasks(count)
-      `
-      )
+        updated_at
+      `)
       .order('created_at', { ascending: false });
 
     if (companyId) {
@@ -45,11 +48,39 @@ export async function getProjects() {
       query = query.is('company_id', null).eq('created_by', userId);
     }
 
+    // Filter by status if provided
+    if (status) {
+      query = query.eq('status', status);
+    }
+
     const { data, error } = await query;
 
     if (error) throw error;
 
-    return data || [];
+    const projects = data || [];
+
+    // Only get task counts if explicitly requested (slower operation)
+    if (includeTaskCounts && projects.length > 0) {
+      // Get all task counts in one query for better performance
+      const projectIds = projects.map(p => p.id);
+      const { data: taskCounts } = await supabase
+        .from('tasks')
+        .select('project_id')
+        .in('project_id', projectIds);
+
+      // Count tasks per project
+      const countsMap = {};
+      taskCounts?.forEach(task => {
+        countsMap[task.project_id] = (countsMap[task.project_id] || 0) + 1;
+      });
+
+      // Add counts to projects
+      projects.forEach(project => {
+        project.tasks = [{ count: countsMap[project.id] || 0 }];
+      });
+    }
+
+    return projects;
   } catch (error) {
     handleError(error, {
       showAlert: false,
@@ -76,18 +107,17 @@ export async function getProject(projectId) {
 
     let query = supabase
       .from('projects')
-      .select(
-        `
+      .select(`
         id,
         name,
         description,
         status,
+        start_year,
+        end_year,
         created_by,
         created_at,
-        updated_at,
-        tasks(count)
-      `
-      )
+        updated_at
+      `)
       .eq('id', projectId);
 
     // Filter by company or personal ownership
@@ -118,7 +148,7 @@ export async function getProject(projectId) {
  */
 export async function createProject(projectData) {
   try {
-    const { name, description = '', status = 'active' } = projectData;
+    const { name, description = '', status = 'active', start_year, end_year } = projectData;
 
     // Validation
     if (!name || name.trim() === '') {
@@ -129,6 +159,16 @@ export async function createProject(projectData) {
       throw new Error('Project name must be 100 characters or less');
     }
 
+    // Prevent creating archived projects
+    if (status === 'archived') {
+      throw new Error('Cannot create a project with archived status. Please use active or paused.');
+    }
+
+    // Validate years
+    if (start_year && end_year && parseInt(end_year) < parseInt(start_year)) {
+      throw new Error('End year cannot be before start year');
+    }
+
     const companyId = await getUserCompanyId();
     const user = await supabase.auth.getUser();
     const userId = user.data?.user?.id;
@@ -137,15 +177,21 @@ export async function createProject(projectData) {
       throw new Error('User not authenticated');
     }
 
+    const insertData = {
+      company_id: companyId || null, // null for personal projects
+      name: name.trim(),
+      description: description.trim() || null,
+      status,
+      created_by: userId,
+    };
+
+    // Add years if provided
+    if (start_year) insertData.start_year = parseInt(start_year);
+    if (end_year) insertData.end_year = parseInt(end_year);
+
     const { data, error } = await supabase
       .from('projects')
-      .insert({
-        company_id: companyId || null, // null for personal projects
-        name: name.trim(),
-        description: description.trim() || null,
-        status,
-        created_by: userId,
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -203,6 +249,19 @@ export async function updateProject(projectId, updates) {
         throw new Error(`Status must be one of: ${validStatuses.join(', ')}`);
       }
       updateData.status = updates.status;
+    }
+
+    if (updates.start_year !== undefined) {
+      updateData.start_year = updates.start_year ? parseInt(updates.start_year) : null;
+    }
+
+    if (updates.end_year !== undefined) {
+      updateData.end_year = updates.end_year ? parseInt(updates.end_year) : null;
+    }
+
+    // Validate years
+    if (updateData.start_year && updateData.end_year && updateData.end_year < updateData.start_year) {
+      throw new Error('End year cannot be before start year');
     }
 
     updateData.updated_at = new Date().toISOString();

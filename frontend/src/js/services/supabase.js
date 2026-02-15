@@ -30,6 +30,10 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// Add URL and key to client object for edge function calls
+supabase.supabaseUrl = supabaseUrl;
+supabase.supabaseKey = supabaseAnonKey;
+
 // Export singleton instance
 export default supabase;
 

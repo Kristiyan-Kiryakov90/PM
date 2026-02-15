@@ -64,7 +64,9 @@
       "Bash(timeout /t 5:*)",
       "WebFetch(domain:clickup.com)",
       "mcp__supabase__list_extensions",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "mcp__supabase__get_edge_function",
+      "Bash(wc:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../src/css/global.css">
   <link rel="stylesheet" href="../src/css/admin.css">
   <link rel="stylesheet" href="../src/css/tags.css">
+  <link rel="stylesheet" href="../src/css/kanban-settings.css">
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
@@ -27,6 +28,9 @@
         </button>
         <button class="admin-tab-btn" data-tab="tags">
           <span>🏷️</span> Tags
+        </button>
+        <button class="admin-tab-btn" data-tab="workflow">
+          <span>⚙️</span> Workflow Settings
         </button>
         <button class="admin-tab-btn" data-tab="company">
           <span>🏢</span> Company Settings
@@ -57,6 +61,19 @@
           </div>
           <div class="card-body" id="tagsContainer">
             <p class="text-muted text-center">Loading tags...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow Settings Tab -->
+      <div class="admin-tab-content" id="workflow-tab">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Workflow Settings</h3>
+            <p class="text-muted mb-0 mt-2" style="font-size: 0.875rem;">Customize status columns for your Kanban board. Select a project to manage its workflow.</p>
+          </div>
+          <div class="card-body" id="workflowContainer">
+            <p class="text-muted text-center">Loading workflow settings...</p>
           </div>
         </div>
       </div>
@@ -96,10 +113,12 @@
     import { renderTagManager } from '../src/js/components/tag-manager-admin.js';
     import { renderTeamMemberManager } from '../src/js/components/team-manager-admin.js';
     import { renderSystemAdminManager } from '../src/js/components/system-admin-manager.js';
+    import { renderWorkflowManager } from '../src/js/components/workflow-manager-admin.js';
     import supabase from '../src/js/services/supabase.js';
 
     let tagManagerInitialized = false;
     let teamManagerInitialized = false;
+    let workflowManagerInitialized = false;
     let sysadminManagerInitialized = false;
     let isSysAdmin = false;
 
@@ -185,6 +204,9 @@
           } else if (tabName === 'tags' && !tagManagerInitialized) {
             console.log('Loading tag manager...');
             await loadTagManager();
+          } else if (tabName === 'workflow' && !workflowManagerInitialized) {
+            console.log('Loading workflow manager...');
+            await loadWorkflowManager();
           } else if (tabName === 'sysadmin' && !sysadminManagerInitialized) {
             console.log('Loading system admin manager...');
             await loadSysAdminManager();
@@ -237,6 +259,24 @@
         tagsContainer.innerHTML = `
           <div class="text-center text-danger">
             <p>Failed to load tag manager</p>
+            <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadWorkflowManager() {
+      const workflowContainer = document.getElementById('workflowContainer');
+      if (!workflowContainer) return;
+
+      try {
+        await renderWorkflowManager(workflowContainer);
+        workflowManagerInitialized = true;
+      } catch (error) {
+        console.error('Failed to load workflow manager:', error);
+        workflowContainer.innerHTML = `
+          <div class="text-center text-danger">
+            <p>Failed to load workflow manager</p>
             <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
           </div>
         `;

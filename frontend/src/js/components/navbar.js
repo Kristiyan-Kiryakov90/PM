@@ -14,7 +14,8 @@ export async function renderNavbar() {
   const metadata = await getUserMetadata();
   if (!metadata) return;
 
-  const userFullName = await getUserFullName();
+  // Use metadata to get full name instead of calling getUserMetadata again
+  const userFullName = `${metadata.first_name} ${metadata.last_name}`.trim() || metadata.email;
   const isAdmin = metadata.role === 'admin' || metadata.role === 'sys_admin';
 
   const navbarHTML = `

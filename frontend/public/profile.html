@@ -138,14 +138,16 @@
 
         <div class="card mt-6">
           <div class="card-header">
-            <h3 class="card-title mb-0">Danger Zone</h3>
+            <h3 class="card-title mb-0 text-danger">⚠️ Danger Zone</h3>
           </div>
           <div class="card-body">
-            <p class="text-muted mb-4">Irreversible actions are listed below.</p>
-            <button type="button" class="btn btn-danger" disabled>
-              Delete Account
+            <div class="alert alert-warning mb-4">
+              <strong>Warning:</strong> Deleting your account is permanent and cannot be undone. All your data will be lost.
+            </div>
+            <p class="text-muted mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+            <button type="button" class="btn btn-danger" id="deleteAccountBtn">
+              🗑️ Delete My Account
             </button>
-            <small class="form-text d-block mt-2">Account deletion coming soon</small>
           </div>
         </div>
       </div>
@@ -158,6 +160,9 @@
     import { getUserMetadata, getUserFullName } from '../src/js/utils/auth.js';
     import { showError, showSuccess, showInfo, disableButton, enableButton } from '../src/js/utils/ui-helpers.js';
     import { updateProfile, changePassword } from '../src/js/services/profile-service.js';
+    import supabase from '../src/js/services/supabase.js';
+
+    let currentUserEmail = '';
 
     async function init() {
       try {
@@ -175,6 +180,9 @@
 
         // Setup form submissions
         setupForms();
+
+        // Setup delete account button
+        setupDeleteAccount();
       } catch (error) {
         console.error('Profile page initialization error:', error);
         showError('Failed to load profile. Please refresh the page.');
@@ -186,10 +194,13 @@
         const metadata = await getUserMetadata();
         const fullName = await getUserFullName();
 
+        // Store email for delete confirmation
+        currentUserEmail = metadata.email || '';
+
         // Populate form fields
         document.getElementById('firstName').value = metadata.first_name || '';
         document.getElementById('lastName').value = metadata.last_name || '';
-        document.getElementById('email').value = metadata.email || '';
+        document.getElementById('email').value = currentUserEmail;
         document.getElementById('roleText').textContent = metadata.role || 'user';
 
         // Update avatar
@@ -297,6 +308,94 @@
         showError(error.message || 'Failed to change password');
       } finally {
         enableButton(submitBtn);
+      }
+    }
+
+    function setupDeleteAccount() {
+      const deleteBtn = document.getElementById('deleteAccountBtn');
+
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          await handleDeleteAccount();
+        });
+      }
+    }
+
+    async function handleDeleteAccount() {
+      // First confirmation
+      const confirmed = confirm(
+        '⚠️ WARNING: This action cannot be undone!\n\n' +
+        'Are you absolutely sure you want to permanently delete your account?\n\n' +
+        'All your projects, tasks, comments, and data will be lost forever.\n\n' +
+        'Click OK to proceed with account deletion.'
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Second confirmation with email verification
+      const emailConfirmation = prompt(
+        `To confirm deletion, please type your email address:\n${currentUserEmail}`
+      );
+
+      if (!emailConfirmation) {
+        showInfo('Account deletion cancelled');
+        return;
+      }
+
+      if (emailConfirmation.trim() !== currentUserEmail) {
+        showError('Email confirmation does not match. Account deletion cancelled.');
+        return;
+      }
+
+      const deleteBtn = document.getElementById('deleteAccountBtn');
+      disableButton(deleteBtn, 'Deleting Account...');
+
+      try {
+        // Call edge function to delete account
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('No active session');
+
+        console.log('Calling delete-own-account with token:', session.access_token.substring(0, 20) + '...');
+
+        const response = await fetch(
+          `${supabase.supabaseUrl}/functions/v1/delete-own-account`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+              'apikey': supabase.supabaseKey,
+            },
+            body: JSON.stringify({
+              confirmEmail: currentUserEmail,
+            }),
+          }
+        );
+
+        const result = await response.json();
+        console.log('Delete response:', result);
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to delete account');
+        }
+
+        // Account deleted successfully - sign out and redirect
+        showSuccess('Your account has been permanently deleted. Goodbye!');
+
+        // Wait a moment for user to see the message
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Sign out
+        await supabase.auth.signOut();
+
+        // Redirect to landing page
+        window.location.href = '/public/index.html';
+      } catch (error) {
+        console.error('Error deleting account:', error);
+        showError(error.message || 'Failed to delete account');
+        enableButton(deleteBtn);
       }
     }
 

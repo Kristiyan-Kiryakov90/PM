@@ -236,10 +236,19 @@ export function formatActivity(activity) {
       icon = '✏️';
       color = 'info';
       message = `Updated ${entity_type}`;
+      // For tasks, use title
       if (details.title) {
         message += `: ${details.title.new || details.title.old}`;
       }
-      if (details.name) {
+      // For projects, use project_name or name changes
+      if (entity_type === 'project') {
+        if (details.project_name) {
+          message += `: ${details.project_name}`;
+        } else if (details.name) {
+          message += `: ${details.name.new || details.name.old}`;
+        }
+      } else if (details.name) {
+        // For other entities
         message += `: ${details.name.new || details.name.old}`;
       }
       break;

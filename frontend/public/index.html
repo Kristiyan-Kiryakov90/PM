@@ -7,57 +7,395 @@
   <link rel="stylesheet" href="../src/css/global.css">
   <link rel="stylesheet" href="../src/css/index.css">
 </head>
-<body>
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-8 mx-auto text-center">
-          <h1 class="hero-title">TaskFlow</h1>
-          <p class="hero-subtitle">Simple task and project management for small teams</p>
-          <div class="mt-4">
-            <a href="signup.html" class="btn btn-light btn-lg me-2">Get Started</a>
-            <a href="signin.html" class="btn btn-outline-light btn-lg">Sign In</a>
+<body class="landing-page">
+  <main>
+    <section class="hero-section">
+      <div class="hero-aurora hero-aurora-a" aria-hidden="true"></div>
+      <div class="hero-aurora hero-aurora-b" aria-hidden="true"></div>
+      <div class="container">
+        <header class="landing-topbar">
+          <div class="brand-mark" aria-label="TaskFlow brand">TaskFlow</div>
+          <div class="d-flex gap-2 topbar-cta">
+            <a href="signin.html" class="btn btn-landing-secondary btn-lg">Sign In</a>
+            <a href="signup.html" class="btn btn-landing-primary btn-lg">Sign Up</a>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
+        </header>
 
-  <!-- Features Section -->
-  <section class="features-section">
-    <div class="container">
-      <h2 class="text-center mb-5">Features</h2>
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="card feature-card">
-            <div class="feature-icon">📋</div>
-            <h3>Project Management</h3>
-            <p>Organize your work into projects and track progress</p>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card feature-card">
-            <h3 class="feature-icon">✅</div>
-            <h3>Task Tracking</h3>
-            <p>Create, assign, and manage tasks with ease</p>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card feature-card">
-            <div class="feature-icon">👥</div>
-            <h3>Team Collaboration</h3>
-            <p>Work together with your team in one place</p>
+        <div class="hero-shell">
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+              <p class="hero-eyebrow">Project execution, redesigned</p>
+              <h1 class="hero-title">Ship work faster with one clear operating layer</h1>
+              <p class="hero-subtitle">
+                TaskFlow keeps planning, priorities, and handoffs in one place so teams move from
+                kickoff to delivery without losing context.
+              </p>
+              <div class="hero-badges" aria-label="Highlights">
+                <span class="hero-chip">Kanban, List, and Gantt views</span>
+                <span class="hero-chip">Dependencies, tags, and checklists</span>
+                <span class="hero-chip">Roles, reporting, and admin controls</span>
+              </div>
+              <p class="hero-proof">Trusted by teams that want clarity, speed, and accountable delivery.</p>
+              <div class="hero-metrics" aria-label="Key metrics">
+                <article class="metric-card">
+                  <p class="metric-value">43%</p>
+                  <p class="metric-label">Less status chasing</p>
+                </article>
+                <article class="metric-card">
+                  <p class="metric-value">2.4x</p>
+                  <p class="metric-label">Faster triage</p>
+                </article>
+                <article class="metric-card">
+                  <p class="metric-value">99.9%</p>
+                  <p class="metric-label">Task visibility</p>
+                </article>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <article class="task-board task-board-mini" id="app-preview" aria-label="Interactive task board preview">
+                <div class="task-board-header">
+                  <div class="window-dots" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <p class="window-title">TaskFlow App Preview</p>
+                </div>
+                <div class="task-board-shell">
+                  <aside class="preview-sidebar" aria-label="App pages">
+                    <p class="preview-sidebar-title">Pages</p>
+                    <button type="button" class="preview-sidebar-item active" data-demo-target="dashboard">Dashboard</button>
+                    <button type="button" class="preview-sidebar-item" data-demo-target="projects">Projects</button>
+                    <button type="button" class="preview-sidebar-item" data-demo-target="tasks">Tasks</button>
+                    <button type="button" class="preview-sidebar-item" data-demo-target="reports">Reports</button>
+                    <button type="button" class="preview-sidebar-item" data-demo-target="admin">Admin</button>
+                  </aside>
+
+                  <div class="task-board-main">
+                    <div class="demo-carousel-toolbar">
+                      <div>
+                        <p class="board-kicker">Live app structure demo</p>
+                        <h2 class="board-title">TaskFlow Workspace Preview</h2>
+                      </div>
+                      <div class="demo-carousel-controls">
+                        <button type="button" class="demo-carousel-btn" id="demoPrevBtn" aria-label="Previous preview">Prev</button>
+                        <button type="button" class="demo-carousel-btn" id="demoNextBtn" aria-label="Next preview">Next</button>
+                      </div>
+                    </div>
+
+                    <div class="demo-carousel-track" id="demoCarouselTrack">
+                      <section class="app-slide is-active" data-demo-slide="dashboard" aria-label="Dashboard preview">
+                        <div class="mini-dashboard-header">
+                          <p class="mini-page-title">Dashboard</p>
+                          <p class="mini-page-caption">Welcome back! Here&apos;s an overview of your work.</p>
+                        </div>
+                        <div class="mini-stats-grid">
+                          <article class="mini-stat-card">
+                            <p>Total Projects</p>
+                            <h3>14</h3>
+                          </article>
+                          <article class="mini-stat-card">
+                            <p>Active Tasks</p>
+                            <h3>39</h3>
+                          </article>
+                          <article class="mini-stat-card">
+                            <p>Completed 7d</p>
+                            <h3>22</h3>
+                          </article>
+                          <article class="mini-stat-card">
+                            <p>Overdue</p>
+                            <h3>4</h3>
+                          </article>
+                        </div>
+                        <div class="mini-dashboard-grid">
+                          <article class="mini-surface-card">
+                            <h4>My Tasks</h4>
+                            <ul>
+                              <li><span class="mini-priority-dot high"></span>Finalize SOC 2 policy checklist</li>
+                              <li><span class="mini-priority-dot medium"></span>Prepare March capacity plan</li>
+                              <li><span class="mini-priority-dot medium"></span>Integrate SSO with Azure AD</li>
+                            </ul>
+                          </article>
+                          <article class="mini-surface-card">
+                            <h4>Upcoming Deadlines</h4>
+                            <ul>
+                              <li>Feb 20 - Finalize SOC 2 policy checklist</li>
+                              <li>Mar 08 - Prepare March capacity plan</li>
+                              <li>Mar 10 - Integrate SSO with Azure AD</li>
+                            </ul>
+                          </article>
+                        </div>
+                      </section>
+
+                      <section class="app-slide" data-demo-slide="projects" aria-label="Projects preview">
+                        <div class="mini-dashboard-header">
+                          <p class="mini-page-title">Projects</p>
+                          <p class="mini-page-caption">Organize your work into projects and track progress.</p>
+                        </div>
+                        <div class="mini-project-filters">
+                          <span class="mini-select-like">All Status</span>
+                          <span class="mini-select-like">All Years</span>
+                          <span class="mini-primary-chip">New Project</span>
+                        </div>
+                        <div class="mini-projects-grid">
+                          <article class="mini-project-card">
+                            <h4>Product Launch</h4>
+                            <p class="mini-status active">active</p>
+                            <div class="mini-progress"><span style="width: 68%"></span></div>
+                            <small>16 tasks</small>
+                          </article>
+                          <article class="mini-project-card">
+                            <h4>Admin Invite System</h4>
+                            <p class="mini-status paused">paused</p>
+                            <div class="mini-progress"><span style="width: 36%"></span></div>
+                            <small>7 tasks</small>
+                          </article>
+                          <article class="mini-project-card">
+                            <h4>Reporting Improvements</h4>
+                            <p class="mini-status active">active</p>
+                            <div class="mini-progress"><span style="width: 81%"></span></div>
+                            <small>11 tasks</small>
+                          </article>
+                        </div>
+                      </section>
+
+                      <section class="app-slide" data-demo-slide="tasks" aria-label="Tasks preview">
+                        <div class="board-toolbar">
+                          <div>
+                            <p class="board-kicker">Tasks page</p>
+                            <h3 class="board-title board-title-small">Kanban, List, and Gantt in one workflow</h3>
+                          </div>
+                          <div class="board-actions">
+                            <button type="button" class="board-btn board-btn-primary" id="boardAddTaskBtn">+ New task</button>
+                            <button type="button" class="board-btn" id="boardFilterBtn" data-filter="all">Filter: All</button>
+                          </div>
+                        </div>
+
+                        <div class="board-view-toggle" aria-label="View mode">
+                          <button type="button" class="board-view active" data-view="kanban">Kanban</button>
+                          <button type="button" class="board-view" data-view="list">List</button>
+                          <button type="button" class="board-view" data-view="gantt">Gantt</button>
+                        </div>
+
+                        <div class="board-panel board-panel-kanban is-active" id="boardKanbanPanel">
+                          <div class="board-columns" id="boardColumns">
+                            <section class="board-column" data-status="todo">
+                              <header>
+                                <h3>To do</h3>
+                                <span id="countTodo">2</span>
+                              </header>
+                              <article class="task-card priority-high" data-task-id="1" data-status="todo" data-priority="high" data-title="Finalize SOC 2 policy checklist" data-assignee="Priya" data-due="2026-02-20" data-completed="">
+                                <p class="task-title">Finalize SOC 2 policy checklist</p>
+                                <p class="task-meta">Due: Feb 20 - Assignee: Priya</p>
+                                <div class="task-tags">
+                                  <span>Security</span>
+                                  <span>High</span>
+                                </div>
+                                <div class="task-card-actions">
+                                  <button type="button" class="task-action" data-action="next">Move right</button>
+                                  <button type="button" class="task-action" data-action="done">Done</button>
+                                </div>
+                              </article>
+                              <article class="task-card" data-task-id="2" data-status="todo" data-priority="medium" data-title="Prepare March capacity plan" data-assignee="Alex" data-due="2026-03-08" data-completed="">
+                                <p class="task-title">Prepare March capacity plan</p>
+                                <p class="task-meta">Due: Mar 08 - Assignee: Alex</p>
+                                <div class="task-tags">
+                                  <span>Planning</span>
+                                </div>
+                                <div class="task-card-actions">
+                                  <button type="button" class="task-action" data-action="next">Move right</button>
+                                  <button type="button" class="task-action" data-action="done">Done</button>
+                                </div>
+                              </article>
+                            </section>
+
+                            <section class="board-column" data-status="in_progress">
+                              <header>
+                                <h3>In progress</h3>
+                                <span id="countProgress">1</span>
+                              </header>
+                              <article class="task-card priority-medium" data-task-id="3" data-status="in_progress" data-priority="medium" data-title="Integrate SSO with Azure AD" data-assignee="Jordan" data-due="2026-03-10" data-completed="">
+                                <p class="task-title">Integrate SSO with Azure AD</p>
+                                <p class="task-meta">Due: Mar 10 - Assignee: Jordan</p>
+                                <div class="task-tags">
+                                  <span>IAM</span>
+                                  <span>Backend</span>
+                                </div>
+                                <div class="task-card-actions">
+                                  <button type="button" class="task-action" data-action="prev">Move left</button>
+                                  <button type="button" class="task-action" data-action="next">Move right</button>
+                                  <button type="button" class="task-action" data-action="done">Done</button>
+                                </div>
+                              </article>
+                            </section>
+
+                            <section class="board-column" data-status="done">
+                              <header>
+                                <h3>Done</h3>
+                                <span id="countDone">2</span>
+                              </header>
+                              <article class="task-card priority-done" data-task-id="4" data-status="done" data-priority="done" data-title="Publish Q1 ops report" data-assignee="Mina" data-due="" data-completed="2h ago">
+                                <p class="task-title">Publish Q1 ops report</p>
+                                <p class="task-meta">Completed 2h ago - Mina</p>
+                                <div class="task-tags">
+                                  <span>Reporting</span>
+                                </div>
+                                <div class="task-card-actions">
+                                  <button type="button" class="task-action" data-action="prev">Move left</button>
+                                  <button type="button" class="task-action" data-action="reopen">Reopen</button>
+                                </div>
+                              </article>
+                              <article class="task-card priority-done" data-task-id="5" data-status="done" data-priority="done" data-title="Migrate billing alerts to PagerDuty" data-assignee="Sam" data-due="" data-completed="Yesterday">
+                                <p class="task-title">Migrate billing alerts to PagerDuty</p>
+                                <p class="task-meta">Completed Yesterday - Sam</p>
+                                <div class="task-tags">
+                                  <span>Ops</span>
+                                </div>
+                                <div class="task-card-actions">
+                                  <button type="button" class="task-action" data-action="prev">Move left</button>
+                                  <button type="button" class="task-action" data-action="reopen">Reopen</button>
+                                </div>
+                              </article>
+                            </section>
+                          </div>
+                        </div>
+
+                        <div class="board-panel board-panel-list" id="boardListPanel">
+                          <div class="board-list" id="boardList"></div>
+                        </div>
+
+                        <div class="board-panel board-panel-gantt" id="boardGanttPanel">
+                          <div class="board-gantt-controls" aria-label="Gantt controls">
+                            <div class="board-gantt-scale">
+                              <span class="active">Day</span>
+                              <span>Week</span>
+                              <span>Month</span>
+                            </div>
+                            <div class="board-gantt-filters">
+                              <span>All Status</span>
+                              <span>All Priorities</span>
+                              <span>MM</span>
+                              <span>All Tags</span>
+                              <span>All Members</span>
+                            </div>
+                          </div>
+                          <div class="board-gantt" id="boardGantt"></div>
+                        </div>
+                      </section>
+
+                      <section class="app-slide" data-demo-slide="reports" aria-label="Reports preview">
+                        <div class="mini-dashboard-header">
+                          <p class="mini-page-title">Reports & Analytics</p>
+                          <p class="mini-page-caption">Track team performance, task completion, and time metrics.</p>
+                        </div>
+                        <div class="mini-project-filters">
+                          <span class="mini-select-like">All Projects</span>
+                          <span class="mini-select-like">All Members</span>
+                          <span class="mini-select-like">Last 30 Days</span>
+                        </div>
+                        <div class="mini-report-metrics">
+                          <article class="mini-report-metric">
+                            <p>Completed Tasks</p>
+                            <h3>46</h3>
+                          </article>
+                          <article class="mini-report-metric">
+                            <p>Overdue</p>
+                            <h3>4</h3>
+                          </article>
+                          <article class="mini-report-metric">
+                            <p>Avg Cycle Time</p>
+                            <h3>3.2d</h3>
+                          </article>
+                        </div>
+                        <div class="mini-reports-grid">
+                          <article class="mini-surface-card">
+                            <h4>Task Completion</h4>
+                            <div class="mini-bar-chart">
+                              <span style="height: 35%"></span>
+                              <span style="height: 70%"></span>
+                              <span style="height: 58%"></span>
+                              <span style="height: 86%"></span>
+                              <span style="height: 64%"></span>
+                            </div>
+                          </article>
+                          <article class="mini-surface-card">
+                            <h4>Status Distribution</h4>
+                            <ul>
+                              <li>To Do: 12</li>
+                              <li>In Progress: 9</li>
+                              <li>Done: 46</li>
+                              <li>Overdue: 4</li>
+                            </ul>
+                          </article>
+                        </div>
+                      </section>
+
+                      <section class="app-slide" data-demo-slide="admin" aria-label="Admin preview">
+                        <div class="mini-dashboard-header">
+                          <p class="mini-page-title">Admin Panel</p>
+                          <p class="mini-page-caption">Manage team members, tags, and workflow settings.</p>
+                        </div>
+                        <div class="mini-admin-tabs">
+                          <span class="active">Team Members</span>
+                          <span>Tags</span>
+                          <span>Workflow</span>
+                          <span>Company</span>
+                        </div>
+                        <article class="mini-surface-card">
+                          <h4>Team Members</h4>
+                          <div class="mini-team-list">
+                            <div class="mini-team-row"><span>Alex Rivera</span><em class="mini-role admin">admin</em></div>
+                            <div class="mini-team-row"><span>Jordan Lee</span><em class="mini-role member">member</em></div>
+                            <div class="mini-team-row"><span>Mina Rahman</span><em class="mini-role member">member</em></div>
+                            <div class="mini-team-row"><span>Priya Shah</span><em class="mini-role member">member</em></div>
+                          </div>
+                        </article>
+                      </section>
+                    </div>
+
+                    <div class="demo-carousel-pagination" id="demoCarouselPagination">
+                      <button type="button" class="demo-dot is-active" data-demo-target="dashboard" aria-label="Dashboard slide"></button>
+                      <button type="button" class="demo-dot" data-demo-target="projects" aria-label="Projects slide"></button>
+                      <button type="button" class="demo-dot" data-demo-target="tasks" aria-label="Tasks slide"></button>
+                      <button type="button" class="demo-dot" data-demo-target="reports" aria-label="Reports slide"></button>
+                      <button type="button" class="demo-dot" data-demo-target="admin" aria-label="Admin slide"></button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <section class="demo-feature-showcase" aria-label="TaskFlow capabilities">
+                <h3 class="demo-feature-title">Core Capabilities</h3>
+                <div class="demo-feature-grid">
+                  <article class="demo-feature-card">
+                    <p class="demo-feature-kicker">Task Execution</p>
+                    <h4>Kanban, List, and Gantt</h4>
+                    <p>Switch between status columns, table list, and timeline planning views.</p>
+                  </article>
+                  <article class="demo-feature-card">
+                    <p class="demo-feature-kicker">Task Details</p>
+                    <h4>Dependencies and Context</h4>
+                    <p>Track priorities, assignees, tags, due dates, attachments, and comments.</p>
+                  </article>
+                  <article class="demo-feature-card">
+                    <p class="demo-feature-kicker">Ops and Governance</p>
+                    <h4>Reports and Admin Controls</h4>
+                    <p>Use analytics, team management, workflow settings, and role-based controls.</p>
+                  </article>
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
   <!-- Bootstrap Modal for First Admin -->
   <div class="modal fade" id="bootstrapModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
+      <div class="modal-content bootstrap-modal">
         <div class="modal-header">
           <h5 class="modal-title">Welcome to TaskFlow</h5>
         </div>
@@ -104,3 +442,4 @@
   <script type="module" src="../src/js/pages/index.js"></script>
 </body>
 </html>
+

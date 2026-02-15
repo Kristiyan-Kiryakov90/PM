@@ -22,7 +22,6 @@ import { changeViewMode } from '../components/gantt-chart.js';
 import { initAttachmentModule } from './tasks-attachments.js';
 import { renderKanbanBoard, changeTaskStatus } from './tasks-kanban.js';
 import { renderListView } from './tasks-list.js';
-import { openKanbanSettings } from '../components/kanban-settings.js';
 import {
   loadGanttView,
   handleShowCriticalPath,
@@ -84,25 +83,16 @@ async function init() {
     // Load current user
     currentUser = await getCurrentUser();
 
-    // Check if user is admin and show/hide Board Settings button
-    const isAdmin = await isCompanyAdmin();
-    const kanbanSettingsBtn = document.getElementById('kanbanSettingsBtn');
-    if (kanbanSettingsBtn) {
-      kanbanSettingsBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-    }
-
     // Initialize modules with user context
     initAttachmentModule(currentUser);
     await initModalsModule(currentUser);
 
-    // Load projects for filter/form dropdowns
-    await loadProjects();
-
-    // Load tags for filter dropdown
-    await loadTags();
-
-    // Load team members for assignee filter
-    await loadTeamMembers();
+    // Load all data in parallel for faster page load
+    await Promise.all([
+      loadProjects(),
+      loadTags(),
+      loadTeamMembers(),
+    ]);
 
     // Populate status filter (with default or first project)
     const firstProjectId = projects.length > 0 ? projects[0].id : null;
@@ -123,11 +113,12 @@ async function init() {
 }
 
 /**
- * Load projects from the API
+ * Load projects from the API (only active projects)
  */
 async function loadProjects() {
   try {
-    projects = await getProjects();
+    // Only load active projects for task assignment
+    projects = await getProjects({ status: 'active' });
     populateProjectDropdowns();
   } catch (error) {
     console.error('Error loading projects:', error);
@@ -577,19 +568,7 @@ function setupEventListeners() {
   // Setup modal listeners
   setupModalListeners(loadTasks);
 
-  // Kanban settings button
-  const kanbanSettingsBtn = document.getElementById('kanbanSettingsBtn');
-  if (kanbanSettingsBtn) {
-    kanbanSettingsBtn.addEventListener('click', () => {
-      if (!currentFilters.project_id) {
-        showError('Please select a project first to customize its Kanban board');
-        return;
-      }
-      openKanbanSettings(currentFilters.project_id);
-    });
-  }
-
-  // Listen for Kanban settings changes
+  // Listen for Kanban settings changes (triggered from admin panel)
   window.addEventListener('kanbanSettingsChanged', () => {
     console.log('Kanban settings changed, reloading tasks...');
     loadTasks();
@@ -674,10 +653,11 @@ async function switchView(view) {
  */
 async function setupRealtimeSubscription() {
   try {
+    console.log('📡 Setting up tasks realtime subscription...');
     realtimeSubscriptionId = await subscribeToTasks(
       // On insert
       (newTask) => {
-        console.log('New task added:', newTask);
+        console.log('📡 Real-time: New task added:', newTask.id, newTask.title);
         debouncedReloadTasks();
       },
       // On update
@@ -704,12 +684,13 @@ async function setupRealtimeSubscription() {
       },
       // On delete
       (deletedTask) => {
-        console.log('Task deleted:', deletedTask);
+        console.log('📡 Real-time: Task deleted:', deletedTask.id);
         debouncedReloadTasks();
       }
     );
+    console.log('✅ Tasks realtime subscription active:', realtimeSubscriptionId);
   } catch (error) {
-    console.error('Error setting up realtime subscription:', error);
+    console.error('❌ Error setting up tasks realtime subscription:', error);
   }
 }
 
