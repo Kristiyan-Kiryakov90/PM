@@ -18,12 +18,31 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+
+      // Feature aliases
+      '@features': resolve(__dirname, './src/features'),
+      '@tasks': resolve(__dirname, './src/features/tasks'),
+      '@admin': resolve(__dirname, './src/features/admin'),
+      '@dashboard': resolve(__dirname, './src/features/dashboard'),
+      '@projects': resolve(__dirname, './src/features/projects'),
+      '@reports': resolve(__dirname, './src/features/reports'),
+      '@landing': resolve(__dirname, './src/features/landing'),
+      '@auth': resolve(__dirname, './src/features/auth'),
+      '@profile': resolve(__dirname, './src/features/profile'),
+
+      // Shared aliases
+      '@shared': resolve(__dirname, './src/shared'),
+      '@components': resolve(__dirname, './src/shared/components'),
+      '@services': resolve(__dirname, './src/shared/services'),
+      '@utils': resolve(__dirname, './src/shared/utils'),
+
+      // Style aliases (for JS imports)
+      '@styles': resolve(__dirname, './src/styles'),
+
+      // Legacy support (keep during migration)
       '@js': resolve(__dirname, './src/js'),
-      '@services': resolve(__dirname, './src/js/services'),
-      '@components': resolve(__dirname, './src/js/components'),
-      '@pages': resolve(__dirname, './src/js/pages'),
-      '@utils': resolve(__dirname, './src/js/utils'),
       '@css': resolve(__dirname, './src/css'),
+      '@pages': resolve(__dirname, './src/js/pages'),
       '@assets': resolve(__dirname, './src/assets'),
     },
   },
