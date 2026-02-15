@@ -1,0 +1,188 @@
+.features-section {
+  padding: 1rem 0 2.45rem;
+}
+
+.features-head {
+  text-align: center;
+  margin-bottom: 1.24rem;
+  animation: fade-in 620ms ease-out;
+}
+
+.features-kicker {
+  margin: 0 0 0.28rem;
+  color: var(--c-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.features-head h2 {
+  margin: 0;
+  font-family: 'Syne', 'Plus Jakarta Sans', sans-serif;
+  color: var(--c-text);
+  font-size: clamp(1.3rem, 2.8vw, 2rem);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+}
+
+.feature-card {
+  height: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(188, 197, 240, 0.72);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 255, 0.94)),
+    linear-gradient(180deg, rgba(9, 198, 173, 0.16), rgba(47, 109, 255, 0.08));
+  box-shadow: 0 22px 34px -30px rgba(37, 52, 125, 0.55);
+  padding: 0.98rem;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 38px -28px rgba(29, 45, 116, 0.7);
+}
+
+.feature-icon {
+  width: 2.28rem;
+  height: 2.28rem;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.62rem;
+  border: 1px solid rgba(188, 197, 240, 0.8);
+  background: linear-gradient(140deg, #ffffff, #f3f7ff 75%);
+  color: var(--c-primary);
+  font-size: 0.71rem;
+  font-weight: 800;
+}
+
+.feature-card h3 {
+  margin: 0 0 0.36rem;
+  color: var(--c-text);
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.feature-card p {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.52;
+}
+
+.interactive-section {
+  padding: 0 0 3rem;
+}
+
+.interactive-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.68rem;
+}
+
+.interactive-card {
+  border: 1px solid rgba(188, 197, 240, 0.72);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 16px 30px -28px rgba(45, 61, 132, 0.7);
+  padding: 0.9rem;
+}
+
+.interactive-kicker {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.interactive-card h3 {
+  margin: 0.24rem 0 0.42rem;
+  color: var(--c-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.interactive-card p {
+  margin: 0 0 0.54rem;
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.48;
+}
+
+.page-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+}
+
+.page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--c-primary);
+  background: linear-gradient(118deg, #2f6dff, #4f89ff 80%);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  transition: all 0.16s ease;
+}
+
+.page-link:hover,
+.page-link:focus-visible {
+  color: #ffffff;
+  border-color: var(--c-primary-hover);
+  background: linear-gradient(118deg, #2558d4, #3f79f6 80%);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.page-link-muted {
+  border-color: rgba(188, 197, 240, 0.92);
+  background: #ffffff;
+  color: var(--c-text-muted);
+}
+
+.page-link-muted:hover,
+.page-link-muted:focus-visible {
+  color: var(--c-text);
+  border-color: var(--c-border-strong);
+  background: #f8f9ff;
+}
+
+.bootstrap-modal {
+  border: 1px solid rgba(188, 197, 240, 0.9);
+  border-radius: 14px;
+  box-shadow: 0 34px 54px -44px rgba(36, 50, 123, 0.75);
+}
+
+.bootstrap-modal .modal-header {
+  border-bottom: 1px solid rgba(188, 197, 240, 0.72);
+}
+
+.bootstrap-modal .modal-title {
+  color: var(--c-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.bootstrap-modal .btn-primary {
+  border-radius: 999px;
+  border-color: var(--c-primary);
+  background: linear-gradient(118deg, #2f6dff, #4f89ff 80%);
+  font-weight: 700;
+}
+
+.bootstrap-modal .btn-primary:hover,
+.bootstrap-modal .btn-primary:focus-visible {
+  border-color: var(--c-primary-hover);
+  background: linear-gradient(118deg, #2558d4, #3f79f6 80%);
+}
+
