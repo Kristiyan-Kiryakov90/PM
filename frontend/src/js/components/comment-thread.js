@@ -12,7 +12,7 @@ import {
   unresolveActionItem,
   subscribeToComments,
 } from '@services/comment-service.js';
-import { getCompanyUsers } from '@services/task-service.js';
+import { taskService } from "../services/task-service.js"';
 import {
   getTaskChecklists,
   createChecklist,
@@ -53,7 +53,7 @@ export async function initCommentThread(taskId, container) {
 async function loadComments(taskId, container) {
   try {
     const comments = await getComments(taskId);
-    const companyUsers = await getCompanyUsers();
+    const companyUsers = await taskService.getCompanyUsers();
 
     renderComments(comments, companyUsers, container);
   } catch (error) {

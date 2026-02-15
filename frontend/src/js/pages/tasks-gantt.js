@@ -4,7 +4,7 @@
  */
 
 import supabase from '../services/supabase.js';
-import { getTasks } from '../services/task-service.js';
+import { taskService } from "../services/task-service.js"';
 import {
   initGanttChart,
   changeViewMode,

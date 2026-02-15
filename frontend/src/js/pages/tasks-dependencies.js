@@ -9,7 +9,7 @@ import {
   addDependency,
   removeDependency,
 } from '../services/gantt-service.js';
-import { getTask, getTasks } from '../services/task-service.js';
+import { taskService } from "../services/task-service.js"';
 import { showError, showSuccess, showLoading, hideLoading } from '../utils/ui-helpers.js';
 import { escapeHtml } from './tasks-utils.js';
 
@@ -59,7 +59,7 @@ export async function handleAddDependencyClick(currentEditingTaskId) {
     showLoading('Loading tasks...');
 
     // Load the current task directly from API to get accurate data
-    const task = await getTask(currentEditingTaskId);
+    const task = await taskService.getTask(currentEditingTaskId);
 
     if (!task) {
       hideLoading();
@@ -76,7 +76,7 @@ export async function handleAddDependencyClick(currentEditingTaskId) {
     }
 
     // Load ALL tasks in the same project (unfiltered)
-    const allTasks = await getTasks({ project_id: task.project_id });
+    const allTasks = await taskService.getTasks({ project_id: task.project_id });
 
     // Filter out the current task
     const projectTasks = allTasks.filter(t => t.id !== currentEditingTaskId);

@@ -10,7 +10,7 @@ import {
   updateTask,
   deleteTask,
 } from '../services/task-service.js';
-import { getAttachments } from '../services/attachment-service.js';
+import { attachmentService } from '../services/attachment-service.js';
 import { getTaskChecklists } from '../services/checklist-service.js';
 import { getTaskTags } from '../services/tag-service.js';
 import { initTagPicker } from '../components/tag-picker.js';
@@ -167,7 +167,7 @@ export async function openEditModal(taskId) {
   try {
     console.log('🔧 Opening edit modal for task:', taskId);
     showLoading('Loading task...');
-    const task = await getTask(taskId);
+    const task = await taskService.getTask(taskId);
     console.log('✅ Task data loaded:', task);
     hideLoading();
 
@@ -264,8 +264,8 @@ export async function openViewModal(taskId) {
   try {
     showLoading('Loading task...');
     const [task, attachments, checklists, taskTags] = await Promise.all([
-      getTask(taskId),
-      getAttachments(taskId),
+      taskService.getTask(taskId),
+      attachmentService.getAttachments(taskId),
       getTaskChecklists(taskId),
       getTaskTags(taskId),
     ]);
@@ -585,13 +585,13 @@ export async function submitTaskForm(reloadTasks) {
     if (currentEditingTaskId) {
       // Update existing task
       console.log('📝 Updating task:', currentEditingTaskId);
-      await updateTask(currentEditingTaskId, taskData);
+      await taskService.updateTask(currentEditingTaskId, taskData);
       console.log('✅ Task updated successfully');
       showSuccess('Task updated successfully');
     } else {
       // Create new task
       console.log('➕ Creating new task');
-      await createTask(taskData);
+      await taskService.createTask(taskData);
       console.log('✅ Task created successfully');
       showSuccess('Task created successfully');
     }
@@ -622,7 +622,7 @@ export async function confirmDelete(reloadTasks) {
     const confirmBtn = document.getElementById('confirmDeleteTaskBtn');
     disableButton(confirmBtn, 'Deleting...');
 
-    await deleteTask(currentDeletingTaskId);
+    await taskService.deleteTask(currentDeletingTaskId);
     showSuccess('Task deleted successfully');
 
     // Close modal and reload

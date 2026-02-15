@@ -4,7 +4,7 @@
  */
 
 import { getProjectStatuses } from '../services/status-service.js';
-import { updateTask } from '../services/task-service.js';
+import { taskService } from "../services/task-service.js"';
 import { renderTagBadges } from '../components/tag-picker.js';
 import { showError } from '../utils/ui-helpers.js';
 import { escapeHtml, capitalizeFirst, getTaskAge } from './tasks-utils.js';
@@ -413,7 +413,7 @@ function updateColumnCounts() {
  */
 export async function changeTaskStatus(taskId, newStatus, reloadTasks = null) {
   try {
-    await updateTask(taskId, { status: newStatus });
+    await taskService.updateTask(taskId, { status: newStatus });
 
     // Only reload if explicitly requested (e.g., from status buttons)
     // Drag-and-drop uses optimistic updates and doesn't need reload

@@ -9,7 +9,7 @@ import { renderNavbar } from '../components/navbar.js';
 import { requireAuth } from '../utils/router.js';
 import { getCurrentUser, isCompanyAdmin } from '../utils/auth.js';
 import { showError } from '../utils/ui-helpers.js';
-import { getTasks } from '../services/task-service.js';
+import { taskService } from "../services/task-service.js"';
 import { getProjects } from '../services/project-service.js';
 import { getTags } from '../services/tag-service.js';
 import { getTaskTags } from '../services/tag-service.js';
@@ -302,7 +302,7 @@ async function loadTasks() {
     if (currentFilters.project_id) filters.project_id = currentFilters.project_id;
     if (currentFilters.status) filters.status = currentFilters.status;
 
-    tasks = await getTasks(filters);
+    tasks = await taskService.getTasks(filters);
 
     // Load tags for each task
     await Promise.all(

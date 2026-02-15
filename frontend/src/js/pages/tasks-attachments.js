@@ -5,12 +5,7 @@
 
 import { Modal } from 'bootstrap';
 import supabase from '../services/supabase.js';
-import {
-  uploadAttachment,
-  getAttachments,
-  deleteAttachment,
-  downloadAttachment,
-} from '../services/attachment-service.js';
+import { attachmentService } from '../services/attachment-service.js';
 import {
   showError,
   showSuccess,
@@ -43,7 +38,7 @@ export function setEditingTaskId(taskId) {
  */
 export async function loadTaskAttachments(taskId) {
   try {
-    currentTaskAttachments = await getAttachments(taskId);
+    currentTaskAttachments = await attachmentService.getAttachments(taskId);
     renderTaskAttachments();
   } catch (error) {
     console.error('Error loading attachments:', error);
@@ -85,7 +80,7 @@ export function renderTaskAttachments() {
             <span>👁️</span>
           </button>
         ` : ''}
-        <button class="btn-icon-sm" onclick="window.downloadAttachment(${att.id})" title="Download">
+        <button class="btn-icon-sm" onclick="window.attachmentService.downloadAttachment(${att.id})" title="Download">
           <span>⬇️</span>
         </button>
         <button class="btn-icon-sm btn-danger-icon" onclick="window.deleteEditAttachment(${att.id})" title="Delete">
@@ -129,7 +124,7 @@ export async function handleAttachmentUpload(event) {
     showLoading('Uploading attachments...');
 
     for (const file of files) {
-      const attachment = await uploadAttachment(currentEditingTaskId, file);
+      const attachment = await attachmentService.uploadAttachment(currentEditingTaskId, file);
       currentTaskAttachments.push(attachment);
     }
 
@@ -157,7 +152,7 @@ export async function deleteEditAttachment(attachmentId) {
 
   try {
     showLoading('Deleting attachment...');
-    await deleteAttachment(attachmentId);
+    await attachmentService.deleteAttachment(attachmentId);
     hideLoading();
 
     // Remove from current list
@@ -182,7 +177,7 @@ export async function deleteViewAttachment(attachmentId, taskId, reopenViewModal
 
   try {
     showLoading('Deleting attachment...');
-    await deleteAttachment(attachmentId);
+    await attachmentService.deleteAttachment(attachmentId);
     hideLoading();
     showSuccess('Attachment deleted successfully');
 
@@ -210,7 +205,7 @@ export function downloadAttachmentHandler(attachmentId, viewAttachments) {
   }
 
   try {
-    downloadAttachment(attachment);
+    attachmentService.downloadAttachment(attachment);
   } catch (error) {
     console.error('Error downloading attachment:', error);
     showError('Failed to download attachment');
