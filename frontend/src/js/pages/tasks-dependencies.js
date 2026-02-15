@@ -9,6 +9,7 @@ import {
   addDependency,
   removeDependency,
 } from '../services/gantt-service.js';
+import { getTask, getTasks } from '../services/task-service.js';
 import { showError, showSuccess, showLoading, hideLoading } from '../utils/ui-helpers.js';
 import { escapeHtml } from './tasks-utils.js';
 
@@ -30,8 +31,9 @@ export async function renderTaskDependencies(taskId) {
     container.innerHTML = deps.map(dep => `
       <div class="dependency-item">
         <span>${escapeHtml(dep.depends_on_task.title)}</span>
-        <button type="button" class="btn btn-sm btn-link text-danger"
-                onclick="handleRemoveDependency(${taskId}, ${dep.depends_on_task_id})">
+        <button type="button" class="btn btn-sm btn-link text-danger remove-dependency-btn"
+                data-task-id="${taskId}"
+                data-depends-on-id="${dep.depends_on_task_id}">
           Remove
         </button>
       </div>
@@ -44,19 +46,42 @@ export async function renderTaskDependencies(taskId) {
 
 /**
  * Handle add dependency button click
+ * Note: Loads tasks directly from API to avoid issues with filtered task arrays
  */
-export async function handleAddDependencyClick(currentEditingTaskId, tasks) {
+export async function handleAddDependencyClick(currentEditingTaskId) {
   try {
-    if (!currentEditingTaskId) return;
+    if (!currentEditingTaskId) {
+      console.error('No task selected for adding dependency');
+      showError('No task selected. Please edit a task first.');
+      return;
+    }
 
-    // Get all tasks in the same project
-    const task = tasks.find(t => t.id === currentEditingTaskId);
-    if (!task) return;
+    showLoading('Loading tasks...');
 
-    const projectTasks = tasks.filter(t =>
-      t.project_id === task.project_id &&
-      t.id !== currentEditingTaskId
-    );
+    // Load the current task directly from API to get accurate data
+    const task = await getTask(currentEditingTaskId);
+
+    if (!task) {
+      hideLoading();
+      console.error('Task not found:', currentEditingTaskId);
+      showError('Task not found. Please refresh and try again.');
+      return;
+    }
+
+    // Task must be in a project to have dependencies
+    if (!task.project_id) {
+      hideLoading();
+      showError('Dependencies can only be added to tasks within a project');
+      return;
+    }
+
+    // Load ALL tasks in the same project (unfiltered)
+    const allTasks = await getTasks({ project_id: task.project_id });
+
+    // Filter out the current task
+    const projectTasks = allTasks.filter(t => t.id !== currentEditingTaskId);
+
+    hideLoading();
 
     if (projectTasks.length === 0) {
       showError('No other tasks in this project to create dependencies');
@@ -74,6 +99,7 @@ export async function handleAddDependencyClick(currentEditingTaskId, tasks) {
     const modal = new Modal(document.getElementById('dependencyModal'));
     modal.show();
   } catch (error) {
+    hideLoading();
     console.error('Error preparing dependency modal:', error);
     showError('Failed to load tasks for dependencies');
   }
@@ -149,6 +175,3 @@ export async function handleRemoveDependency(taskId, dependsOnTaskId, currentVie
     showError('Failed to remove dependency');
   }
 }
-
-// Expose to window for onclick handlers
-window.handleRemoveDependency = handleRemoveDependency;

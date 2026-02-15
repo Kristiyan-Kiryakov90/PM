@@ -7,12 +7,14 @@
 import { Modal } from 'bootstrap';
 import { renderNavbar } from '../components/navbar.js';
 import { requireAuth } from '../utils/router.js';
-import { getCurrentUser } from '../utils/auth.js';
+import { getCurrentUser, isCompanyAdmin } from '../utils/auth.js';
 import { showError } from '../utils/ui-helpers.js';
 import { getTasks } from '../services/task-service.js';
 import { getProjects } from '../services/project-service.js';
 import { getTags } from '../services/tag-service.js';
 import { getTaskTags } from '../services/tag-service.js';
+import { teamService } from '../services/team-service.js';
+import { getProjectStatuses } from '../services/status-service.js';
 import { subscribeToTasks, unsubscribeAll } from '../services/realtime-service.js';
 import { changeViewMode } from '../components/gantt-chart.js';
 
@@ -20,6 +22,7 @@ import { changeViewMode } from '../components/gantt-chart.js';
 import { initAttachmentModule } from './tasks-attachments.js';
 import { renderKanbanBoard, changeTaskStatus } from './tasks-kanban.js';
 import { renderListView } from './tasks-list.js';
+import { openKanbanSettings } from '../components/kanban-settings.js';
 import {
   loadGanttView,
   handleShowCriticalPath,
@@ -27,6 +30,7 @@ import {
   exposeGanttFunctions,
   getGanttSortOrder,
   setGanttSortOrder,
+  cleanupGanttView,
 } from './tasks-gantt.js';
 import {
   initModalsModule,
@@ -48,16 +52,23 @@ import {
 let tasks = [];
 let projects = [];
 let tags = []; // All available tags
+let teamMembers = []; // Team members for assignee filter
 let statuses = []; // Dynamic statuses for current project
 let currentFilters = {
   project_id: '',
   status: '',
+  priority: '',
   tag_id: '',
+  assigned_to: '',
   search: '',
 };
 let currentUser = null;
 let realtimeSubscriptionId = null;
 let currentView = 'kanban'; // 'kanban', 'list', 'gantt'
+let recentLocalUpdates = new Set(); // Track recent local updates to prevent reload loops
+let reloadDebounceTimer = null;
+let isLoadingTasks = false; // Prevent concurrent task loads
+let ignoreRealtimeUpdates = false; // Temporarily ignore real-time updates during manual operations
 
 /**
  * Initialize the tasks page
@@ -73,15 +84,29 @@ async function init() {
     // Load current user
     currentUser = await getCurrentUser();
 
+    // Check if user is admin and show/hide Board Settings button
+    const isAdmin = await isCompanyAdmin();
+    const kanbanSettingsBtn = document.getElementById('kanbanSettingsBtn');
+    if (kanbanSettingsBtn) {
+      kanbanSettingsBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
+
     // Initialize modules with user context
     initAttachmentModule(currentUser);
-    initModalsModule(currentUser);
+    await initModalsModule(currentUser);
 
     // Load projects for filter/form dropdowns
     await loadProjects();
 
     // Load tags for filter dropdown
     await loadTags();
+
+    // Load team members for assignee filter
+    await loadTeamMembers();
+
+    // Populate status filter (with default or first project)
+    const firstProjectId = projects.length > 0 ? projects[0].id : null;
+    await populateStatusFilter(firstProjectId);
 
     // Load tasks
     await loadTasks();
@@ -118,6 +143,18 @@ async function loadTags() {
     populateTagFilter();
   } catch (error) {
     console.error('Error loading tags:', error);
+  }
+}
+
+/**
+ * Load team members from the API
+ */
+async function loadTeamMembers() {
+  try {
+    teamMembers = await teamService.getTeamMembers();
+    populateAssigneeFilter();
+  } catch (error) {
+    console.error('Error loading team members:', error);
   }
 }
 
@@ -177,10 +214,99 @@ function populateTagFilter() {
 }
 
 /**
+ * Populate assignee filter dropdown
+ */
+function populateAssigneeFilter() {
+  const filterAssigneeSelect = document.getElementById('filterAssignee');
+
+  if (filterAssigneeSelect) {
+    const currentValue = filterAssigneeSelect.value;
+    filterAssigneeSelect.innerHTML = '<option value="">All Members</option>';
+    teamMembers.forEach((member) => {
+      const option = document.createElement('option');
+      option.value = member.id;
+      option.textContent = member.full_name || member.email || 'Unknown User';
+      filterAssigneeSelect.appendChild(option);
+    });
+    filterAssigneeSelect.value = currentValue;
+  }
+}
+
+/**
+ * Populate status filter dropdown based on selected project
+ */
+async function populateStatusFilter(projectId) {
+  const filterStatusSelect = document.getElementById('filterStatus');
+
+  if (!filterStatusSelect) return;
+
+  const currentValue = filterStatusSelect.value;
+  filterStatusSelect.innerHTML = '<option value="">All Status</option>';
+
+  if (!projectId) {
+    // No project selected, show default statuses
+    const defaultStatuses = [
+      { slug: 'todo', name: 'To Do' },
+      { slug: 'in_progress', name: 'In Progress' },
+      { slug: 'review', name: 'Review' },
+      { slug: 'done', name: 'Done' },
+    ];
+    defaultStatuses.forEach((status) => {
+      const option = document.createElement('option');
+      option.value = status.slug;
+      option.textContent = status.name;
+      filterStatusSelect.appendChild(option);
+    });
+  } else {
+    // Load dynamic statuses for selected project
+    try {
+      const projectStatuses = await getProjectStatuses(projectId);
+      projectStatuses.forEach((status) => {
+        const option = document.createElement('option');
+        option.value = status.slug;
+        option.textContent = status.name;
+        filterStatusSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error loading statuses:', error);
+      // Fallback to default statuses
+      const defaultStatuses = [
+        { slug: 'todo', name: 'To Do' },
+        { slug: 'in_progress', name: 'In Progress' },
+        { slug: 'review', name: 'Review' },
+        { slug: 'done', name: 'Done' },
+      ];
+      defaultStatuses.forEach((status) => {
+        const option = document.createElement('option');
+        option.value = status.slug;
+        option.textContent = status.name;
+        filterStatusSelect.appendChild(option);
+      });
+    }
+  }
+
+  filterStatusSelect.value = currentValue;
+}
+
+/**
  * Load tasks from the API
  */
 async function loadTasks() {
+  // Prevent concurrent loads
+  if (isLoadingTasks) {
+    console.log('⏭️ Skipping task load - already in progress');
+    return;
+  }
+
+  // Cancel any pending debounced reloads
+  clearTimeout(reloadDebounceTimer);
+
+  console.log('🔄 Loading tasks...');
+
   try {
+    isLoadingTasks = true;
+    ignoreRealtimeUpdates = true; // Ignore real-time updates during manual load
+
     const filters = {};
     if (currentFilters.project_id) filters.project_id = currentFilters.project_id;
     if (currentFilters.status) filters.status = currentFilters.status;
@@ -198,7 +324,7 @@ async function loadTasks() {
     if (currentView === 'gantt') {
       await loadGanttView(tasks, currentFilters, openViewModal);
     } else if (currentView === 'list') {
-      renderListView(tasks, currentFilters);
+      await renderListView(tasks, currentFilters);
     } else {
       const loadedStatuses = await renderKanbanBoard(
         tasks,
@@ -206,15 +332,26 @@ async function loadTasks() {
         currentFilters,
         openEditModal,
         openViewModal,
-        handleChangeTaskStatus
+        handleChangeTaskStatus,
+        trackLocalUpdate
       );
       if (loadedStatuses) {
         statuses = loadedStatuses;
       }
     }
+
+    console.log('✅ Tasks loaded successfully');
   } catch (error) {
     console.error('Error loading tasks:', error);
     showError('Failed to load tasks. Please try again.');
+  } finally {
+    isLoadingTasks = false;
+
+    // Re-enable real-time updates after a short delay to catch the current update
+    setTimeout(() => {
+      ignoreRealtimeUpdates = false;
+      console.log('✅ Real-time updates re-enabled');
+    }, 1000);
   }
 }
 
@@ -237,8 +374,10 @@ function setupEventListeners() {
 
   // Filters
   const filterStatus = document.getElementById('filterStatus');
+  const filterPriority = document.getElementById('filterPriority');
   const filterProject = document.getElementById('filterProject');
   const filterTag = document.getElementById('filterTag');
+  const filterAssignee = document.getElementById('filterAssignee');
   const searchTasks = document.getElementById('searchTasks');
 
   if (filterStatus) {
@@ -248,15 +387,39 @@ function setupEventListeners() {
     });
   }
 
+  if (filterPriority) {
+    filterPriority.addEventListener('change', async () => {
+      currentFilters.priority = filterPriority.value;
+      // Re-render current view without API call for priority filter
+      if (currentView === 'kanban') {
+        renderKanbanBoard(
+          tasks,
+          projects,
+          currentFilters,
+          openEditModal,
+          openViewModal,
+          handleChangeTaskStatus,
+          trackLocalUpdate
+        );
+      } else if (currentView === 'list') {
+        await renderListView(tasks, currentFilters);
+      } else if (currentView === 'gantt') {
+        await loadGanttView(tasks, currentFilters, openViewModal);
+      }
+    });
+  }
+
   if (filterProject) {
-    filterProject.addEventListener('change', () => {
+    filterProject.addEventListener('change', async () => {
       currentFilters.project_id = filterProject.value;
+      // Update status filter based on selected project
+      await populateStatusFilter(filterProject.value);
       loadTasks();
     });
   }
 
   if (filterTag) {
-    filterTag.addEventListener('change', () => {
+    filterTag.addEventListener('change', async () => {
       currentFilters.tag_id = filterTag.value;
       // Re-render current view without API call for tag filter
       if (currentView === 'kanban') {
@@ -266,10 +429,33 @@ function setupEventListeners() {
           currentFilters,
           openEditModal,
           openViewModal,
-          handleChangeTaskStatus
+          handleChangeTaskStatus,
+          trackLocalUpdate
         );
       } else if (currentView === 'list') {
-        renderListView(tasks, currentFilters);
+        await renderListView(tasks, currentFilters);
+      }
+    });
+  }
+
+  if (filterAssignee) {
+    filterAssignee.addEventListener('change', async () => {
+      currentFilters.assigned_to = filterAssignee.value;
+      // Re-render current view without API call for assignee filter
+      if (currentView === 'kanban') {
+        renderKanbanBoard(
+          tasks,
+          projects,
+          currentFilters,
+          openEditModal,
+          openViewModal,
+          handleChangeTaskStatus,
+          trackLocalUpdate
+        );
+      } else if (currentView === 'list') {
+        await renderListView(tasks, currentFilters);
+      } else if (currentView === 'gantt') {
+        await loadGanttView(tasks, currentFilters, openViewModal);
       }
     });
   }
@@ -278,7 +464,7 @@ function setupEventListeners() {
     let searchTimeout;
     searchTasks.addEventListener('input', () => {
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
+      searchTimeout = setTimeout(async () => {
         currentFilters.search = searchTasks.value;
         // Re-render current view without API call for search
         if (currentView === 'kanban') {
@@ -288,10 +474,11 @@ function setupEventListeners() {
             currentFilters,
             openEditModal,
             openViewModal,
-            handleChangeTaskStatus
+            handleChangeTaskStatus,
+            trackLocalUpdate
           );
         } else if (currentView === 'list') {
-          renderListView(tasks, currentFilters);
+          await renderListView(tasks, currentFilters);
         }
       }, 300);
     });
@@ -361,7 +548,7 @@ function setupEventListeners() {
   if (addDependencyBtn) {
     addDependencyBtn.addEventListener('click', () => {
       const currentEditingTaskId = getCurrentEditingTaskId();
-      handleAddDependencyClick(currentEditingTaskId, tasks);
+      handleAddDependencyClick(currentEditingTaskId);
     });
   }
 
@@ -374,8 +561,46 @@ function setupEventListeners() {
     });
   }
 
+  // Remove dependency buttons (event delegation)
+  const taskDependenciesContainer = document.getElementById('taskDependencies');
+  if (taskDependenciesContainer) {
+    taskDependenciesContainer.addEventListener('click', async (e) => {
+      const removeBtn = e.target.closest('.remove-dependency-btn');
+      if (removeBtn) {
+        const taskId = parseInt(removeBtn.dataset.taskId, 10);
+        const dependsOnId = parseInt(removeBtn.dataset.dependsOnId, 10);
+        await handleRemoveDependency(taskId, dependsOnId, currentView, loadTasks, renderTaskDependencies);
+      }
+    });
+  }
+
   // Setup modal listeners
   setupModalListeners(loadTasks);
+
+  // Kanban settings button
+  const kanbanSettingsBtn = document.getElementById('kanbanSettingsBtn');
+  if (kanbanSettingsBtn) {
+    kanbanSettingsBtn.addEventListener('click', () => {
+      if (!currentFilters.project_id) {
+        showError('Please select a project first to customize its Kanban board');
+        return;
+      }
+      openKanbanSettings(currentFilters.project_id);
+    });
+  }
+
+  // Listen for Kanban settings changes
+  window.addEventListener('kanbanSettingsChanged', () => {
+    console.log('Kanban settings changed, reloading tasks...');
+    loadTasks();
+  });
+
+  // Listen for task status changes from checklists
+  window.addEventListener('taskStatusChanged', (event) => {
+    console.log('Task status changed from checklist:', event.detail);
+    // Reload tasks to show updated status on board
+    loadTasks();
+  });
 
   // Expose Gantt reorder functions
   exposeGanttFunctions(currentFilters, () => loadGanttView(tasks, currentFilters, openViewModal));
@@ -386,6 +611,13 @@ function setupEventListeners() {
  */
 async function switchView(view) {
   console.log(`🔄 Switching view from "${currentView}" to "${view}"`);
+
+  // Cleanup previous view
+  if (currentView === 'gantt' && view !== 'gantt') {
+    console.log('🧹 Cleaning up Gantt view...');
+    cleanupGanttView();
+  }
+
   currentView = view;
 
   // Update active button
@@ -414,7 +646,7 @@ async function switchView(view) {
     if (view === 'gantt') {
       await loadGanttView(tasks, currentFilters, openViewModal);
     } else if (view === 'list') {
-      renderListView(tasks, currentFilters);
+      await renderListView(tasks, currentFilters);
     } else {
       const loadedStatuses = await renderKanbanBoard(
         tasks,
@@ -422,7 +654,8 @@ async function switchView(view) {
         currentFilters,
         openEditModal,
         openViewModal,
-        handleChangeTaskStatus
+        handleChangeTaskStatus,
+        trackLocalUpdate
       );
       if (loadedStatuses) {
         statuses = loadedStatuses;
@@ -445,22 +678,68 @@ async function setupRealtimeSubscription() {
       // On insert
       (newTask) => {
         console.log('New task added:', newTask);
-        loadTasks(); // Reload to get full task data with relations
+        debouncedReloadTasks();
       },
       // On update
       (updatedTask, oldTask) => {
-        console.log('Task updated:', updatedTask);
-        loadTasks(); // Reload to get full task data
+        console.log('📡 Real-time: Task updated:', updatedTask.id, updatedTask.title);
+
+        // Ignore real-time updates during manual operations
+        if (ignoreRealtimeUpdates) {
+          console.log('⏭️ Ignoring real-time update during manual operation');
+          return;
+        }
+
+        // Check if this was a local update (from drag-and-drop)
+        const taskKey = `${updatedTask.id}-${updatedTask.status}`;
+        if (recentLocalUpdates.has(taskKey)) {
+          console.log('⏭️ Ignoring local update for task:', updatedTask.id);
+          recentLocalUpdates.delete(taskKey);
+          return;
+        }
+
+        console.log('🔄 Real-time triggering reload...');
+        // Reload for updates from other users
+        debouncedReloadTasks();
       },
       // On delete
       (deletedTask) => {
         console.log('Task deleted:', deletedTask);
-        loadTasks(); // Reload
+        debouncedReloadTasks();
       }
     );
   } catch (error) {
     console.error('Error setting up realtime subscription:', error);
   }
+}
+
+/**
+ * Debounced reload to prevent multiple rapid reloads
+ */
+function debouncedReloadTasks() {
+  // Don't debounce if already loading
+  if (isLoadingTasks) {
+    console.log('⏭️ Skipping debounced reload - load already in progress');
+    return;
+  }
+
+  clearTimeout(reloadDebounceTimer);
+  reloadDebounceTimer = setTimeout(() => {
+    loadTasks();
+  }, 500); // Wait 500ms before reloading
+}
+
+/**
+ * Track a local update to prevent reload loop
+ */
+export function trackLocalUpdate(taskId, newStatus) {
+  const taskKey = `${taskId}-${newStatus}`;
+  recentLocalUpdates.add(taskKey);
+
+  // Remove from tracking after 3 seconds
+  setTimeout(() => {
+    recentLocalUpdates.delete(taskKey);
+  }, 3000);
 }
 
 /**

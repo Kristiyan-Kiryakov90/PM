@@ -36,6 +36,15 @@ export async function getGanttTasks(filters = {}) {
         updated_at,
         gantt_position,
         projects:project_id (id, name, color),
+        checklists (
+          id,
+          title,
+          checklist_items (
+            id,
+            content,
+            is_completed
+          )
+        ),
         task_dependencies!task_id (
           id,
           depends_on_task_id,

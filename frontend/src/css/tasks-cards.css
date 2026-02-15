@@ -10,7 +10,7 @@
   border: 1px solid var(--gray-200);
   padding: var(--space-4);
   margin-bottom: var(--space-3);
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s var(--ease-out);
   position: relative;
 }
@@ -19,6 +19,20 @@
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
   border-color: var(--primary);
+}
+
+/* Drag and Drop States */
+.task-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary);
+  z-index: 1000;
+}
+
+.task-card:active {
+  cursor: grabbing;
 }
 
 .task-card:last-child {

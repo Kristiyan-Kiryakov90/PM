@@ -1,0 +1,185 @@
+/**
+ * Kanban Board Settings Styles
+ * Styles for managing status columns
+ */
+
+/* Status List */
+.status-list {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 0.5rem;
+  background-color: var(--gray-50);
+}
+
+/* Status Item */
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.status-item:hover {
+  border-color: var(--gray-300);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.status-item.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+  background-color: var(--gray-100);
+}
+
+/* Drag Handle */
+.status-item-handle {
+  flex-shrink: 0;
+}
+
+.drag-handle {
+  display: inline-block;
+  color: var(--gray-400);
+  font-size: 1rem;
+  cursor: grab;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Status Color Indicator */
+.status-item-color {
+  flex-shrink: 0;
+  width: 4px;
+  height: 40px;
+  border-radius: 2px;
+}
+
+/* Status Content */
+.status-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-item-name {
+  font-weight: 500;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-item-meta {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Status Actions */
+.status-item-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-item-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Color Picker */
+.form-control-color {
+  width: 3rem;
+  height: 38px;
+  border-radius: 4px 0 0 4px;
+}
+
+#editStatusColorHex {
+  border-radius: 0 4px 4px 0;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+/* Badges in status items */
+.status-item-name .badge {
+  font-size: 0.625rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+}
+
+/* Empty State */
+.status-list p.text-muted {
+  text-align: center;
+  padding: 2rem;
+  margin: 0;
+}
+
+/* Modal specific overrides */
+#kanbanSettingsModal .modal-body {
+  padding: 1.5rem;
+}
+
+#kanbanSettingsModal .modal-dialog {
+  max-width: 600px;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .status-item {
+    flex-wrap: wrap;
+  }
+
+  .status-item-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+
+  .status-item-meta {
+    flex-wrap: wrap;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .status-list {
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+
+  .status-item {
+    background-color: var(--gray-900);
+    border-color: var(--gray-700);
+  }
+
+  .status-item:hover {
+    border-color: var(--gray-600);
+  }
+
+  .status-item.dragging {
+    background-color: var(--gray-800);
+  }
+
+  .status-item-name {
+    color: var(--gray-100);
+  }
+
+  .status-item-meta {
+    color: var(--gray-400);
+  }
+
+  .drag-handle {
+    color: var(--gray-500);
+  }
+}

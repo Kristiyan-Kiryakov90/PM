@@ -8,12 +8,33 @@ import { updateTask } from '../services/task-service.js';
 import { renderTagBadges } from '../components/tag-picker.js';
 import { showError } from '../utils/ui-helpers.js';
 import { escapeHtml, capitalizeFirst, getTaskAge } from './tasks-utils.js';
+import { teamService } from '../services/team-service.js';
+
+// Cache team members to avoid reloading on every render
+let cachedTeamMembers = [];
+
+/**
+ * Get assignee name by user ID
+ */
+function getAssigneeName(userId) {
+  const assignee = cachedTeamMembers.find(m => m.id === userId);
+  return assignee?.full_name || assignee?.email || 'Unknown';
+}
 
 /**
  * Render Kanban board
  */
-export async function renderKanbanBoard(tasks, projects, currentFilters, openEditModal, openViewModal, changeTaskStatus) {
+export async function renderKanbanBoard(tasks, projects, currentFilters, openEditModal, openViewModal, changeTaskStatus, trackLocalUpdate = null) {
   const container = document.getElementById('tasksContainer');
+
+  // Load team members if not cached
+  if (cachedTeamMembers.length === 0) {
+    try {
+      cachedTeamMembers = await teamService.getTeamMembers();
+    } catch (error) {
+      console.error('Error loading team members:', error);
+    }
+  }
 
   // Load statuses for filtered project (or first project if none selected)
   const projectId = currentFilters.project_id || (projects.length > 0 ? projects[0].id : null);
@@ -48,6 +69,20 @@ export async function renderKanbanBoard(tasks, projects, currentFilters, openEdi
     );
   }
 
+  // Apply priority filter
+  if (currentFilters.priority) {
+    filteredTasks = filteredTasks.filter(
+      (task) => task.priority === currentFilters.priority
+    );
+  }
+
+  // Apply assignee filter
+  if (currentFilters.assigned_to) {
+    filteredTasks = filteredTasks.filter(
+      (task) => task.assigned_to === currentFilters.assigned_to
+    );
+  }
+
   // Apply tag filter
   if (currentFilters.tag_id) {
     const tagId = parseInt(currentFilters.tag_id, 10);
@@ -70,6 +105,9 @@ export async function renderKanbanBoard(tasks, projects, currentFilters, openEdi
 
   // Attach event listeners to task cards
   attachTaskCardListeners(openEditModal, openViewModal, changeTaskStatus);
+
+  // Setup drag and drop
+  setupDragAndDrop(changeTaskStatus, trackLocalUpdate);
 
   return statuses;
 }
@@ -118,7 +156,7 @@ function renderTaskCard(task, allStatuses) {
   const taskAge = getTaskAge(task.created_at);
 
   return `
-    <div class="task-card" data-task-id="${task.id}" data-status="${task.status}">
+    <div class="task-card" data-task-id="${task.id}" data-status="${task.status}" draggable="true">
       <div class="task-card-header">
         <h4 class="task-title">${escapeHtml(task.title)}</h4>
         <div class="task-card-actions">
@@ -134,6 +172,7 @@ function renderTaskCard(task, allStatuses) {
         <span class="${priorityClass}">${capitalizeFirst(task.priority)}</span>
         ${dueDateDisplay ? `<span class="task-due-date ${isOverdue ? 'overdue' : ''}">📅 ${dueDateDisplay}</span>` : ''}
         ${taskAge ? `<span class="task-age" style="color: var(--gray-500); font-size: 0.75rem;">🕒 ${taskAge}</span>` : ''}
+        ${task.assigned_to ? `<span class="task-assignee" style="color: var(--gray-600); font-size: 0.75rem;">👤 ${getAssigneeName(task.assigned_to)}</span>` : ''}
       </div>
 
       ${task.tags && task.tags.length > 0 ? `
@@ -228,16 +267,162 @@ function attachTaskCardListeners(openEditModal, openViewModal, changeTaskStatus)
 }
 
 /**
+ * Setup drag and drop for task cards
+ */
+function setupDragAndDrop(changeTaskStatus, trackLocalUpdate) {
+  let draggedCard = null;
+  let isDragging = false;
+
+  // Task cards - drag start
+  document.querySelectorAll('.task-card').forEach((card) => {
+    card.addEventListener('dragstart', (e) => {
+      isDragging = true;
+      draggedCard = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', card.innerHTML);
+
+      // Store the task ID and old status
+      e.dataTransfer.setData('taskId', card.dataset.taskId);
+      e.dataTransfer.setData('oldStatus', card.dataset.status);
+    });
+
+    card.addEventListener('dragend', (e) => {
+      card.classList.remove('dragging');
+      // Remove all drag-over states
+      document.querySelectorAll('.task-column-content').forEach((col) => {
+        col.classList.remove('drag-over');
+      });
+
+      // Reset dragging flag after a short delay
+      setTimeout(() => {
+        isDragging = false;
+      }, 50);
+    });
+  });
+
+  // Columns - drop zones
+  document.querySelectorAll('.task-column-content').forEach((column) => {
+    column.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      const afterElement = getDragAfterElement(column, e.clientY);
+      if (afterElement == null) {
+        column.appendChild(draggedCard);
+      } else {
+        column.insertBefore(draggedCard, afterElement);
+      }
+
+      column.classList.add('drag-over');
+    });
+
+    column.addEventListener('dragleave', (e) => {
+      // Only remove drag-over if leaving the column itself, not a child
+      if (e.target === column) {
+        column.classList.remove('drag-over');
+      }
+    });
+
+    column.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      column.classList.remove('drag-over');
+
+      if (!draggedCard) return;
+
+      const taskId = draggedCard.dataset.taskId;
+      const newStatus = column.closest('.task-column').dataset.status;
+      const oldStatus = draggedCard.dataset.status;
+
+      if (newStatus !== oldStatus) {
+        // Optimistic update: Update UI immediately
+        draggedCard.dataset.status = newStatus;
+
+        // Update task count badges immediately
+        updateColumnCounts();
+
+        // Track this local update to prevent reload loop
+        if (trackLocalUpdate) {
+          trackLocalUpdate(taskId, newStatus);
+        }
+
+        // Save to backend in background (don't await)
+        changeTaskStatus(taskId, newStatus).catch((error) => {
+          // If update fails, revert the UI change
+          console.error('Failed to update task status, reverting...', error);
+          draggedCard.dataset.status = oldStatus;
+          // Move card back to original column
+          const originalColumn = document.querySelector(`.task-column[data-status="${oldStatus}"] .task-column-content`);
+          if (originalColumn) {
+            originalColumn.appendChild(draggedCard);
+          }
+          updateColumnCounts();
+        });
+      }
+
+      draggedCard = null;
+    });
+  });
+}
+
+/**
+ * Get the element to insert the dragged card after
+ */
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+/**
+ * Update task count badges on all columns
+ */
+function updateColumnCounts() {
+  document.querySelectorAll('.task-column').forEach((column) => {
+    const status = column.dataset.status;
+    const taskCount = column.querySelectorAll('.task-card').length;
+    const countBadge = column.querySelector('.task-column-count');
+    if (countBadge) {
+      countBadge.textContent = taskCount;
+    }
+
+    // Show/hide empty state
+    const content = column.querySelector('.task-column-content');
+    const emptyState = column.querySelector('.task-column-empty');
+    if (taskCount === 0 && !emptyState) {
+      content.innerHTML = '<div class="task-column-empty"><p>No tasks</p></div>';
+    } else if (taskCount > 0 && emptyState) {
+      emptyState.remove();
+    }
+  });
+}
+
+/**
  * Change task status
  */
-export async function changeTaskStatus(taskId, newStatus, reloadTasks) {
+export async function changeTaskStatus(taskId, newStatus, reloadTasks = null) {
   try {
     await updateTask(taskId, { status: newStatus });
-    // Task will be updated via realtime subscription
-    // But we'll reload to ensure UI is in sync
-    await reloadTasks();
+
+    // Only reload if explicitly requested (e.g., from status buttons)
+    // Drag-and-drop uses optimistic updates and doesn't need reload
+    if (reloadTasks) {
+      await reloadTasks();
+    }
   } catch (error) {
     console.error('Error changing task status:', error);
     showError('Failed to update task status');
+    throw error; // Re-throw so drag-and-drop can revert
   }
 }

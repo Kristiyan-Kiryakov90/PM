@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../src/css/tasks.css">
   <link rel="stylesheet" href="../src/css/comments.css">
   <link rel="stylesheet" href="../src/css/tags.css">
+  <link rel="stylesheet" href="../src/css/kanban-settings.css">
   <!-- Frappe Gantt Library -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
   <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
@@ -40,6 +41,11 @@
             <button class="btn btn-outline-secondary" data-view="gantt">📊 Gantt</button>
           </div>
 
+          <!-- Kanban Settings Button -->
+          <button class="btn btn-outline-secondary btn-sm" id="kanbanSettingsBtn" title="Customize Kanban Board">
+            <span>⚙️</span> Board Settings
+          </button>
+
           <!-- Gantt Controls (hidden by default) -->
           <div class="gantt-controls d-none">
             <div class="btn-group" role="group">
@@ -51,8 +57,8 @@
         </div>
 
         <!-- Filter Bar -->
-        <div class="row g-3">
-          <div class="col-md-3">
+        <div class="row g-3 mb-3">
+          <div class="col-md-2">
             <select class="form-select" id="filterStatus">
               <option value="">All Status</option>
               <option value="todo">To Do</option>
@@ -60,14 +66,28 @@
               <option value="done">Done</option>
             </select>
           </div>
+          <div class="col-md-2">
+            <select class="form-select" id="filterPriority">
+              <option value="">All Priorities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
           <div class="col-md-3">
             <select class="form-select" id="filterProject">
               <option value="">All Projects</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <select class="form-select" id="filterTag">
               <option value="">All Tags</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filterAssignee">
+              <option value="">All Members</option>
             </select>
           </div>
         </div>
@@ -151,14 +171,24 @@
               </div>
 
               <div class="col-md-6 mb-3">
-                <label for="taskStartDate" class="form-label">Start Date</label>
-                <input type="date" class="form-control" id="taskStartDate">
+                <label for="taskAssignee" class="form-label">Assign To</label>
+                <select class="form-select" id="taskAssignee">
+                  <option value="">Unassigned</option>
+                  <!-- Team members will be populated here -->
+                </select>
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="taskDueDate" class="form-label">Due Date</label>
-              <input type="date" class="form-control" id="taskDueDate">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="taskStartDate" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="taskStartDate">
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="taskDueDate" class="form-label">Due Date</label>
+                <input type="date" class="form-control" id="taskDueDate">
+              </div>
             </div>
 
             <!-- Dependencies Section (only shown when editing) -->

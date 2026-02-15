@@ -53,7 +53,7 @@ export async function initTagPicker(container, taskId) {
         </div>
       `;
 
-      setupEventListeners();
+      // Event listeners are setup once during initialization, not on every render
     } catch (error) {
       console.error('Error rendering tag picker:', error);
       container.innerHTML = `
@@ -121,6 +121,7 @@ export async function initTagPicker(container, taskId) {
         <div class="tag-list">
           ${availableTags.map(tag => `
             <button
+              type="button"
               class="tag-badge tag-badge-clickable"
               style="background-color: ${tag.color}; color: ${getContrastColor(tag.color)}; border: none; cursor: pointer;"
               data-tag-id="${tag.id}"
@@ -136,26 +137,40 @@ export async function initTagPicker(container, taskId) {
 
 
   /**
-   * Setup event listeners
+   * Click handler for the container (handles both add and remove)
+   */
+  async function handleContainerClick(e) {
+    // Handle remove tag clicks (from selected tags)
+    const removeBtn = e.target.closest('.tag-badge-remove');
+    if (removeBtn) {
+      e.preventDefault(); // Prevent form submission
+      const tagId = parseInt(removeBtn.dataset.tagId, 10);
+      await handleRemoveTag(tagId);
+      return;
+    }
+
+    // Handle add tag clicks (from available tags)
+    const addBtn = e.target.closest('.tag-badge-clickable');
+    if (addBtn) {
+      e.preventDefault(); // Prevent form submission
+      const tagId = parseInt(addBtn.dataset.tagId, 10);
+      await handleAddTag(tagId);
+      return;
+    }
+  }
+
+  /**
+   * Setup event listeners (called once during init)
    */
   function setupEventListeners() {
-    // Remove tag clicks (from selected tags)
-    container.addEventListener('click', async (e) => {
-      const removeBtn = e.target.closest('.tag-badge-remove');
-      if (removeBtn) {
-        const tagId = parseInt(removeBtn.dataset.tagId, 10);
-        await handleRemoveTag(tagId);
-      }
-    });
+    container.addEventListener('click', handleContainerClick);
+  }
 
-    // Add tag clicks (from available tags)
-    container.addEventListener('click', async (e) => {
-      const addBtn = e.target.closest('.tag-badge-clickable');
-      if (addBtn) {
-        const tagId = parseInt(addBtn.dataset.tagId, 10);
-        await handleAddTag(tagId);
-      }
-    });
+  /**
+   * Remove event listeners (called during cleanup)
+   */
+  function removeEventListeners() {
+    container.removeEventListener('click', handleContainerClick);
   }
 
   /**
@@ -191,13 +206,23 @@ export async function initTagPicker(container, taskId) {
     return selectedTags.map((t) => t.id);
   }
 
-  // Initialize
+  /**
+   * Cleanup and remove event listeners
+   */
+  function destroy() {
+    removeEventListeners();
+    container.innerHTML = '';
+  }
+
+  // Initialize: render first, then setup listeners once
   await render();
+  setupEventListeners(); // Setup event listeners ONCE after initial render
 
   // Return API
   return {
     render,
     getSelectedTagIds,
+    destroy,
   };
 }
 

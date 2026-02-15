@@ -14,6 +14,7 @@ import { getAttachments } from '../services/attachment-service.js';
 import { getTaskChecklists } from '../services/checklist-service.js';
 import { getTaskTags } from '../services/tag-service.js';
 import { initTagPicker } from '../components/tag-picker.js';
+import { teamService } from '../services/team-service.js';
 import { initCommentThread, destroyCommentThread } from '../components/comment-thread.js';
 import {
   showError,
@@ -31,7 +32,7 @@ import {
 } from './tasks-attachments.js';
 import { renderChecklistsSection, setupChecklistHandlers } from './tasks-checklists.js';
 import { renderTaskDependencies } from './tasks-dependencies.js';
-import { escapeHtml, capitalizeFirst, getTaskAge, formatFileSize, formatDate } from './tasks-utils.js';
+import { escapeHtml, capitalizeFirst, getTaskAge, formatFileSize, formatDate, formatStatus, getStatusBadgeClass } from './tasks-utils.js';
 import { renderTagBadges } from '../components/tag-picker.js';
 
 // Modal state
@@ -39,12 +40,54 @@ let currentEditingTaskId = null;
 let currentDeletingTaskId = null;
 let currentTagPickerInstance = null;
 let currentUser = null;
+let teamMembers = [];
 
 /**
  * Initialize modals module
  */
-export function initModalsModule(user) {
+export async function initModalsModule(user) {
   currentUser = user;
+  await loadTeamMembers();
+}
+
+/**
+ * Load team members for assignment dropdown
+ */
+async function loadTeamMembers() {
+  try {
+    teamMembers = await teamService.getTeamMembers();
+    populateAssigneeDropdown();
+  } catch (error) {
+    console.error('Error loading team members:', error);
+    teamMembers = [];
+  }
+}
+
+/**
+ * Populate assignee dropdown with team members
+ */
+function populateAssigneeDropdown() {
+  const assigneeSelect = document.getElementById('taskAssignee');
+  if (!assigneeSelect) return;
+
+  // Keep current selection
+  const currentValue = assigneeSelect.value;
+
+  // Reset dropdown
+  assigneeSelect.innerHTML = '<option value="">Unassigned</option>';
+
+  // Add team members
+  teamMembers.forEach((member) => {
+    const option = document.createElement('option');
+    option.value = member.id;
+    option.textContent = member.full_name || member.email || 'Unknown User';
+    assigneeSelect.appendChild(option);
+  });
+
+  // Restore previous selection if it exists
+  if (currentValue) {
+    assigneeSelect.value = currentValue;
+  }
 }
 
 /**
@@ -82,8 +125,10 @@ export function openCreateModal() {
  */
 export async function openEditModal(taskId) {
   try {
+    console.log('🔧 Opening edit modal for task:', taskId);
     showLoading('Loading task...');
     const task = await getTask(taskId);
+    console.log('✅ Task data loaded:', task);
     hideLoading();
 
     currentEditingTaskId = taskId;
@@ -93,6 +138,7 @@ export async function openEditModal(taskId) {
     const descInput = document.getElementById('taskDescription');
     const projectInput = document.getElementById('taskProject');
     const priorityInput = document.getElementById('taskPriority');
+    const assigneeInput = document.getElementById('taskAssignee');
     const startDateInput = document.getElementById('taskStartDate');
     const dueDateInput = document.getElementById('taskDueDate');
     const title = document.getElementById('taskModalTitle');
@@ -106,6 +152,7 @@ export async function openEditModal(taskId) {
     if (descInput) descInput.value = task.description || '';
     if (projectInput) projectInput.value = task.project_id || '';
     if (priorityInput) priorityInput.value = task.priority;
+    if (assigneeInput) assigneeInput.value = task.assigned_to || '';
     if (startDateInput) startDateInput.value = task.start_date || '';
     if (dueDateInput) dueDateInput.value = task.due_date || '';
     if (title) title.textContent = 'Edit Task';
@@ -118,26 +165,47 @@ export async function openEditModal(taskId) {
     // Show tags section and initialize tag picker
     if (tagsSection) {
       tagsSection.style.display = 'block';
-      const tagPickerContainer = document.getElementById('taskTagPicker');
-      if (tagPickerContainer) {
-        currentTagPickerInstance = await initTagPicker(tagPickerContainer, taskId);
+
+      try {
+        // Cleanup previous instance if it exists
+        if (currentTagPickerInstance) {
+          currentTagPickerInstance.destroy();
+          currentTagPickerInstance = null;
+        }
+
+        const tagPickerContainer = document.getElementById('taskTagPicker');
+        if (tagPickerContainer) {
+          currentTagPickerInstance = await initTagPicker(tagPickerContainer, taskId);
+        }
+      } catch (error) {
+        console.error('Error initializing tag picker:', error);
       }
     }
 
     // Show attachments section and load attachments
     if (attachmentsSection) {
       attachmentsSection.style.display = 'block';
-      await loadTaskAttachments(taskId);
+      try {
+        await loadTaskAttachments(taskId);
+      } catch (error) {
+        console.error('Error loading attachments:', error);
+      }
     }
 
     // Show dependencies section and load dependencies
     if (dependenciesSection) {
       dependenciesSection.style.display = 'block';
-      await renderTaskDependencies(taskId);
+      try {
+        await renderTaskDependencies(taskId);
+      } catch (error) {
+        console.error('Error loading dependencies:', error);
+      }
     }
 
+    console.log('📝 Opening modal...');
     const modal = new Modal(document.getElementById('taskModal'));
     modal.show();
+    console.log('✅ Modal opened successfully');
   } catch (error) {
     hideLoading();
     console.error('Error loading task:', error);
@@ -175,6 +243,13 @@ export async function openViewModal(taskId) {
             year: 'numeric',
           })
         : 'No due date';
+
+      // Get assignee name
+      let assigneeName = 'Unassigned';
+      if (task.assigned_to) {
+        const assignee = teamMembers.find(m => m.id === task.assigned_to);
+        assigneeName = assignee?.full_name || assignee?.email || 'Unknown User';
+      }
 
       const taskAge = getTaskAge(task.created_at);
       const createdAtFull = new Date(task.created_at).toLocaleString('en-US', {
@@ -253,7 +328,7 @@ export async function openViewModal(taskId) {
                 <div class="view-task-details">
                   <div class="detail-item">
                     <span class="detail-label">Status:</span>
-                    <span class="task-status ${task.status}">${capitalizeFirst(task.status.replace('_', ' '))}</span>
+                    <span class="badge bg-${getStatusBadgeClass(task.status)} view-task-status-badge">${formatStatus(task.status)}</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">Priority:</span>
@@ -262,6 +337,10 @@ export async function openViewModal(taskId) {
                   <div class="detail-item">
                     <span class="detail-label">Project:</span>
                     <span>📁 ${escapeHtml(projectName)}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Assigned To:</span>
+                    <span>👤 ${escapeHtml(assigneeName)}</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-label">Due Date:</span>
@@ -396,11 +475,13 @@ export function openDeleteModal(taskId, tasks) {
  * Submit task form
  */
 export async function submitTaskForm(reloadTasks) {
+  console.log('💾 Submitting task form...');
   try {
     const titleInput = document.getElementById('taskTitle');
     const descInput = document.getElementById('taskDescription');
     const projectInput = document.getElementById('taskProject');
     const priorityInput = document.getElementById('taskPriority');
+    const assigneeInput = document.getElementById('taskAssignee');
     const startDateInput = document.getElementById('taskStartDate');
     const dueDateInput = document.getElementById('taskDueDate');
     const errorsDiv = document.getElementById('taskFormErrors');
@@ -440,25 +521,34 @@ export async function submitTaskForm(reloadTasks) {
       description: descInput.value.trim(),
       project_id: projectInput.value || null, // Allow null for tasks without projects
       priority: priorityInput.value,
+      assigned_to: assigneeInput.value || null,
       start_date: startDateInput.value || null,
       due_date: dueDateInput.value || null,
     };
 
     if (currentEditingTaskId) {
       // Update existing task
+      console.log('📝 Updating task:', currentEditingTaskId);
       await updateTask(currentEditingTaskId, taskData);
+      console.log('✅ Task updated successfully');
       showSuccess('Task updated successfully');
     } else {
       // Create new task
+      console.log('➕ Creating new task');
       await createTask(taskData);
+      console.log('✅ Task created successfully');
       showSuccess('Task created successfully');
     }
 
     // Close modal and reload
+    console.log('🔄 Closing modal and reloading...');
     const modal = Modal.getInstance(document.getElementById('taskModal'));
     modal.hide();
+    console.log('✅ Modal closed');
 
+    console.log('🔄 Reloading tasks...');
     await reloadTasks();
+    console.log('✅ Tasks reloaded, re-enabling button');
     enableButton(submitBtn);
   } catch (error) {
     console.error('Error submitting task form:', error);
@@ -517,7 +607,14 @@ export function resetTaskForm() {
 
   // Cleanup tag picker if it exists
   if (currentTagPickerInstance) {
+    currentTagPickerInstance.destroy();
     currentTagPickerInstance = null;
+  }
+
+  // Also clear the tag picker container
+  const tagPickerContainer = document.getElementById('taskTagPicker');
+  if (tagPickerContainer) {
+    tagPickerContainer.innerHTML = '';
   }
 }
 

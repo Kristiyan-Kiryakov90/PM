@@ -82,6 +82,9 @@ export async function loadGanttView(tasks, currentFilters, openViewModal) {
     // Initialize Gantt chart (no auto-scheduling - dates persist until user changes them)
     ganttInstance = await initGanttChart(container, {
       project_id: currentFilters.project_id,
+      priority: currentFilters.priority,
+      assigned_to: currentFilters.assigned_to,
+      tag_id: currentFilters.tag_id,
       sort_by: ganttSortOrder,
       viewMode: 'Day',
       onTaskClick: (task) => {
@@ -562,4 +565,14 @@ export function exposeGanttFunctions(currentFilters, reloadGanttView) {
   };
 
   console.log('✅ Gantt reorder functions registered on window object');
+}
+
+/**
+ * Cleanup Gantt view when switching away
+ */
+export function cleanupGanttView() {
+  console.log('🧹 Destroying Gantt instance...');
+  destroyGanttChart();
+  ganttInstance = null;
+  isLoadingGantt = false;
 }

@@ -14,13 +14,34 @@ import {
   filterTasks,
   getContrastingTextColor,
 } from './tasks-utils.js';
+import { teamService } from '../services/team-service.js';
+
+// Cache team members to avoid reloading on every render
+let cachedTeamMembers = [];
+
+/**
+ * Get assignee name by user ID
+ */
+function getAssigneeName(userId) {
+  const assignee = cachedTeamMembers.find(m => m.id === userId);
+  return assignee?.full_name || assignee?.email || 'Unknown';
+}
 
 /**
  * Render list view
  */
-export function renderListView(tasks, currentFilters) {
+export async function renderListView(tasks, currentFilters) {
   const tbody = document.getElementById('listViewTableBody');
   if (!tbody) return;
+
+  // Load team members if not cached
+  if (cachedTeamMembers.length === 0) {
+    try {
+      cachedTeamMembers = await teamService.getTeamMembers();
+    } catch (error) {
+      console.error('Error loading team members:', error);
+    }
+  }
 
   const filteredTasks = filterTasks(tasks, currentFilters);
 
@@ -31,9 +52,7 @@ export function renderListView(tasks, currentFilters) {
 
   tbody.innerHTML = filteredTasks.map(task => {
     const project = task.projects || { name: 'No Project', color: '#6c757d' };
-    const assignee = task.assigned_to_user
-      ? (task.assigned_to_user.user_metadata?.full_name || task.assigned_to_user.email)
-      : 'Unassigned';
+    const assignee = task.assigned_to ? getAssigneeName(task.assigned_to) : 'Unassigned';
 
     // Get contrasting text color for project badge
     const projectTextColor = getContrastingTextColor(project.color);

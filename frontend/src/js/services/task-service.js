@@ -247,11 +247,11 @@ export async function updateTask(taskId, updates) {
     }
 
     if (updates.status !== undefined) {
-      const validStatuses = ['todo', 'in_progress', 'review', 'done'];
-      if (!validStatuses.includes(updates.status)) {
-        throw new Error(`Status must be one of: ${validStatuses.join(', ')}`);
+      // Validate status is a non-empty string (custom statuses are now supported per project)
+      if (typeof updates.status !== 'string' || updates.status.trim() === '') {
+        throw new Error('Status must be a non-empty string');
       }
-      updateData.status = updates.status;
+      updateData.status = updates.status.trim();
     }
 
     if (updates.priority !== undefined) {

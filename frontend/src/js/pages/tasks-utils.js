@@ -168,6 +168,16 @@ export function formatDueDate(dateString) {
  */
 export function filterTasks(tasks, filters) {
   return tasks.filter(task => {
+    // Priority filter
+    if (filters.priority) {
+      if (task.priority !== filters.priority) return false;
+    }
+
+    // Assignee filter
+    if (filters.assigned_to) {
+      if (task.assigned_to !== filters.assigned_to) return false;
+    }
+
     // Tag filter
     if (filters.tag_id) {
       const hasTag = task.tags?.some(tag => tag.id === parseInt(filters.tag_id));

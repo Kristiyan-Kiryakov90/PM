@@ -162,9 +162,34 @@
   fill: #fafafa;
 }
 
+/* Today marker as a thin red vertical line */
 .gantt .today-highlight {
-  fill: #fcf3cf;
-  opacity: 0.5;
+  fill: none !important;
+  opacity: 1 !important;
+}
+
+/* Add red border on the left side to create a vertical line effect */
+.gantt .grid-row .today-highlight {
+  fill: none !important;
+  stroke: #dc2626 !important;
+  stroke-width: 2 !important;
+  opacity: 1 !important;
+}
+
+/* If Frappe Gantt uses a different structure, target the rect directly */
+.gantt rect.today-highlight {
+  fill: none !important;
+  stroke: #dc2626 !important;
+  stroke-width: 3 !important;
+  stroke-opacity: 1 !important;
+}
+
+/* Alternative: Use transform to make it thinner */
+.gantt .today-highlight {
+  transform: scaleX(0.02) !important;
+  transform-origin: center !important;
+  fill: #dc2626 !important;
+  opacity: 1 !important;
 }
 
 /* Ensure dependency arrows are visible */

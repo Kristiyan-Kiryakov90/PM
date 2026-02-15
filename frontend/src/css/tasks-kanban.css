@@ -56,6 +56,14 @@
   flex: 1;
   overflow-y: auto;
   max-height: calc(100vh - 300px);
+  transition: background-color 0.2s var(--ease-out);
+}
+
+/* Drag and Drop States */
+.task-column-content.drag-over {
+  background-color: var(--primary-lighter);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-md);
 }
 
 .task-column-empty {
@@ -63,5 +71,6 @@
   padding: var(--space-8) var(--space-4);
   color: var(--gray-400);
   font-size: var(--text-sm);
+  pointer-events: none;
 }
 
