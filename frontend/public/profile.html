@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profile - TaskFlow</title>
   <link rel="stylesheet" href="../src/styles/global/global.css">
-  <link rel="stylesheet" href="../src/css/profile.css">
+  <link rel="stylesheet" href="../src/styles/shared/profile.css">
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
@@ -155,19 +155,19 @@
   </main>
 
   <script type="module">
-    import { renderNavbar } from '../src/js/components/navbar.js';
-    import { requireAuth } from '../src/js/utils/router.js';
-    import { getUserMetadata, getUserFullName } from '../src/js/utils/auth.js';
-    import { showError, showSuccess, showInfo, disableButton, enableButton } from '../src/js/utils/ui-helpers.js';
-    import { updateProfile, changePassword } from '../src/js/services/profile-service.js';
-    import supabase from '../src/js/services/supabase.js';
+    import { renderNavbar } from '../src/shared/components/navbar.js';
+    import { router } from '../src/shared/utils/router.js';
+    import { authUtils } from '../src/shared/utils/auth.js';
+    import { uiHelpers } from '../src/shared/utils/ui-helpers.js';
+    import { profileService } from '../src/shared/services/profile-service.js';
+    import supabase from '../src/shared/services/supabase.js';
 
     let currentUserEmail = '';
 
     async function init() {
       try {
         // Ensure user is authenticated
-        await requireAuth();
+        await router.requireAuth();
 
         // Render navbar
         await renderNavbar();
@@ -185,14 +185,14 @@
         setupDeleteAccount();
       } catch (error) {
         console.error('Profile page initialization error:', error);
-        showError('Failed to load profile. Please refresh the page.');
+        uiHelpers.showError('Failed to load profile. Please refresh the page.');
       }
     }
 
     async function loadProfileData() {
       try {
-        const metadata = await getUserMetadata();
-        const fullName = await getUserFullName();
+        const metadata = await authUtils.getUserMetadata();
+        const fullName = await authUtils.getUserFullName();
 
         // Store email for delete confirmation
         currentUserEmail = metadata.email || '';
@@ -213,7 +213,7 @@
         document.getElementById('profileAvatarBig').textContent = initials;
       } catch (error) {
         console.error('Error loading profile data:', error);
-        showError('Failed to load profile information.');
+        uiHelpers.showError('Failed to load profile information.');
       }
     }
 
@@ -259,25 +259,25 @@
       const submitBtn = document.querySelector('#profileForm button[type="submit"]');
 
       try {
-        disableButton(submitBtn, 'Saving...');
+        uiHelpers.disableButton(submitBtn, 'Saving...');
 
         const firstName = document.getElementById('firstName').value.trim();
         const lastName = document.getElementById('lastName').value.trim();
 
-        await updateProfile({
+        await profileService.updateProfile({
           first_name: firstName,
           last_name: lastName,
         });
 
-        showSuccess('Profile updated successfully');
+        uiHelpers.showSuccess('Profile updated successfully');
 
         // Reload profile data to refresh UI
         await loadProfileData();
       } catch (error) {
         console.error('Error updating profile:', error);
-        showError(error.message || 'Failed to update profile');
+        uiHelpers.showError(error.message || 'Failed to update profile');
       } finally {
-        enableButton(submitBtn);
+        uiHelpers.enableButton(submitBtn);
       }
     }
 
@@ -291,23 +291,23 @@
 
         // Validate passwords match
         if (newPassword !== confirmPassword) {
-          showError('New password and confirmation do not match');
+          uiHelpers.showError('New password and confirmation do not match');
           return;
         }
 
-        disableButton(submitBtn, 'Updating...');
+        uiHelpers.disableButton(submitBtn, 'Updating...');
 
-        await changePassword(newPassword);
+        await profileService.changePassword(newPassword);
 
-        showSuccess('Password changed successfully');
+        uiHelpers.showSuccess('Password changed successfully');
 
         // Clear form
         document.getElementById('passwordForm').reset();
       } catch (error) {
         console.error('Error changing password:', error);
-        showError(error.message || 'Failed to change password');
+        uiHelpers.showError(error.message || 'Failed to change password');
       } finally {
-        enableButton(submitBtn);
+        uiHelpers.enableButton(submitBtn);
       }
     }
 
@@ -340,17 +340,17 @@
       );
 
       if (!emailConfirmation) {
-        showInfo('Account deletion cancelled');
+        uiHelpers.showInfo('Account deletion cancelled');
         return;
       }
 
       if (emailConfirmation.trim() !== currentUserEmail) {
-        showError('Email confirmation does not match. Account deletion cancelled.');
+        uiHelpers.showError('Email confirmation does not match. Account deletion cancelled.');
         return;
       }
 
       const deleteBtn = document.getElementById('deleteAccountBtn');
-      disableButton(deleteBtn, 'Deleting Account...');
+      uiHelpers.disableButton(deleteBtn, 'Deleting Account...');
 
       try {
         // Call edge function to delete account
@@ -382,7 +382,7 @@
         }
 
         // Account deleted successfully - sign out and redirect
-        showSuccess('Your account has been permanently deleted. Goodbye!');
+        uiHelpers.showSuccess('Your account has been permanently deleted. Goodbye!');
 
         // Wait a moment for user to see the message
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -394,8 +394,8 @@
         window.location.href = '/public/index.html';
       } catch (error) {
         console.error('Error deleting account:', error);
-        showError(error.message || 'Failed to delete account');
-        enableButton(deleteBtn);
+        uiHelpers.showError(error.message || 'Failed to delete account');
+        uiHelpers.enableButton(deleteBtn);
       }
     }
 

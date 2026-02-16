@@ -39,10 +39,7 @@ export default defineConfig({
       // Style aliases (for JS imports)
       '@styles': resolve(__dirname, './src/styles'),
 
-      // Legacy support (keep during migration)
-      '@js': resolve(__dirname, './src/js'),
-      '@css': resolve(__dirname, './src/css'),
-      '@pages': resolve(__dirname, './src/js/pages'),
+      // Assets
       '@assets': resolve(__dirname, './src/assets'),
     },
   },

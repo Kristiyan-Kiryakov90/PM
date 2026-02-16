@@ -69,8 +69,8 @@
   </div>
 
   <script type="module">
-    import { runAuthDiagnostic } from '../src/js/utils/auth-diagnostic.js';
-    import supabase from '../src/js/services/supabase.js';
+    import { authDiagnostic } from '../src/shared/utils/auth-diagnostic.js';
+    import supabase from '../src/shared/services/supabase.js';
 
     const consoleDiv = document.getElementById('console');
     const originalLog = console.log;
@@ -99,7 +99,7 @@
       captureConsole();
 
       try {
-        await runAuthDiagnostic();
+        await authDiagnostic.runAuthDiagnostic();
 
         // Additional checks
         console.log('\n=== ADDITIONAL CHECKS ===\n');
