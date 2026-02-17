@@ -98,12 +98,20 @@ export const router = {
 
   /**
    * Get return URL from query parameter
+   * Only allows relative paths within /public/ to prevent open redirect attacks.
    * @returns {string} Return URL or default dashboard
    */
   getReturnUrl() {
     const params = new URLSearchParams(window.location.search);
     const returnUrl = params.get('return');
-    return returnUrl ? decodeURIComponent(returnUrl) : '/public/dashboard.html';
+    if (returnUrl) {
+      const decoded = decodeURIComponent(returnUrl);
+      // Strict allowlist: only /public/<name>.html with safe characters
+      if (/^\/public\/[a-zA-Z0-9_-]+\.html$/.test(decoded)) {
+        return decoded;
+      }
+    }
+    return '/public/dashboard.html';
   },
 
   /**

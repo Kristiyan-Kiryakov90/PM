@@ -7,19 +7,73 @@
 import supabase from './supabase.js';
 import { authUtils } from '../utils/auth.js';
 
+const TAGS_CACHE_KEY = 'tf_tags_v1';
+const TAGS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+let _tagsMemCache = null;
+
 /**
  * Get all tags for the current user's company
  * @returns {Promise<Array>} List of tags
  */
 export const tagService = {
   async getTags() {
+    // In-memory cache (zero cost within same page)
+    if (_tagsMemCache) return _tagsMemCache;
+
+    // sessionStorage cache (survives navigation within session)
+    try {
+      const stored = sessionStorage.getItem(TAGS_CACHE_KEY);
+      if (stored) {
+        const { data: cachedData, ts } = JSON.parse(stored);
+        if (Date.now() - ts < TAGS_CACHE_TTL) {
+          _tagsMemCache = cachedData;
+          return cachedData;
+        }
+      }
+    } catch (_) { /* ignore parse errors */ }
+
     const { data, error } = await supabase
       .from('tags')
       .select('*')
       .order('name');
 
     if (error) throw error;
-    return data || [];
+    const result = data || [];
+
+    _tagsMemCache = result;
+    try {
+      sessionStorage.setItem(TAGS_CACHE_KEY, JSON.stringify({ data: result, ts: Date.now() }));
+    } catch (_) { /* ignore storage errors */ }
+
+    return result;
+  },
+
+  clearTagsCache() {
+    _tagsMemCache = null;
+    try { sessionStorage.removeItem(TAGS_CACHE_KEY); } catch (_) { /* ignore */ }
+  },
+
+  /**
+   * Get all tags for a list of tasks in a single query (replaces N+1 per-task calls)
+   * @param {number[]} taskIds
+   * @returns {Promise<Object>} Map of taskId → tags[]
+   */
+  async getTagsForTasks(taskIds) {
+    if (!taskIds || taskIds.length === 0) return {};
+
+    const { data, error } = await supabase
+      .from('task_tags')
+      .select('task_id, tags(id, name, color)')
+      .in('task_id', taskIds);
+
+    if (error) throw error;
+
+    const byTask = {};
+    (data || []).forEach(row => {
+      if (!byTask[row.task_id]) byTask[row.task_id] = [];
+      if (row.tags) byTask[row.task_id].push(row.tags);
+    });
+    return byTask;
   },
 
   /**

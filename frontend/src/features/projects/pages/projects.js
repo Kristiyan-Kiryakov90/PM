@@ -40,22 +40,23 @@ async function init() {
     // Require authentication
     await router.requireAuth();
 
-    // Render navbar
-    await renderNavbar();
+    // Run navbar, auth checks, and data fetch all in parallel
+    const [, loadedUser, loadedIsAdmin, loadedProjects] = await Promise.all([
+      renderNavbar(),
+      authUtils.getCurrentUser(),
+      authUtils.isCompanyAdmin(),
+      projectService.getProjects({ includeTaskCounts: true }),
+    ]);
 
-    // Load current user
-    currentUser = await authUtils.getCurrentUser();
+    currentUser = loadedUser;
+    isAdmin = loadedIsAdmin;
+    projects = loadedProjects;
 
-    // Check if user is admin
-    isAdmin = await authUtils.isCompanyAdmin();
+    // Render immediately — no overlay needed
+    renderProjectsView();
 
-    // Load projects
-    await loadProjects();
-
-    // Setup event listeners
+    // Setup event listeners and real-time
     setupEventListeners();
-
-    // Subscribe to real-time updates
     await setupRealtimeSubscription();
 
     console.timeEnd('⏱️ Projects Page Load');

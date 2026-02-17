@@ -18,8 +18,8 @@ export const activityService = {
       const { limit = 20, entity_type = null, entity_id = null } = options;
 
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -135,8 +135,8 @@ export const activityService = {
   async getActivityStats() {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');

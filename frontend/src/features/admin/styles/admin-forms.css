@@ -1,12 +1,7 @@
 /**
  * Admin Forms Styles
- * Invite forms, member forms, company forms, and modals
+ * Member forms, company forms, and modals
  */
-
-/* Invite Form */
-.invite-form {
-  max-width: 600px;
-}
 
 .form-group {
   margin-bottom: var(--space-6);

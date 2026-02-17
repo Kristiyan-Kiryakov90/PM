@@ -164,28 +164,72 @@
   font-size: 0.75rem;
 }
 
-/* Dropdown Menu */
-.comment-card .dropdown-toggle {
-  padding: 0.25rem 0.5rem;
-  text-decoration: none;
+/* Custom comment menu — no Popper.js, positions relative to the toggle button */
+.comment-menu-wrapper {
+  position: relative;
 }
 
-.comment-card .dropdown-toggle:hover {
-  background: var(--bs-light);
+.comment-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  background: none;
+  border: none;
   border-radius: 4px;
+  color: var(--bs-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.comment-card .dropdown-menu {
-  max-height: 400px;
-  overflow-y: auto;
-  z-index: 9999 !important;
-  position: absolute !important;
-  will-change: transform;
+.comment-card:hover .comment-menu-toggle,
+.comment-menu-wrapper.open .comment-menu-toggle {
+  opacity: 1;
 }
 
-/* Ensure dropdown is above modal content */
-.modal-body .comment-card .dropdown-menu {
-  position: fixed !important;
+.comment-menu-toggle:hover {
+  background: var(--bs-light);
+  color: var(--bs-dark);
+}
+
+.comment-menu-dropdown {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  min-width: 130px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  padding: 4px 0;
+  list-style: none;
+  margin: 0;
+}
+
+.comment-menu-wrapper.open .comment-menu-dropdown {
+  display: block;
+}
+
+.comment-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  color: var(--bs-body-color);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.comment-menu-item:hover {
+  background: var(--bs-light);
+  color: var(--bs-body-color);
+}
+
+.comment-menu-item.text-danger:hover {
+  background: #fff0f0;
 }
 
 /* Keep proper overflow for scrolling */

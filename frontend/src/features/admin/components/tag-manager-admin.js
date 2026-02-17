@@ -236,9 +236,11 @@ export async function renderTagManager(container) {
       try {
         if (editingTagId) {
           await tagService.updateTag(editingTagId, { name, color: selectedColor });
+          tagService.clearTagsCache();
           uiHelpers.showSuccess('Tag updated');
         } else {
           await tagService.createTag({ name, color: selectedColor });
+          tagService.clearTagsCache();
           uiHelpers.showSuccess('Tag created');
         }
         overlay?.remove();
@@ -292,6 +294,7 @@ export async function renderTagManager(container) {
 
     try {
       await tagService.deleteTag(tagId);
+      tagService.clearTagsCache();
       uiHelpers.showSuccess('Tag deleted');
       await render();
     } catch (error) {

@@ -241,6 +241,74 @@ export function handleTextareaInput(container, textarea) {
   textarea.style.height = 'auto';
   const newHeight = Math.max(80, Math.min(textarea.scrollHeight, 200));
   textarea.style.height = newHeight + 'px';
+
+  // @mention autocomplete
+  handleMentionAutocomplete(container, textarea);
+}
+
+/**
+ * Detect @mention at cursor and show autocomplete suggestions
+ */
+function handleMentionAutocomplete(container, textarea) {
+  const suggestionsEl = container.querySelector('.mention-suggestions');
+  if (!suggestionsEl) return;
+
+  const companyUsers = container._companyUsers || [];
+  const pos = textarea.selectionStart;
+  const textBefore = textarea.value.substring(0, pos);
+  const mentionMatch = textBefore.match(/@(\w*)$/);
+
+  if (!mentionMatch || companyUsers.length === 0) {
+    suggestionsEl.style.display = 'none';
+    return;
+  }
+
+  const query = mentionMatch[1].toLowerCase();
+  const matches = companyUsers.filter(u => {
+    const name = (u.full_name || '').toLowerCase();
+    const email = (u.email || '').toLowerCase();
+    return name.includes(query) || email.includes(query);
+  }).slice(0, 6);
+
+  if (matches.length === 0) {
+    suggestionsEl.style.display = 'none';
+    return;
+  }
+
+  suggestionsEl.innerHTML = matches.map(u => `
+    <a class="dropdown-item mention-suggestion-item d-flex align-items-center gap-2 py-2"
+       href="#"
+       data-user-id="${u.id}"
+       data-user-name="${escapeAttr(u.full_name || u.email)}">
+      <span class="fw-semibold">${escapeHtml(u.full_name || u.email)}</span>
+      ${u.full_name ? `<span class="text-muted small">${escapeHtml(u.email)}</span>` : ''}
+    </a>
+  `).join('');
+  suggestionsEl.style.display = 'block';
+
+  // Handle suggestion click
+  suggestionsEl.querySelectorAll('.mention-suggestion-item').forEach(item => {
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // prevent textarea blur
+      const userName = item.dataset.userName;
+      // Replace the @query with @full_name
+      const before = textarea.value.substring(0, pos - mentionMatch[0].length);
+      const after = textarea.value.substring(pos);
+      textarea.value = before + '@' + userName + ' ' + after;
+      // Move cursor after inserted mention
+      const newPos = before.length + userName.length + 2;
+      textarea.setSelectionRange(newPos, newPos);
+      suggestionsEl.style.display = 'none';
+      textarea.focus();
+      // Re-trigger button state
+      const postBtn = container.querySelector('.post-comment-btn');
+      if (postBtn) postBtn.disabled = !textarea.value.trim();
+    });
+  });
+}
+
+function escapeAttr(text) {
+  return String(text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /**

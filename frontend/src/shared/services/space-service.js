@@ -16,8 +16,8 @@ export const spaceService = {
   async getSpaces() {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -54,8 +54,8 @@ export const spaceService = {
   async getSpace(spaceId) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -106,8 +106,8 @@ export const spaceService = {
       }
 
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -144,8 +144,8 @@ export const spaceService = {
   async updateSpace(spaceId, updates) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -223,8 +223,8 @@ export const spaceService = {
   async deleteSpace(spaceId) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -264,8 +264,8 @@ export const spaceService = {
   async getProjectsInSpace(spaceId) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -309,8 +309,8 @@ export const spaceService = {
   async getSpacesWithCounts() {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');

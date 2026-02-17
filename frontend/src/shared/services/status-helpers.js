@@ -5,34 +5,52 @@
 
 import supabase from './supabase.js';
 
+// 30-second cache + in-flight deduplication for status definitions.
+// All concurrent callers (e.g. the 5 dashboard functions) share one request.
+let _statusDefsCache = null;
+let _statusDefsCacheTime = 0;
+let _statusDefsInflight = null;
+const STATUS_DEFS_TTL = 30_000;
+
 /**
- * Get status definitions for given project IDs
- * @param {Array<number>} projectIds - Array of project IDs
- * @returns {Promise<Map>} Map of project_id-status_slug -> status definition
+ * Get status definitions for given project IDs.
+ * Fetches all definitions visible to the current user (RLS-scoped to company)
+ * so concurrent callers on the same page share a single request + cached result.
+ * @param {Array<number>} projectIds - kept for API compatibility; RLS scopes result
+ * @returns {Promise<Map>} Map of "project_id-status_slug" -> status definition
  */
 export async function getStatusDefinitionsMap(projectIds) {
   if (!projectIds || projectIds.length === 0) {
     return new Map();
   }
 
-  const { data: statusDefs, error } = await supabase
-    .from('status_definitions')
-    .select('project_id, slug, is_done, sort_order, name')
-    .in('project_id', projectIds);
-
-  if (error) {
-    console.error('Error fetching status definitions:', error);
-    return new Map();
+  // 1. Return cached map if still fresh
+  if (_statusDefsCache && (Date.now() - _statusDefsCacheTime) < STATUS_DEFS_TTL) {
+    return _statusDefsCache;
   }
 
-  // Build lookup map: "projectId-statusSlug" -> statusDef
-  const map = new Map();
-  statusDefs?.forEach(def => {
-    const key = `${def.project_id}-${def.slug}`;
-    map.set(key, def);
-  });
+  // 2. Deduplicate concurrent calls — all waiters share the same in-flight promise
+  if (!_statusDefsInflight) {
+    _statusDefsInflight = supabase
+      .from('status_definitions')
+      .select('project_id, slug, is_done, sort_order, name')
+      .then(({ data: statusDefs, error }) => {
+        _statusDefsInflight = null;
+        if (error) {
+          console.error('Error fetching status definitions:', error);
+          return new Map();
+        }
+        const map = new Map();
+        (statusDefs || []).forEach(def => {
+          map.set(`${def.project_id}-${def.slug}`, def);
+        });
+        _statusDefsCache = map;
+        _statusDefsCacheTime = Date.now();
+        return map;
+      });
+  }
 
-  return map;
+  return _statusDefsInflight;
 }
 
 /**

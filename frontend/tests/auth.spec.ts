@@ -1,11 +1,26 @@
 import { test, expect } from '@playwright/test';
+import { 
+  loginUser, 
+  logoutUser, 
+  navigateToPage,
+  generateTestId,
+  getTestUser,
+  TEST_CONFIG,
+  waitForElement 
+} from './test-setup';
 
 /**
  * Authentication Tests
  * Tests for signup, signin, and signout flows
+ * Uses 3 pre-created test users to avoid database flooding
  */
 
 test.describe('Authentication', () => {
+  // Ensure we start from a clean state
+  test.beforeEach(async ({ page }) => {
+    await navigateToPage(page, '/signin.html');
+  });
+
   test.describe('Signup Flow', () => {
     test('should display signup page', async ({ page }) => {
       await page.goto('/signup.html');
@@ -53,8 +68,8 @@ test.describe('Authentication', () => {
       const password = 'TestPassword123!';
 
       // Fill form
-      await page.fill('input[name="email"]', uniqueEmail);
-      await page.fill('input[name="password"]', password);
+      await page.fill('#email', uniqueEmail);
+      await page.fill('#password', password);
 
       // Submit form
       await page.click('button[type="submit"]');

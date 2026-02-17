@@ -4,6 +4,9 @@
  * Refactored from 689 lines into modular CSS files
  */
 
+/* Bootstrap Icons */
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
 /* Import all global stylesheets in order */
 @import './global-variables.css';
 @import './global-reset.css';

@@ -9,6 +9,18 @@ import { authUtils } from '../utils/auth.js';
 const STORAGE_BUCKET = 'task-attachments';
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB limit
 
+// Allowlist of permitted MIME types (images + PDF)
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+]);
+
+// Allowlist of permitted file extensions (must match MIME type)
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf']);
+
 export const attachmentService = {
   /**
    * Upload attachment to a task
@@ -23,6 +35,12 @@ export const attachmentService = {
         throw new Error(`File size exceeds maximum of 1MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
       }
 
+      // Validate file type by extension and MIME type
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      if (!ALLOWED_EXTENSIONS.has(fileExt) || !ALLOWED_MIME_TYPES.has(file.type)) {
+        throw new Error('File type not allowed. Only images (JPG, PNG, GIF, WebP) and PDF files are accepted.');
+      }
+
       const user = await authUtils.getCurrentUser();
       if (!user) {
         throw new Error('User not authenticated');
@@ -31,7 +49,6 @@ export const attachmentService = {
       const companyId = user.user_metadata?.company_id || null;
 
       // Generate unique file path (bucket name NOT included in path)
-      const fileExt = file.name.split('.').pop();
       const fileName = file.name;
       const randomId = Math.random().toString(36).substring(2, 15);
       const filePath = `${taskId}/${randomId}.${fileExt}`;

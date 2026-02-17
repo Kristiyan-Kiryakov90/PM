@@ -66,5 +66,34 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     open: '/public/index.html',
+    headers: securityHeaders(),
+  },
+
+  // Preview server (production build)
+  preview: {
+    headers: securityHeaders(),
   },
 });
+
+function securityHeaders() {
+  const supabaseOrigin = 'https://zuupemhuaovzqqhyyocz.supabase.co';
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com`,
+    `style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net`,
+    `connect-src 'self' ${supabaseOrigin} wss://zuupemhuaovzqqhyyocz.supabase.co`,
+    `img-src 'self' data: blob: ${supabaseOrigin}`,
+    "font-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+
+  return {
+    'Content-Security-Policy': csp,
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+  };
+}

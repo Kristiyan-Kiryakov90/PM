@@ -22,14 +22,14 @@ async function init() {
     // Require authentication
     await router.requireAuth();
 
-    // Render navbar
-    await renderNavbar();
+    // Run navbar, user fetch, and data load in parallel
+    const [, loadedUser] = await Promise.all([
+      renderNavbar(),
+      authUtils.getCurrentUser(),
+      loadDashboard(),
+    ]);
 
-    // Load current user
-    currentUser = await authUtils.getCurrentUser();
-
-    // Load all dashboard data
-    await loadDashboard();
+    currentUser = loadedUser;
 
     console.timeEnd('⏱️ Dashboard Page Load');
   } catch (error) {
@@ -44,8 +44,6 @@ async function init() {
  */
 async function loadDashboard() {
   try {
-    uiHelpers.showLoading('Loading dashboard...');
-
     // Load data in parallel
     const [stats, myTasks, upcomingDeadlines, projectProgress] = await Promise.all([
       dashboardService.getDashboardStats(),
@@ -54,24 +52,21 @@ async function loadDashboard() {
       dashboardService.getProjectProgress(),
     ]);
 
-    uiHelpers.hideLoading();
-
     // Render each section
     renderStats(stats);
     renderMyTasks(myTasks);
     renderUpcomingDeadlines(upcomingDeadlines);
     renderProjectProgress(projectProgress);
 
-    // Initialize activity feed with real-time updates
+    // Initialize activity feed independently — don't block other renders
     const activityContainer = document.getElementById('recentActivityContainer');
     if (activityContainer) {
-      await initActivityFeed(activityContainer, {
+      initActivityFeed(activityContainer, {
         limit: 10,
         realtime: true,
-      });
+      }).catch(console.error);
     }
   } catch (error) {
-    uiHelpers.hideLoading();
     console.error('Error loading dashboard:', error);
     uiHelpers.showError('Failed to load dashboard data. Please try again.');
   }
@@ -90,7 +85,7 @@ function renderStats(stats) {
     const skeleton = el.querySelector('.skeleton');
     if (skeleton) {
       skeleton.style.opacity = '0';
-      setTimeout(() => skeleton.remove(), 200);
+      setTimeout(() => skeleton.remove(), 80);
     }
 
     // Set number with fade-in
@@ -98,8 +93,8 @@ function renderStats(stats) {
     el.textContent = value;
     setTimeout(() => {
       el.style.opacity = '1';
-      el.style.transition = 'opacity 0.3s';
-    }, 200);
+      el.style.transition = 'opacity 0.1s';
+    }, 80);
   };
 
   // Update all stats smoothly
@@ -120,8 +115,8 @@ async function renderMyTasks(tasks) {
   const skeletonList = container.querySelector('.skeleton-list');
   if (skeletonList) {
     skeletonList.style.opacity = '0';
-    skeletonList.style.transition = 'opacity 0.2s';
-    await new Promise(resolve => setTimeout(resolve, 200));
+    skeletonList.style.transition = 'opacity 0.1s';
+    await new Promise(resolve => setTimeout(resolve, 80));
   }
 
   if (tasks.length === 0) {
@@ -162,8 +157,8 @@ async function renderUpcomingDeadlines(tasks) {
   const skeletonList = container.querySelector('.skeleton-list');
   if (skeletonList) {
     skeletonList.style.opacity = '0';
-    skeletonList.style.transition = 'opacity 0.2s';
-    await new Promise(resolve => setTimeout(resolve, 200));
+    skeletonList.style.transition = 'opacity 0.1s';
+    await new Promise(resolve => setTimeout(resolve, 80));
   }
 
   if (tasks.length === 0) {

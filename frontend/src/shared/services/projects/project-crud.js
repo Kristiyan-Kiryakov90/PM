@@ -18,8 +18,8 @@ export async function getProjects(options = {}) {
   try {
     const { status, includeTaskCounts = false } = options;
     const companyId = await authUtils.getUserCompanyId();
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+    const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');
@@ -98,8 +98,8 @@ export async function getProjects(options = {}) {
 export async function getProject(projectId) {
   try {
     const companyId = await authUtils.getUserCompanyId();
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+    const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');
@@ -170,8 +170,8 @@ export async function createProject(projectData) {
     }
 
     const companyId = await authUtils.getUserCompanyId();
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+    const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');
@@ -213,8 +213,8 @@ export async function createProject(projectData) {
 export async function updateProject(projectId, updates) {
   try {
     const companyId = await authUtils.getUserCompanyId();
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+    const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');
@@ -300,8 +300,8 @@ export async function updateProject(projectId, updates) {
 export async function deleteProject(projectId) {
   try {
     const companyId = await authUtils.getUserCompanyId();
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+    const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');

@@ -5,6 +5,7 @@
 
 import { Modal } from 'bootstrap';
 import { uiHelpers } from '@utils/ui-helpers.js';
+import { teamService } from '@services/team-service.js';
 import { showPasswordResetModal } from './team-manager-password-reset.js';
 import {
   createMember,
@@ -251,6 +252,7 @@ async function handleSaveMember({
     try {
       console.log('Creating member:', { email, full_name: fullName, company_name: companyName, role });
       await createMember({ email, full_name: fullName, password, role, company_name: companyName });
+      teamService.clearTeamCache();
       uiHelpers.showSuccess('Team member added');
       modal.hide();
       if (onSave) await onSave();
@@ -282,6 +284,7 @@ async function handleSaveMember({
 
       console.log('Updating member:', editingMemberId, { full_name: fullName, role: finalRole });
       await updateMember(editingMemberId, { full_name: fullName, role: finalRole });
+      teamService.clearTeamCache();
       uiHelpers.showSuccess('Team member updated');
       modal.hide();
       if (onSave) await onSave();

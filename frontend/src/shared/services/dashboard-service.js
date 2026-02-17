@@ -17,8 +17,8 @@ export const dashboardService = {
   async getDashboardStats() {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -165,8 +165,8 @@ export const dashboardService = {
    */
   async getMyTasks() {
     try {
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -204,8 +204,8 @@ export const dashboardService = {
   async getUpcomingDeadlines() {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -256,8 +256,8 @@ export const dashboardService = {
   async getProjectProgress() {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -323,8 +323,8 @@ export const dashboardService = {
       // Placeholder: will implement fully in Phase 2B (Activity Log)
       // For now, return recent tasks as a proxy
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');

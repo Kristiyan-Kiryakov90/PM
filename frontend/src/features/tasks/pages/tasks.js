@@ -11,6 +11,7 @@ import { authUtils } from '@utils/auth.js';
 import { uiHelpers } from '@utils/ui-helpers.js';
 import { taskService } from "@services/task-service.js";
 import { tagService } from '@services/tag-service.js';
+import { statusService } from '@services/status-service.js';
 import { changeViewMode } from '@tasks/components/gantt-chart.js';
 
 // Import page modules
@@ -20,7 +21,6 @@ import { renderListView } from './tasks-list.js';
 import {
   loadGanttView,
   handleShowCriticalPath,
-  handleAutoSchedule,
   exposeGanttFunctions,
   getGanttSortOrder,
   setGanttSortOrder,
@@ -50,6 +50,7 @@ import {
   populateTagFilter,
   populateAssigneeFilter,
   populateStatusFilter,
+  populateStatusFilterFromData,
 } from './tasks-init.js';
 import { setupFilterListeners } from './tasks-filters.js';
 import {
@@ -87,49 +88,57 @@ async function init() {
     // Require authentication
     await router.requireAuth();
 
-    // Render navbar
-    await renderNavbar();
-
-    // Load current user
-    currentUser = await authUtils.getCurrentUser();
-
-    // Initialize modules with user context
-    initAttachmentModule(currentUser);
-    await initModalsModule(currentUser);
-
-    // Load all data in parallel for faster page load
-    const [loadedProjects, loadedTags, loadedTeamMembers] = await Promise.all([
+    // Round 1: fire everything that doesn't need other results in parallel,
+    // including an initial unfiltered task load so tasks arrive ASAP.
+    const [, loadedUser, loadedProjects, loadedTags, loadedTeamMembers, fetchedTasks] = await Promise.all([
+      renderNavbar(),
+      authUtils.getCurrentUser(),
       loadProjects(),
       loadTags(),
       loadTeamMembers(),
+      taskService.getTasks({}),
     ]);
 
+    currentUser = loadedUser;
     projects = loadedProjects;
     tags = loadedTags;
     teamMembers = loadedTeamMembers;
+    tasks = fetchedTasks;
 
-    // Populate dropdowns
+    // Round 2: now we have task IDs and project IDs — fetch tags + statuses in parallel.
+    const firstProjectId = projects.length > 0 ? projects[0].id : null;
+    const [tagsByTask, fetchedStatuses] = await Promise.all([
+      tagService.getTagsForTasks(tasks.map(t => t.id)),
+      firstProjectId ? statusService.getProjectStatuses(firstProjectId) : Promise.resolve([]),
+    ]);
+
+    tasks.forEach(task => { task.tags = tagsByTask[task.id] || []; });
+    statuses = fetchedStatuses;
+
+    // Populate all dropdowns — sync, no DB calls
     populateProjectDropdowns(projects);
     populateTagFilter(tags);
     populateAssigneeFilter(teamMembers);
+    populateStatusFilterFromData(fetchedStatuses);
 
-    // Populate status filter (with default or first project)
-    const firstProjectId = projects.length > 0 ? projects[0].id : null;
-    await populateStatusFilter(firstProjectId);
+    // Init modules — pass pre-loaded team members to skip the extra fetch
+    initAttachmentModule(currentUser);
+    initModalsModule(currentUser, teamMembers);
 
-    // Load tasks
-    await loadTasksInternal();
+    // Render — no DB calls (all data is ready)
+    const loadedStatuses = await renderKanbanBoard(
+      tasks, projects, currentFilters,
+      openEditModal, openViewModal, handleChangeTaskStatus, trackLocalUpdate,
+      { preloadedStatuses: fetchedStatuses, preloadedTeamMembers: teamMembers }
+    );
+    if (loadedStatuses) statuses = loadedStatuses;
 
-    // Setup event listeners
+    // Setup event listeners and real-time
     setupEventListeners();
-
-    // Create debounced reload function
     const debouncedReloadTasks = createDebouncedReload(
       () => isLoadingTasks,
       loadTasksInternal
     );
-
-    // Subscribe to real-time updates
     await setupRealtimeSubscription(
       () => ignoreRealtimeUpdates,
       debouncedReloadTasks
@@ -163,14 +172,19 @@ async function loadTasksInternal() {
     if (currentFilters.project_id) filters.project_id = currentFilters.project_id;
     if (currentFilters.status) filters.status = currentFilters.status;
 
-    tasks = await taskService.getTasks(filters);
+    // Determine which project's statuses to fetch (same logic as renderKanbanBoard)
+    const statusProjectId = currentFilters.project_id || (projects.length > 0 ? projects[0].id : null);
 
-    // Load tags for each task
-    await Promise.all(
-      tasks.map(async (task) => {
-        task.tags = await tagService.getTaskTags(task.id);
-      })
-    );
+    // Fetch tasks and statuses in parallel
+    const [fetchedTasks, fetchedStatuses] = await Promise.all([
+      taskService.getTasks(filters),
+      statusProjectId ? statusService.getProjectStatuses(statusProjectId) : Promise.resolve(null),
+    ]);
+    tasks = fetchedTasks;
+
+    // Load tags for each task (needs task IDs, so runs after getTasks)
+    const tagsByTask = await tagService.getTagsForTasks(tasks.map(t => t.id));
+    tasks.forEach(task => { task.tags = tagsByTask[task.id] || []; });
 
     // Render appropriate view
     if (currentView === 'gantt') {
@@ -185,7 +199,8 @@ async function loadTasksInternal() {
         openEditModal,
         openViewModal,
         handleChangeTaskStatus,
-        trackLocalUpdate
+        trackLocalUpdate,
+        { preloadedStatuses: fetchedStatuses, preloadedTeamMembers: teamMembers }
       );
       if (loadedStatuses) {
         statuses = loadedStatuses;
@@ -303,18 +318,6 @@ function setupEventListeners() {
   const criticalPathBtn = document.getElementById('showCriticalPathBtn');
   if (criticalPathBtn) {
     criticalPathBtn.addEventListener('click', () => handleShowCriticalPath(currentFilters));
-  }
-
-  // Auto-schedule buttons
-  const autoScheduleBtn = document.getElementById('autoScheduleBtn');
-  const autoScheduleAllBtn = document.getElementById('autoScheduleAllBtn');
-
-  if (autoScheduleBtn) {
-    autoScheduleBtn.addEventListener('click', () => handleAutoSchedule(currentFilters, loadTasksInternal));
-  }
-
-  if (autoScheduleAllBtn) {
-    autoScheduleAllBtn.addEventListener('click', () => handleAutoSchedule(currentFilters, loadTasksInternal));
   }
 
   // Add dependency button

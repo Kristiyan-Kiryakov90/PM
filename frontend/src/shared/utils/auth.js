@@ -10,6 +10,11 @@ import supabase from '@services/supabase.js';
 let metadataCache = null;
 let currentUserCache = null;
 
+// sessionStorage key and TTL for cross-page metadata caching.
+// TTL is kept short (3 min) to limit exposure window; RLS enforces real access control.
+const METADATA_SESSION_KEY = 'tf_user_metadata_v1';
+const METADATA_SESSION_TTL = 3 * 60 * 1000; // 3 minutes
+
 export const authUtils = {
   /**
    * Get current user session (cached after first call)
@@ -34,18 +39,28 @@ export const authUtils = {
    * @returns {Promise<Object|null>} User metadata or null
    */
   async getUserMetadata() {
-    // Return cached metadata if available
+    // 1. Return in-memory cache if available (fastest, same-page calls)
     if (metadataCache) {
-      console.log('📦 Using cached metadata');
       return metadataCache;
     }
+
+    // 2. Check sessionStorage cache (survives page navigation within same session)
+    try {
+      const cached = sessionStorage.getItem(METADATA_SESSION_KEY);
+      if (cached) {
+        const { data, timestamp, userId } = JSON.parse(cached);
+        const user = await this.getCurrentUser();
+        if (user && data && userId === user.id && (Date.now() - timestamp) < METADATA_SESSION_TTL) {
+          metadataCache = data;
+          return metadataCache;
+        }
+      }
+    } catch (e) { /* ignore parse errors */ }
 
     const user = await this.getCurrentUser();
     if (!user) return null;
 
-    console.log('Getting metadata for user:', user.email);
-
-    // Get user metadata from profiles table
+    // 3. Fetch from database
     try {
       const { data: profile, error: profilesError } = await supabase
         .from('profiles')
@@ -54,7 +69,6 @@ export const authUtils = {
         .maybeSingle();
 
       if (!profilesError && profile) {
-        console.log('✅ Found in profiles table:', profile);
         metadataCache = {
           id: user.id,
           email: user.email,
@@ -64,24 +78,33 @@ export const authUtils = {
           last_name: user.user_metadata?.last_name || '',
           created_at: user.created_at,
         };
-        return metadataCache;
       }
     } catch (e) {
       console.error('Error fetching profile:', e.message);
     }
 
-    // Fallback to user_metadata (for bootstrapping and backward compatibility)
-    console.log('⚠️ Using user_metadata fallback');
-    metadataCache = {
-      id: user.id,
-      email: user.email,
-      role: user.user_metadata?.role || 'user',
-      company_id: user.user_metadata?.company_id || null,
-      first_name: user.user_metadata?.first_name || '',
-      last_name: user.user_metadata?.last_name || '',
-      created_at: user.created_at,
-    };
-    console.log('Returning metadata:', metadataCache);
+    // Fallback to user_metadata if profile fetch failed
+    if (!metadataCache) {
+      metadataCache = {
+        id: user.id,
+        email: user.email,
+        role: user.user_metadata?.role || 'user',
+        company_id: user.user_metadata?.company_id || null,
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        created_at: user.created_at,
+      };
+    }
+
+    // 4. Store in sessionStorage for next page navigation
+    try {
+      sessionStorage.setItem(METADATA_SESSION_KEY, JSON.stringify({
+        data: metadataCache,
+        timestamp: Date.now(),
+        userId: user.id,
+      }));
+    } catch (e) { /* ignore quota errors */ }
+
     return metadataCache;
   },
 
@@ -149,7 +172,7 @@ export const authUtils = {
   clearCache() {
     metadataCache = null;
     currentUserCache = null;
-    console.log('🗑️ Metadata cache cleared');
+    try { sessionStorage.removeItem(METADATA_SESSION_KEY); } catch (e) {}
   },
 
   /**

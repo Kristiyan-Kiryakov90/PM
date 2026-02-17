@@ -16,8 +16,8 @@ export const taskService = {
   async getTasks(filters = {}) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -89,8 +89,8 @@ export const taskService = {
   async getTask(taskId) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -177,8 +177,8 @@ export const taskService = {
       // Project is optional - tasks can exist without a project
 
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -219,8 +219,8 @@ export const taskService = {
   async updateTask(taskId, updates) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');
@@ -317,8 +317,8 @@ export const taskService = {
   async deleteTask(taskId) {
     try {
       const companyId = await authUtils.getUserCompanyId();
-      const user = await supabase.auth.getUser();
-      const userId = user.data?.user?.id;
+      const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
       if (!userId) {
         throw new Error('User not authenticated');

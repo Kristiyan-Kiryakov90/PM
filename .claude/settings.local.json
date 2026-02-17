@@ -96,7 +96,10 @@
       "Bash(do activity-service.js checklist-service.js comment-service.js dashboard-service.js profile-service.js project-service.js realtime-service.js space-service.js status-service.js task-service.js team-service.js EOF grep \"import.*authUtils\\\\|import.*errorHandler\" \"/c/Projects/PM/frontend/src/shared/services/$file\")",
       "Bash(awk:*)",
       "Bash(git mv:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(/c/Projects/PM/SECURITY_REVIEW.md:*)",
+      "Bash(python3:*)",
+      "Bash(printf:*)"
     ]
   },
   "enabledMcpjsonServers": [

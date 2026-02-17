@@ -25,6 +25,39 @@ export {
 let ganttInstance = null;
 let isLoadingGantt = false; // Prevent infinite loops
 let ganttSortOrder = 'gantt_position'; // Default sort order
+let ganttLibsLoaded = false;
+
+/**
+ * Dynamically load Frappe Gantt CSS and JS on first use
+ */
+async function loadGanttLibraries() {
+  if (ganttLibsLoaded || typeof Gantt !== 'undefined') {
+    ganttLibsLoaded = true;
+    return;
+  }
+
+  const BASE = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/';
+
+  await Promise.all([
+    new Promise((resolve, reject) => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = BASE + 'frappe-gantt.min.css';
+      link.onload = resolve;
+      link.onerror = reject;
+      document.head.appendChild(link);
+    }),
+    new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = BASE + 'frappe-gantt.min.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    }),
+  ]);
+
+  ganttLibsLoaded = true;
+}
 
 /**
  * Get current Gantt sort order
@@ -53,12 +86,8 @@ export async function loadGanttView(tasks, currentFilters, openViewModal) {
   try {
     isLoadingGantt = true;
 
-    // Check if Frappe Gantt is loaded
-    if (typeof Gantt === 'undefined') {
-      uiHelpers.showError('Gantt chart library failed to load. Please refresh the page.');
-      isLoadingGantt = false;
-      return;
-    }
+    // Lazy-load Frappe Gantt on first use
+    await loadGanttLibraries();
 
     const container = document.getElementById('ganttChart');
     const emptyState = document.querySelector('.gantt-empty');
@@ -126,7 +155,7 @@ export async function loadGanttView(tasks, currentFilters, openViewModal) {
       } else {
         const missingCount = getMissingDatesTasks(tasks).length;
         emptyMessage.textContent = missingCount > 0
-          ? `${missingCount} task(s) need start date and due date. Click "Auto-Schedule" to populate dates automatically.`
+          ? `${missingCount} task(s) need start date and due date to appear on the Gantt chart.`
           : 'No tasks with dates to display.';
       }
     }

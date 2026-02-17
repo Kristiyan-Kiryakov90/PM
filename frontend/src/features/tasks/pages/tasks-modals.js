@@ -32,10 +32,16 @@ let teamMembers = [];
 
 /**
  * Initialize modals module
+ * If preloadedMembers is provided, skips the DB fetch for team members.
  */
-export async function initModalsModule(user) {
+export async function initModalsModule(user, preloadedMembers = null) {
   currentUser = user;
-  await loadTeamMembers();
+  if (preloadedMembers) {
+    teamMembers = preloadedMembers;
+    populateAssigneeDropdown();
+  } else {
+    await loadTeamMembers();
+  }
 }
 
 /**

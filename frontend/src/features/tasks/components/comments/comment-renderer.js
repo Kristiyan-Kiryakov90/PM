@@ -9,25 +9,20 @@
  * @param {Array} companyUsers - Company users for mentions
  * @param {HTMLElement} container - Container element
  */
-export function renderComments(comments, companyUsers, container) {
+export function renderComments(comments, companyUsers, container, currentUserId) {
   const rootComments = comments.filter((c) => !c.parent_comment_id);
   const commentMap = new Map();
 
   // Build comment map
   comments.forEach((comment) => {
-    commentMap.set(comment.id, {
-      ...comment,
-      replies: [],
-    });
+    commentMap.set(comment.id, { ...comment, replies: [] });
   });
 
   // Build tree structure
   comments.forEach((comment) => {
     if (comment.parent_comment_id) {
       const parent = commentMap.get(comment.parent_comment_id);
-      if (parent) {
-        parent.replies.push(commentMap.get(comment.id));
-      }
+      if (parent) parent.replies.push(commentMap.get(comment.id));
     }
   });
 
@@ -35,11 +30,12 @@ export function renderComments(comments, companyUsers, container) {
   const html = `
     <div class="comment-thread">
       <div class="comment-list">
-        ${rootComments.map((c) => renderComment(commentMap.get(c.id), companyUsers, 0)).join('')}
+        ${rootComments.map((c) => renderComment(commentMap.get(c.id), companyUsers, 0, currentUserId)).join('')}
         ${rootComments.length === 0 ? '<div class="text-center text-muted py-4"><i class="bi bi-chat-dots me-2"></i>No comments yet. Be the first to comment!</div>' : ''}
       </div>
 
-      <div class="comment-form mt-3">
+      <div class="comment-form mt-3" style="position:relative">
+        <div class="mention-suggestions dropdown-menu" style="display:none;position:absolute;bottom:100%;left:0;z-index:1050;max-height:180px;overflow-y:auto;min-width:200px"></div>
         <textarea
           class="form-control comment-input"
           rows="3"
@@ -67,20 +63,35 @@ export function renderComments(comments, companyUsers, container) {
  * @param {number} depth - Nesting depth
  * @returns {string} HTML
  */
-export function renderComment(comment, companyUsers, depth = 0) {
+export function renderComment(comment, companyUsers, depth = 0, currentUserId = null) {
   const indentClass = depth > 0 ? 'ms-4' : '';
+  const isOwn = currentUserId && comment.author_id === currentUserId;
+
+  // Resolve author display name from team members list
+  const author = companyUsers?.find(u => u.id === comment.author_id);
+  const authorName = author?.full_name || author?.email || comment.author_id.substring(0, 8);
 
   const editedBadge = comment.edited_at
     ? `<span class="text-muted small">(edited)</span>`
     : '';
 
+  // Resolve mention display names
   const mentions = comment.mentions || [];
-  const mentionBadges = mentions
-    .map(
-      (m) =>
-        `<span class="badge bg-info text-dark ms-1">@${m.mentioned_user_id}</span>`
-    )
-    .join('');
+  const mentionBadges = mentions.map((m) => {
+    const mentionedUser = companyUsers?.find(u => u.id === m.mentioned_user_id);
+    const mentionName = mentionedUser?.full_name || mentionedUser?.email || m.mentioned_user_id.substring(0, 8);
+    return `<span class="badge bg-info text-dark ms-1">@${escapeHtml(mentionName)}</span>`;
+  }).join('');
+
+  // Only show Edit/Delete for own comments
+  const ownActions = isOwn ? `
+    <li><a class="comment-menu-item edit-comment-btn" href="#" data-comment-id="${comment.id}">
+      <i class="bi bi-pencil me-2"></i>Edit
+    </a></li>
+    <li><hr class="dropdown-divider my-1"></li>
+    <li><a class="comment-menu-item text-danger delete-comment-btn" href="#" data-comment-id="${comment.id}">
+      <i class="bi bi-trash me-2"></i>Delete
+    </a></li>` : '';
 
   return `
     <div class="comment-item ${indentClass} mb-2" data-comment-id="${comment.id}">
@@ -88,28 +99,20 @@ export function renderComment(comment, companyUsers, depth = 0) {
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-1">
             <div>
-              <strong class="comment-author">${comment.author_id.substring(0, 8)}</strong>
+              <strong class="comment-author">${escapeHtml(authorName)}</strong>
               ${mentionBadges}
               <span class="text-muted small ms-2">${formatDate(comment.created_at)}</span>
               ${editedBadge}
             </div>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-link text-muted dropdown-toggle"
-                      type="button"
-                      data-bs-toggle="dropdown">
+            <div class="comment-menu-wrapper">
+              <button class="comment-menu-toggle" type="button" data-comment-id="${comment.id}">
                 <i class="bi bi-three-dots"></i>
               </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item reply-comment-btn" href="#" data-comment-id="${comment.id}">
-                  <i class="bi bi-reply"></i> Reply
+              <ul class="comment-menu-dropdown">
+                <li><a class="comment-menu-item reply-comment-btn" href="#" data-comment-id="${comment.id}">
+                  <i class="bi bi-reply me-2"></i>Reply
                 </a></li>
-                <li><a class="dropdown-item edit-comment-btn" href="#" data-comment-id="${comment.id}">
-                  <i class="bi bi-pencil"></i> Edit
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger delete-comment-btn" href="#" data-comment-id="${comment.id}">
-                  <i class="bi bi-trash"></i> Delete
-                </a></li>
+                ${ownActions}
               </ul>
             </div>
           </div>
@@ -122,7 +125,7 @@ export function renderComment(comment, companyUsers, depth = 0) {
 
       ${comment.replies && comment.replies.length > 0 ? `
         <div class="comment-replies mt-2">
-          ${comment.replies.map((r) => renderComment(r, companyUsers, depth + 1)).join('')}
+          ${comment.replies.map((r) => renderComment(r, companyUsers, depth + 1, currentUserId)).join('')}
         </div>
       ` : ''}
     </div>

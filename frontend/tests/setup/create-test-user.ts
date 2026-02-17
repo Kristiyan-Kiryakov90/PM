@@ -1,16 +1,56 @@
 import { chromium, type Browser, type Page } from 'playwright';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from .env.test
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
 /**
  * Test User Setup Script
- * Creates a test user account for running automated tests
+ * Creates 3 test users with different roles (sys_admin, admin, user) for comprehensive testing
+ * This ensures we test all functionality with minimal database pollution
  */
 
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+// Use environment variables for test credentials
 const TEST_USER = {
-  email: 'playwright.test@taskflow.com',
-  password: 'TestPassword123!',
-  firstName: 'Test',
-  lastName: 'User',
+  email: process.env.TEST_EMAIL || process.env.TEST_ADMIN_EMAIL || 'playwright.test@taskflow.com',
+  password: process.env.TEST_PASSWORD || process.env.TEST_ADMIN_PASSWORD || 'TestPassword123!',
+  firstName: process.env.TEST_FIRST_NAME || 'Test',
+  lastName: process.env.TEST_LAST_NAME || 'User',
 };
+
+const TEST_USERS = [
+  {
+    email: process.env.TEST_ADMIN_EMAIL || process.env.TEST_EMAIL || 'playwright.test@taskflow.com',
+    password: process.env.TEST_ADMIN_PASSWORD || process.env.TEST_PASSWORD || 'TestPassword123!',
+    firstName: process.env.TEST_ADMIN_FIRST_NAME || 'Test',
+    lastName: process.env.TEST_ADMIN_LAST_NAME || 'Admin',
+    role: 'admin',
+    company: 'Test Company Admin'
+  },
+  {
+    email: process.env.TEST_USER_EMAIL || process.env.TEST_EMAIL || 'playwright.test@taskflow.com',
+    password: process.env.TEST_USER_PASSWORD || process.env.TEST_PASSWORD || 'TestPassword123!',
+    firstName: process.env.TEST_USER_FIRST_NAME || 'Test',
+    lastName: process.env.TEST_USER_LAST_NAME || 'User',
+    role: 'user',
+    company: 'Test Company User'
+  },
+  {
+    email: process.env.TEST_SYSADMIN_EMAIL || process.env.TEST_EMAIL || 'playwright.test@taskflow.com',
+    password: process.env.TEST_SYSADMIN_PASSWORD || process.env.TEST_PASSWORD || 'TestPassword123!',
+    firstName: process.env.TEST_SYSADMIN_FIRST_NAME || 'Test',
+    lastName: process.env.TEST_SYSADMIN_LAST_NAME || 'Admin',
+    role: 'sys_admin',
+    company: 'System Admin Company'
+  }
+];
 
 async function createTestUser() {
   console.log('🚀 Starting test user setup...\n');
@@ -154,5 +194,96 @@ async function performLogin(page: Page, email: string, password: string) {
   }
 }
 
-// Run the setup
-createTestUser().catch(console.error);
+/**
+ * Create test users via Supabase API
+ * More efficient than using the UI for setup
+ */
+async function createTestUsersViaAPI() {
+  console.log('🚀 Creating test users via Supabase API...\n');
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const createdUsers: any[] = [];
+
+  for (const testUser of TEST_USERS) {
+    try {
+      console.log(`📝 Creating user: ${testUser.email} (${testUser.role})`);
+
+      // Check if user already exists
+      const { data: existingUser } = await supabase
+        .from('auth.users')
+        .select('id')
+        .eq('email', testUser.email)
+        .limit(1);
+
+      if (existingUser && existingUser.length > 0) {
+        console.log(`   ⚠️  User already exists`);
+        createdUsers.push({ email: testUser.email, role: testUser.role, status: 'exists' });
+        continue;
+      }
+
+      // Sign up user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: testUser.email,
+        password: testUser.password,
+        options: {
+          data: {
+            first_name: testUser.firstName,
+            last_name: testUser.lastName,
+            role: testUser.role,
+            company_name: testUser.company
+          }
+        }
+      });
+
+      if (signUpError) {
+        console.log(`   ❌ SignUp failed: ${signUpError.message}`);
+        continue;
+      }
+
+      if (signUpData.user) {
+        console.log(`   ✓ User created: ${signUpData.user.id}`);
+        createdUsers.push({
+          id: signUpData.user.id,
+          email: testUser.email,
+          role: testUser.role,
+          status: 'created'
+        });
+      }
+    } catch (error) {
+      console.log(`   ❌ Error: ${error}`);
+    }
+  }
+
+  return createdUsers;
+}
+
+/**
+ * Export test user data for use in tests
+ */
+export { TEST_USER, TEST_USERS };
+
+/**
+ * Export function to get test credentials
+ */
+export function getTestCredentials(role: 'admin' | 'user' | 'sys_admin' = 'admin') {
+  const user = TEST_USERS.find(u => u.role === role);
+  if (!user) {
+    console.warn(`No test user found for role: ${role}, defaulting to first user`);
+    return TEST_USERS[0];
+  }
+  return user;
+}
+
+// Run the setup when this script is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  if (process.argv.includes('--api')) {
+    createTestUsersViaAPI().then(users => {
+      console.log('\n✅ Test users created:\n');
+      users.forEach(u => {
+        console.log(`  ${u.email} (${u.role}) - ${u.status}`);
+      });
+    }).catch(console.error);
+  } else {
+    createTestUser().catch(console.error);
+  }
+}

@@ -1,4 +1,5 @@
 import supabase from './supabase.js';
+import { authUtils } from '@utils/auth.js';
 
 /**
  * Notification Service
@@ -147,12 +148,12 @@ export const notificationService = {
      * @returns {Promise<Object>} Created notification
      */
     async createNotification(notification) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const currentUser = await authUtils.getCurrentUser();
 
         const { data, error } = await supabase
             .from('notifications')
             .insert({
-                user_id: notification.userId || user.id,
+                user_id: notification.userId || currentUser?.id,
                 company_id: notification.companyId || null,
                 type: notification.type,
                 title: notification.title,

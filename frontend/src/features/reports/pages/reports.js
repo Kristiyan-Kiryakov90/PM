@@ -37,18 +37,24 @@ let datePresets = {};
 async function init() {
   try {
     await router.requireAuth();
-    await renderNavbar();
 
-    currentUser = await authUtils.getCurrentUser();
+    // Set up date presets synchronously before any async work
     datePresets = reportsService.getDateRangePresets();
-
-    // Set default filter to last 30 days
     currentFilters.startDate = datePresets.last30Days.startDate;
     currentFilters.endDate = datePresets.last30Days.endDate;
 
-    await loadProjects();
+    // Run navbar, user fetch, and projects fetch in parallel; fire reports independently
+    loadAllReports();
+    const [, loadedUser, loadedProjects] = await Promise.all([
+      renderNavbar(),
+      authUtils.getCurrentUser(),
+      projectService.getProjects(),
+    ]);
+
+    currentUser = loadedUser;
+    projects = loadedProjects;
+    populateProjectFilter();
     setupEventListeners();
-    await loadAllReports();
   } catch (error) {
     console.error('Reports page initialization error:', error);
     uiHelpers.showError('Failed to load reports page');
@@ -123,7 +129,7 @@ async function handleFilterChange() {
     document.querySelectorAll('.filter-preset-btn').forEach(btn => btn.classList.remove('active'));
   }
 
-  await loadAllReports();
+  loadAllReports();
 }
 
 /**
@@ -148,27 +154,16 @@ function applyDatePreset(preset) {
 }
 
 /**
- * Load all reports
+ * Load all reports — progressive rendering, no global spinner.
+ * Each section renders independently as its query completes.
  */
-async function loadAllReports() {
-  try {
-    uiHelpers.showLoading('Loading reports...');
-
-    await Promise.all([
-      loadMetricsOverview(),
-      loadTaskCompletionReport(),
-      loadStatusDistribution(),
-      loadPriorityDistribution(),
-      loadTeamProductivity(),
-      loadOverdueTasksReport(),
-    ]);
-
-    uiHelpers.hideLoading();
-  } catch (error) {
-    uiHelpers.hideLoading();
-    console.error('Error loading reports:', error);
-    uiHelpers.showError('Failed to load some reports');
-  }
+function loadAllReports() {
+  loadMetricsOverview().catch(err => console.error('Error loading metrics overview:', err));
+  loadTaskCompletionReport().catch(err => console.error('Error loading task completion:', err));
+  loadStatusDistribution().catch(err => console.error('Error loading status distribution:', err));
+  loadPriorityDistribution().catch(err => console.error('Error loading priority distribution:', err));
+  loadTeamProductivity().catch(err => console.error('Error loading team productivity:', err));
+  loadOverdueTasksReport().catch(err => console.error('Error loading overdue tasks:', err));
 }
 
 /**

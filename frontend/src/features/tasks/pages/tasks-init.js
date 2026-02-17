@@ -177,3 +177,30 @@ export async function populateStatusFilter(projectId) {
 
   filterStatusSelect.value = currentValue;
 }
+
+/**
+ * Populate status filter from already-loaded statuses (no DB call)
+ */
+export function populateStatusFilterFromData(statuses) {
+  const filterStatusSelect = document.getElementById('filterStatus');
+  if (!filterStatusSelect) return;
+
+  const currentValue = filterStatusSelect.value;
+  filterStatusSelect.innerHTML = '<option value="">All Status</option>';
+
+  const list = statuses?.length ? statuses : [
+    { slug: 'todo', name: 'To Do' },
+    { slug: 'in_progress', name: 'In Progress' },
+    { slug: 'review', name: 'Review' },
+    { slug: 'done', name: 'Done' },
+  ];
+
+  list.forEach((status) => {
+    const option = document.createElement('option');
+    option.value = status.slug;
+    option.textContent = status.name;
+    filterStatusSelect.appendChild(option);
+  });
+
+  filterStatusSelect.value = currentValue;
+}

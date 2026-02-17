@@ -25,11 +25,13 @@ function getAssigneeName(userId) {
 /**
  * Render Kanban board
  */
-export async function renderKanbanBoard(tasks, projects, currentFilters, openEditModal, openViewModal, changeTaskStatus, trackLocalUpdate = null) {
+export async function renderKanbanBoard(tasks, projects, currentFilters, openEditModal, openViewModal, changeTaskStatus, trackLocalUpdate = null, { preloadedStatuses, preloadedTeamMembers } = {}) {
   const container = document.getElementById('tasksContainer');
 
-  // Load team members if not cached
-  if (cachedTeamMembers.length === 0) {
+  // Use pre-loaded team members if provided, otherwise fetch (and cache for future renders)
+  if (preloadedTeamMembers && cachedTeamMembers.length === 0) {
+    cachedTeamMembers = preloadedTeamMembers;
+  } else if (cachedTeamMembers.length === 0) {
     try {
       cachedTeamMembers = await teamService.getTeamMembers();
     } catch (error) {
@@ -46,17 +48,20 @@ export async function renderKanbanBoard(tasks, projects, currentFilters, openEdi
   }
 
   let statuses;
-  try {
-    // Load dynamic statuses
-    statuses = await statusService.getProjectStatuses(projectId);
-  } catch (error) {
-    console.error('Error loading statuses:', error);
-    // Fallback to default statuses
-    statuses = [
-      { slug: 'todo', name: 'To Do', color: '#94a3b8', sort_order: 0 },
-      { slug: 'in_progress', name: 'In Progress', color: '#3b82f6', sort_order: 1 },
-      { slug: 'done', name: 'Done', color: '#10b981', sort_order: 2 },
-    ];
+  if (preloadedStatuses) {
+    // Use pre-loaded statuses to avoid a duplicate DB call
+    statuses = preloadedStatuses;
+  } else {
+    try {
+      statuses = await statusService.getProjectStatuses(projectId);
+    } catch (error) {
+      console.error('Error loading statuses:', error);
+      statuses = [
+        { slug: 'todo', name: 'To Do', color: '#94a3b8', sort_order: 0 },
+        { slug: 'in_progress', name: 'In Progress', color: '#3b82f6', sort_order: 1 },
+        { slug: 'done', name: 'Done', color: '#10b981', sort_order: 2 },
+      ];
+    }
   }
 
   // Apply search filter
@@ -104,10 +109,10 @@ export async function renderKanbanBoard(tasks, projects, currentFilters, openEdi
   if (skeletonKanban) {
     // Hide skeleton first (prevents layout shift)
     skeletonKanban.style.opacity = '0';
-    skeletonKanban.style.transition = 'opacity 0.2s';
+    skeletonKanban.style.transition = 'opacity 0.1s';
 
     // Wait for fade out, then replace content
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 80));
   }
 
   // Replace content with proper task board

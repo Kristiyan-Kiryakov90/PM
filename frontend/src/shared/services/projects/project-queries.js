@@ -14,8 +14,8 @@ import { authUtils } from '@utils/auth.js';
 export async function getProjectStats(projectId) {
   try {
     const companyId = await authUtils.getUserCompanyId();
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
+    const currentUser = await authUtils.getCurrentUser();
+      const userId = currentUser?.id;
 
     if (!userId) {
       throw new Error('User not authenticated');

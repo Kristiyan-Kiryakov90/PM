@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://zuupemhuaovzqqhyyocz.supabase.co wss://zuupemhuaovzqqhyyocz.supabase.co; img-src 'self' data: blob: https://zuupemhuaovzqqhyyocz.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <title>Admin Panel - TaskFlow</title>
   <link rel="stylesheet" href="../src/styles/global/global.css">
+  <link rel="stylesheet" href="../src/styles/shared/navbar.css">
+  <link rel="stylesheet" href="../src/styles/shared/notifications.css">
   <link rel="stylesheet" href="../src/features/admin/styles/admin.css">
   <link rel="stylesheet" href="../src/styles/shared/tags.css">
   <link rel="stylesheet" href="../src/features/admin/styles/kanban-settings.css">
@@ -18,7 +22,7 @@
       <!-- Header -->
       <div class="admin-header mb-8">
         <h1 class="mb-2">Admin Panel</h1>
-        <p class="text-muted">Manage team members, tags, and company settings.</p>
+        <p class="text-muted">Manage team members, tags, and workflow settings.</p>
       </div>
 
       <!-- Admin Tabs -->
@@ -31,9 +35,6 @@
         </button>
         <button class="admin-tab-btn" data-tab="workflow">
           <span>⚙️</span> Workflow Settings
-        </button>
-        <button class="admin-tab-btn" data-tab="company">
-          <span>🏢</span> Company Settings
         </button>
         <button class="admin-tab-btn" data-tab="sysadmin" id="sysadminTab" style="display: none;">
           <span>⚙️</span> System Admin
@@ -74,18 +75,6 @@
           </div>
           <div class="card-body" id="workflowContainer">
             <p class="text-muted text-center">Loading workflow settings...</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Company Settings Tab -->
-      <div class="admin-tab-content" id="company-tab">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title mb-0">Company Settings</h3>
-          </div>
-          <div class="card-body" id="companyContainer">
-            <p class="text-muted text-center">Company settings coming in Plan 08</p>
           </div>
         </div>
       </div>
@@ -140,7 +129,6 @@
         // Setup tab switching
         setupTabs();
 
-        // Load tags on first load (since invites tab is active by default)
         // Tags will be loaded when user clicks the Tags tab
       } catch (error) {
         console.error('Admin page initialization error:', error);

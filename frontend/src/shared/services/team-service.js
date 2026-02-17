@@ -1,6 +1,10 @@
 import supabase from './supabase.js';
 import { authUtils } from '@utils/auth.js';
 
+const TEAM_CACHE_KEY = 'tf_team_members_v1';
+const TEAM_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+let _teamMemCache = null;
+
 /**
  * Team Member Service
  * Handles team member queries and user management
@@ -11,6 +15,21 @@ export const teamService = {
      * @returns {Promise<Array>} List of team members
      */
     async getTeamMembers() {
+        // In-memory cache (zero cost within same page)
+        if (_teamMemCache) return _teamMemCache;
+
+        // sessionStorage cache (survives navigation within session)
+        try {
+            const stored = sessionStorage.getItem(TEAM_CACHE_KEY);
+            if (stored) {
+                const { data: cachedData, ts } = JSON.parse(stored);
+                if (Date.now() - ts < TEAM_CACHE_TTL) {
+                    _teamMemCache = cachedData;
+                    return cachedData;
+                }
+            }
+        } catch (_) { /* ignore parse errors */ }
+
         try {
             const companyId = await authUtils.getUserCompanyId();
 
@@ -20,11 +39,22 @@ export const teamService = {
 
             if (error) throw error;
 
-            return data || [];
+            const result = data || [];
+            _teamMemCache = result;
+            try {
+                sessionStorage.setItem(TEAM_CACHE_KEY, JSON.stringify({ data: result, ts: Date.now() }));
+            } catch (_) { /* ignore storage errors */ }
+
+            return result;
         } catch (error) {
             console.error('Error fetching team members:', error);
             throw error;
         }
+    },
+
+    clearTeamCache() {
+        _teamMemCache = null;
+        try { sessionStorage.removeItem(TEAM_CACHE_KEY); } catch (_) { /* ignore */ }
     },
 
     /**

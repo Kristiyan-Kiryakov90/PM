@@ -20,16 +20,16 @@ npm run build
 ### Multi-Page Application (NOT SPA)
 Separate HTML files for each feature:
 - `index.html` - Landing + sys_admin bootstrap modal
-- `signup.html` - Registration (regular + invite-based)
+- `signup.html` - Registration
 - `signin.html` - Login
 - `dashboard.html` - User overview
 - `projects.html` - Project management
 - `tasks.html` - Task board
-- `admin.html` - Admin panel (invites, company)
+- `admin.html` - Admin panel (team, tags, workflow, company)
 
 ### Role-Based Access (3 roles in auth.users metadata)
 - `sys_admin` - Created via bootstrap modal (one-time)
-- `admin` - Company admin (manages invites)
+- `admin` - Company admin (manages team, tags, workflow)
 - `user` - Standard user
 
 Enforce at 3 layers: RLS policies, backend routes, frontend UI.
@@ -38,13 +38,12 @@ Enforce at 3 layers: RLS policies, backend routes, frontend UI.
 - Multi-tenant via `companies` table
 - RLS uses `auth.user_company_id()` for isolation
 - Helper functions: `auth.is_company_admin()`, `auth.is_system_admin()`
-- Tables: companies, projects, tasks, attachments, invites
+- Tables: companies, projects, tasks, attachments
 - No public users table (data in auth.users metadata)
 
 ### Authentication
 - Supabase Auth handles everything (no custom auth)
 - Standard registration creates `user` role
-- Invite registration assigns role from invite token
 
 
 
@@ -54,8 +53,7 @@ Enforce at 3 layers: RLS policies, backend routes, frontend UI.
 2. Forgetting RLS policies for company isolation
 3. Hardcoding company_id instead of using `auth.user_company_id()`
 4. Skipping role validation at all three layers
-5. Not handling invite-based registration differently
-6. Committing `.env` file
+5. Committing `.env` file
 
 ## Key Documentation
 

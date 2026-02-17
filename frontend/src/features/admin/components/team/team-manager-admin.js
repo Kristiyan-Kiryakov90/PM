@@ -5,6 +5,7 @@
  */
 
 import { uiHelpers } from '@utils/ui-helpers.js';
+import { teamService } from '@services/team-service.js';
 import {
   checkUserPermissions,
   getAllUsersWithCompanies,
@@ -210,6 +211,7 @@ export async function renderTeamMemberManager(container) {
 
     try {
       await deleteMember(memberId);
+      teamService.clearTeamCache();
       uiHelpers.showSuccess('Team member removed');
       await render();
     } catch (error) {

@@ -1,60 +1,43 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load environment variables from .env.test for test execution
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  // Reduce workers to prevent browser context exhaustion and interrupted tests
+  workers: process.env.CI ? 1 : 2,
   reporter: 'html',
-  timeout: 60000, // Increase test timeout to 60 seconds
-  globalSetup: './tests/global-setup.ts', // Run login before all tests
+  timeout: 60000,
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    actionTimeout: 15000, // Increase action timeout to 15 seconds
-    navigationTimeout: 30000, // Increase navigation timeout to 30 seconds
-    storageState: 'tests/.auth/user.json', // Use stored auth session
+    actionTimeout: 15000,
+    navigationTimeout: 30000,
   },
 
   projects: [
-    // Setup project that runs first
-    {
-      name: 'setup',
-      testMatch: /global-setup\.ts/,
-    },
-
-    // Auth tests - no stored state (testing login/signup)
-    {
-      name: 'auth-chromium',
-      testMatch: /auth\.spec\.ts/,
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: undefined, // Don't use stored auth for auth tests
-      },
-    },
-
-    // All other tests - with stored auth
     {
       name: 'chromium',
-      testIgnore: /auth\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
-      dependencies: ['setup'],
     },
 
     {
       name: 'firefox',
-      testIgnore: /auth\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
-      dependencies: ['setup'],
     },
 
     {
       name: 'webkit',
-      testIgnore: /auth\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
-      dependencies: ['setup'],
     },
   ],
 

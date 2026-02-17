@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://zuupemhuaovzqqhyyocz.supabase.co wss://zuupemhuaovzqqhyyocz.supabase.co; img-src 'self' data: blob: https://zuupemhuaovzqqhyyocz.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <title>Tasks - TaskFlow</title>
 
   <!-- Resource Hints: Reduce CLS by preconnecting to CDNs -->
@@ -45,21 +47,18 @@
 
   <!-- Local CSS (inline critical path) -->
   <link rel="stylesheet" href="../src/styles/global/global.css">
+  <link rel="stylesheet" href="../src/styles/shared/navbar.css">
+  <link rel="stylesheet" href="../src/styles/shared/notifications.css">
   <link rel="stylesheet" href="../src/features/tasks/styles/tasks.css">
   <link rel="stylesheet" href="../src/features/tasks/styles/comments.css">
   <link rel="stylesheet" href="../src/styles/shared/tags.css">
 
-  <!-- Frappe Gantt Library (preload for faster loading) -->
-  <link rel="preload" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css" as="style">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
-  <link rel="preload" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js" as="script">
-  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js" defer></script>
-
-  <!-- Flatpickr Date Picker (preload for faster loading) -->
+  <!-- Flatpickr Date Picker (used in task create/edit modal) -->
   <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" as="style">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr" as="script">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+  <!-- Frappe Gantt is lazy-loaded on demand when user opens Gantt view -->
 </head>
 <body class="tasks-page">
   <!-- Navigation (injected by navbar component) -->
@@ -211,7 +210,6 @@
         <div class="gantt-wrapper" id="ganttChart"></div>
         <div class="gantt-empty" style="display: none;">
           <p>No scheduled tasks. Tasks need start date and due date to appear on Gantt chart.</p>
-          <button class="btn btn-primary" id="autoScheduleAllBtn">Auto-Schedule Tasks</button>
         </div>
       </div>
     </div>
