@@ -9,3 +9,5 @@
 @import './global-reset.css';
 @import './global-utilities.css';
 @import './global-components.css';
+@import './global-skeleton.css'; /* Skeleton loaders for CLS reduction */
+@import './global-cls-fixes.css'; /* CLS prevention and layout stability */

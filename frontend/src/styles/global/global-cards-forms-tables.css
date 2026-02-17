@@ -1,0 +1,221 @@
+/**
+ * Global Cards, Forms, Tables, & Modals
+ * Card components, form inputs, table styles, and modal components
+ */
+
+/* Cards */
+.card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  background-color: white;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  background-color: white;
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--space-6);
+}
+
+.card-body {
+  padding: var(--space-6);
+}
+
+.card-footer {
+  background-color: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+  padding: var(--space-6);
+}
+
+/* Forms - Modern Input Styling */
+.form-control,
+.form-select {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-300);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  transition: var(--transition-speed);
+  background-color: white;
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: var(--gray-400);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.form-control::placeholder {
+  color: var(--gray-500);
+}
+
+.form-label {
+  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.form-text {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+  margin-top: var(--space-2);
+}
+
+.invalid-feedback,
+.valid-feedback {
+  font-size: var(--text-sm);
+  margin-top: var(--space-2);
+}
+
+.is-invalid {
+  border-color: var(--danger);
+}
+
+.is-invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Links */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-speed);
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+a:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Navigation Links */
+.nav-link {
+  color: var(--gray-700);
+  font-weight: 500;
+  font-size: var(--text-sm);
+  transition: color var(--transition-speed);
+}
+
+.nav-link:hover {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.nav-link.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+/* Table */
+.table {
+  font-size: var(--text-sm);
+  border-collapse: collapse;
+}
+
+.table thead th {
+  background-color: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+  font-weight: 600;
+  color: var(--gray-900);
+  padding: var(--space-4);
+  text-align: left;
+}
+
+.table tbody td {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--gray-200);
+  color: var(--gray-700);
+}
+
+.table tbody tr:hover {
+  background-color: var(--gray-50);
+}
+
+/* Modal */
+.modal-content {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--gray-200);
+  padding: var(--space-6);
+}
+
+.modal-body {
+  padding: var(--space-6);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--gray-200);
+  padding: var(--space-6);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height: 56px;
+    --sidebar-width: 200px;
+    --text-3xl: 1.5rem;
+    --text-4xl: 1.875rem;
+  }
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+
+  .card-body,
+  .card-header,
+  .card-footer {
+    padding: var(--space-4);
+  }
+
+  .container {
+    padding: 0 var(--space-4);
+  }
+}
+
+@media (max-width: 576px) {
+  :root {
+    --sidebar-width: 100%;
+    --text-2xl: 1.25rem;
+    --text-3xl: 1.375rem;
+  }
+
+  .space-x-2 > * + * { margin-left: 0; }
+  .space-x-4 > * + * { margin-left: 0; }
+  .space-x-6 > * + * { margin-left: 0; }
+
+  .table {
+    font-size: var(--text-xs);
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: var(--space-2) var(--space-3);
+  }
+}

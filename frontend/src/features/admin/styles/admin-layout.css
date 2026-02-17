@@ -1,0 +1,196 @@
+/**
+ * Admin Layout Styles
+ * Page structure, tabs, navigation, and spacing utilities
+ */
+
+/* Page Layout */
+.admin-main {
+  min-height: 100vh;
+  background-color: var(--gray-50);
+  padding-top: var(--header-height);
+}
+
+.admin-header {
+  margin-bottom: var(--space-8);
+}
+
+.admin-header h1 {
+  margin-bottom: var(--space-2);
+  color: var(--gray-900);
+}
+
+.admin-header p {
+  color: var(--gray-600);
+}
+
+/* Admin Tabs Navigation */
+.admin-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+  border-bottom: 2px solid var(--gray-200);
+  flex-wrap: wrap;
+}
+
+.admin-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: var(--space-4) 0;
+  margin-bottom: -2px;
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.admin-tab-btn:hover {
+  color: var(--primary);
+}
+
+.admin-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Tab Content */
+.admin-tab-content {
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.admin-tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* System Admin Sub-tabs */
+.system-admin-manager {
+  width: 100%;
+}
+
+.system-admin-subtabs {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.system-admin-subtab {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: -2px;
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.system-admin-subtab:hover {
+  color: var(--primary);
+  background-color: var(--gray-50);
+}
+
+.system-admin-subtab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background-color: var(--gray-50);
+}
+
+.system-admin-content {
+  display: none;
+}
+
+.system-admin-content.active {
+  display: block;
+}
+
+.system-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Card Header with Actions */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Layout Utilities */
+.d-flex {
+  display: flex;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+/* Spacing Utilities */
+.py-6 {
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-12);
+}
+
+.mb-2 {
+  margin-bottom: var(--space-2);
+}
+
+.mb-8 {
+  margin-bottom: var(--space-8);
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+.btn-sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  .admin-main {
+    padding-top: var(--header-height);
+  }
+
+  .admin-tabs {
+    flex-direction: column;
+    border-bottom: none;
+  }
+
+  .admin-tab-btn {
+    border-bottom: none !important;
+    border-left: 3px solid transparent;
+    padding-left: var(--space-4);
+    margin-bottom: 0;
+  }
+
+  .admin-tab-btn.active {
+    border-left-color: var(--primary);
+    background-color: var(--primary-lighter);
+  }
+}

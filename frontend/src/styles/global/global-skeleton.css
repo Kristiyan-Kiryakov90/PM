@@ -1,0 +1,292 @@
+/**
+ * Skeleton Loaders - Reduce CLS
+ * Reserve space for content while loading to prevent layout shifts
+ */
+
+/* Skeleton Animation */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Base Skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gray-200) 0%,
+    var(--gray-300) 20%,
+    var(--gray-200) 40%,
+    var(--gray-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-dark {
+  background: linear-gradient(
+    90deg,
+    var(--gray-700) 0%,
+    var(--gray-600) 20%,
+    var(--gray-700) 40%,
+    var(--gray-700) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Skeleton Text */
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-text-sm {
+  height: 0.875rem;
+}
+
+.skeleton-text-lg {
+  height: 1.25rem;
+}
+
+.skeleton-text-title {
+  height: 2rem;
+  width: 60%;
+  margin-bottom: 1rem;
+}
+
+/* Skeleton Card */
+.skeleton-card {
+  padding: 1.5rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.skeleton-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.skeleton-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.skeleton-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Skeleton Stats Grid (Dashboard) */
+.skeleton-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.skeleton-stat-card {
+  padding: 1.5rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  min-height: 120px;
+}
+
+.skeleton-stat-label {
+  height: 1rem;
+  width: 60%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-stat-number {
+  height: 3rem;
+  width: 40%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-stat-trend {
+  height: 0.875rem;
+  width: 50%;
+}
+
+/* Skeleton Table */
+.skeleton-table {
+  width: 100%;
+}
+
+.skeleton-table-row {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.skeleton-table-cell {
+  flex: 1;
+  height: 1.25rem;
+}
+
+/* Skeleton Kanban Board */
+.skeleton-kanban {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.skeleton-kanban-column {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  min-height: 400px;
+}
+
+.skeleton-kanban-header {
+  height: 2rem;
+  width: 50%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-kanban-card {
+  background: white;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.skeleton-kanban-card-title {
+  height: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-kanban-card-meta {
+  height: 0.875rem;
+  width: 70%;
+}
+
+/* Skeleton List */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.skeleton-list-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.skeleton-list-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Skeleton Gantt */
+.skeleton-gantt {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  min-height: 400px;
+}
+
+.skeleton-gantt-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.skeleton-gantt-bar {
+  height: 40px;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Utility Classes */
+.skeleton-rounded {
+  border-radius: var(--radius-full);
+}
+
+.skeleton-square {
+  aspect-ratio: 1;
+}
+
+.skeleton-w-full {
+  width: 100%;
+}
+
+.skeleton-w-75 {
+  width: 75%;
+}
+
+.skeleton-w-50 {
+  width: 50%;
+}
+
+.skeleton-w-25 {
+  width: 25%;
+}
+
+/* Prevent layout shift during loading */
+.skeleton-container {
+  min-height: 400px; /* Reserve space */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--gray-700) 0%,
+      var(--gray-600) 20%,
+      var(--gray-700) 40%,
+      var(--gray-700) 100%
+    );
+  }
+
+  .skeleton-card,
+  .skeleton-stat-card,
+  .skeleton-kanban-card,
+  .skeleton-list-item,
+  .skeleton-gantt {
+    background: var(--gray-800);
+  }
+
+  .skeleton-kanban-column {
+    background: var(--gray-900);
+  }
+}

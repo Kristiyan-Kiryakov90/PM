@@ -211,7 +211,7 @@ export function renderTeamProductivity(productivity) {
 
   const rows = productivity.map(user => `
     <tr>
-      <td>${user.userId === 'unassigned' ? 'Unassigned' : user.userId}</td>
+      <td>${user.userName || user.userId}</td>
       <td>${user.total}</td>
       <td>${user.completed}</td>
       <td>${user.inProgress}</td>

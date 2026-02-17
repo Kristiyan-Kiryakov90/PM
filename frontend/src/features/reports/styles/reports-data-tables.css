@@ -1,0 +1,200 @@
+/**
+ * Reports Data Tables
+ * Tables, progress bars, status badges, and chart containers
+ */
+
+/* =====================================================
+   Charts Container
+   ===================================================== */
+.chart-container {
+  position: relative;
+  height: 300px;
+  margin-bottom: 1rem;
+}
+
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--gray-50);
+  border-radius: 6px;
+  color: var(--gray-400);
+  font-size: 0.875rem;
+}
+
+/* =====================================================
+   Data Tables
+   ===================================================== */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.report-table thead {
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.report-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.report-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  color: var(--gray-700);
+}
+
+.report-table tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.report-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =====================================================
+   Progress Bars
+   ===================================================== */
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.success {
+  background: #10b981;
+}
+
+.progress-bar-fill.warning {
+  background: #f59e0b;
+}
+
+.progress-bar-fill.danger {
+  background: #ef4444;
+}
+
+.progress-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  min-width: 45px;
+  text-align: right;
+}
+
+/* =====================================================
+   Empty State
+   ===================================================== */
+.report-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.report-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.report-empty-text {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+/* =====================================================
+   Export PDF Container
+   ===================================================== */
+.export-pdf-container {
+  text-align: center;
+  padding: 3rem 1rem;
+  margin-top: 2rem;
+}
+
+.export-pdf-container .btn {
+  min-width: 250px;
+  font-size: 1rem;
+  padding: 0.75rem 2rem;
+}
+
+/* =====================================================
+   Status Badges (in reports)
+   ===================================================== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.todo {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.status-badge.in-progress {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.status-badge.done {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+@media (max-width: 768px) {
+  .reports-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .report-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .chart-container {
+    height: 250px;
+  }
+
+  .report-table {
+    font-size: 0.75rem;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 0.5rem;
+  }
+}

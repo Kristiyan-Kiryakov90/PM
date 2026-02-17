@@ -1,0 +1,152 @@
+/**
+ * Tag Picker (Task Modal)
+ * Picker component, input, suggestions, and selection UI
+ */
+
+/* =====================================================
+   Tag Picker (Task Modal)
+   ===================================================== */
+.tag-picker {
+  margin-top: 1rem;
+}
+
+.tag-picker-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.tag-picker-input-wrapper {
+  position: relative;
+}
+
+.tag-picker-input {
+  width: 100%;
+  padding: 0.5rem;
+  padding-right: 2.5rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.tag-picker-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.tag-picker-create-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tag-picker-create-btn:hover {
+  background-color: var(--primary-dark, #2563eb);
+}
+
+.tag-picker-create-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tag-picker-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid var(--gray-300);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  margin-top: -1px;
+}
+
+.tag-picker-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tag-picker-suggestion:hover {
+  background-color: var(--gray-50);
+}
+
+.tag-picker-suggestion-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-picker-suggestion-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+.tag-picker-suggestion-count {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.tag-picker-selected {
+  margin-top: 0.5rem;
+  min-height: 24px;
+}
+
+.tag-picker-available {
+  padding: 0.75rem 0;
+}
+
+.tag-picker-available small {
+  font-weight: 500;
+}
+
+.tag-picker-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  border: 1px dashed var(--gray-300);
+  border-radius: 6px;
+}
+
+/* =====================================================
+   Dark Mode Support
+   ===================================================== */
+@media (prefers-color-scheme: dark) {
+  .tag-picker-input {
+    background-color: var(--gray-800);
+    border-color: var(--gray-600);
+    color: var(--gray-100);
+  }
+
+  .tag-picker-suggestions {
+    background-color: var(--gray-800);
+    border-color: var(--gray-600);
+  }
+
+  .tag-picker-suggestion:hover {
+    background-color: var(--gray-700);
+  }
+}

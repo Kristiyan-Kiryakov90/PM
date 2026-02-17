@@ -4,18 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tasks - TaskFlow</title>
+
+  <!-- Resource Hints: Reduce CLS by preconnecting to CDNs -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- CRITICAL CSS INLINE - Load immediately to prevent shifts -->
+  <style>
+    /* Reserve space for navbar before it loads */
+    body {
+      margin: 0;
+      padding-top: 64px;
+      overflow-x: hidden;
+    }
+
+    /* Fixed navbar prevents shift */
+    .navbar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      z-index: 1030;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Main content stability */
+    .tasks-main {
+      min-height: 100vh;
+      contain: layout;
+    }
+
+    /* Kanban board dimensions */
+    #tasksContainer {
+      min-height: 600px;
+      width: 100%;
+    }
+  </style>
+
+  <!-- Local CSS (inline critical path) -->
   <link rel="stylesheet" href="../src/styles/global/global.css">
   <link rel="stylesheet" href="../src/features/tasks/styles/tasks.css">
   <link rel="stylesheet" href="../src/features/tasks/styles/comments.css">
   <link rel="stylesheet" href="../src/styles/shared/tags.css">
-  <!-- Frappe Gantt Library -->
+
+  <!-- Frappe Gantt Library (preload for faster loading) -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css" as="style">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
-  <!-- Flatpickr Date Picker -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js" as="script">
+  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js" defer></script>
+
+  <!-- Flatpickr Date Picker (preload for faster loading) -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" as="style">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/flatpickr" as="script">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
 </head>
-<body>
+<body class="tasks-page">
   <!-- Navigation (injected by navbar component) -->
 
   <!-- Main Content -->
@@ -54,16 +100,26 @@
         </div>
 
         <!-- Filter Bar -->
-        <div class="row g-3 mb-3">
-          <div class="col-md-2">
+        <div class="row g-2 mb-3">
+          <!-- Search -->
+          <div class="col-12 col-md-3">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted">🔍</span>
+              <input type="text" class="form-control border-start-0 ps-0" id="searchTasks" placeholder="Search tasks…">
+            </div>
+          </div>
+          <!-- Status -->
+          <div class="col-6 col-md">
             <select class="form-select" id="filterStatus">
               <option value="">All Status</option>
               <option value="todo">To Do</option>
               <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
               <option value="done">Done</option>
             </select>
           </div>
-          <div class="col-md-2">
+          <!-- Priority -->
+          <div class="col-6 col-md">
             <select class="form-select" id="filterPriority">
               <option value="">All Priorities</option>
               <option value="low">Low</option>
@@ -72,17 +128,20 @@
               <option value="urgent">Urgent</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <!-- Project -->
+          <div class="col-6 col-md">
             <select class="form-select" id="filterProject">
               <option value="">All Projects</option>
             </select>
           </div>
-          <div class="col-md-2">
+          <!-- Tags -->
+          <div class="col-6 col-md">
             <select class="form-select" id="filterTag">
               <option value="">All Tags</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <!-- Members -->
+          <div class="col-6 col-md">
             <select class="form-select" id="filterAssignee">
               <option value="">All Members</option>
             </select>
@@ -90,13 +149,44 @@
         </div>
       </div>
 
-      <!-- Kanban Board -->
-      <div id="tasksContainer" class="kanban-view">
-        <!-- Kanban columns will be rendered here by JS -->
+      <!-- Kanban Board with min-height (prevents CLS) -->
+      <div id="tasksContainer" class="kanban-view" style="min-height: 500px;">
+        <!-- Skeleton loader - prevents layout shift -->
+        <div class="skeleton-kanban">
+          <div class="skeleton-kanban-column">
+            <div class="skeleton skeleton-kanban-header"></div>
+            <div class="skeleton-kanban-card">
+              <div class="skeleton skeleton-kanban-card-title"></div>
+              <div class="skeleton skeleton-kanban-card-meta"></div>
+            </div>
+            <div class="skeleton-kanban-card">
+              <div class="skeleton skeleton-kanban-card-title"></div>
+              <div class="skeleton skeleton-kanban-card-meta"></div>
+            </div>
+          </div>
+          <div class="skeleton-kanban-column">
+            <div class="skeleton skeleton-kanban-header"></div>
+            <div class="skeleton-kanban-card">
+              <div class="skeleton skeleton-kanban-card-title"></div>
+              <div class="skeleton skeleton-kanban-card-meta"></div>
+            </div>
+          </div>
+          <div class="skeleton-kanban-column">
+            <div class="skeleton skeleton-kanban-header"></div>
+            <div class="skeleton-kanban-card">
+              <div class="skeleton skeleton-kanban-card-title"></div>
+              <div class="skeleton skeleton-kanban-card-meta"></div>
+            </div>
+            <div class="skeleton-kanban-card">
+              <div class="skeleton skeleton-kanban-card-title"></div>
+              <div class="skeleton skeleton-kanban-card-meta"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- List View (hidden by default) -->
-      <div class="list-view" style="display: none;">
+      <div class="list-view" style="display: none; min-height: 500px;">
         <div class="table-responsive">
           <table class="table table-hover">
             <thead>
@@ -118,7 +208,7 @@
 
       <!-- Gantt View (hidden by default) -->
       <div class="gantt-view" style="display: none;">
-        <div class="gantt-container" id="ganttChart"></div>
+        <div class="gantt-wrapper" id="ganttChart"></div>
         <div class="gantt-empty" style="display: none;">
           <p>No scheduled tasks. Tasks need start date and due date to appear on Gantt chart.</p>
           <button class="btn btn-primary" id="autoScheduleAllBtn">Auto-Schedule Tasks</button>

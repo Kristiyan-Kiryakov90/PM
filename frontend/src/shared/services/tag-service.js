@@ -181,12 +181,13 @@ export const tagService = {
 
   /**
    * Set all tags for a task (replaces existing tags)
+   * OPTIMIZED: Uses batch operations instead of N+1 queries
    * @param {number} taskId - Task ID
    * @param {Array<number>} tagIds - Array of tag IDs
    * @returns {Promise<void>}
    */
   async setTaskTags(taskId, tagIds) {
-    // First, get existing tags
+    // Get existing tags to determine what to add/remove
     const existingTags = await this.getTaskTags(taskId);
     const existingTagIds = existingTags.map(t => t.id);
 
@@ -194,14 +195,29 @@ export const tagService = {
     const toAdd = tagIds.filter(id => !existingTagIds.includes(id));
     const toRemove = existingTagIds.filter(id => !tagIds.includes(id));
 
-    // Remove tags
-    for (const tagId of toRemove) {
-      await this.removeTagFromTask(taskId, tagId);
+    // BATCH DELETE: Remove tags in single query with IN clause
+    if (toRemove.length > 0) {
+      const { error } = await supabase
+        .from('task_tags')
+        .delete()
+        .eq('task_id', taskId)
+        .in('tag_id', toRemove);
+
+      if (error) throw error;
     }
 
-    // Add new tags
-    for (const tagId of toAdd) {
-      await this.addTagToTask(taskId, tagId);
+    // BATCH INSERT: Add new tags in single query
+    if (toAdd.length > 0) {
+      const { error } = await supabase
+        .from('task_tags')
+        .insert(toAdd.map(tagId => ({ task_id: taskId, tag_id: tagId })));
+
+      if (error) {
+        // Handle duplicate (tag already on task) - shouldn't happen but be safe
+        if (error.code !== '23505') {
+          throw error;
+        }
+      }
     }
   },
 
@@ -247,29 +263,21 @@ export const tagService = {
 
   /**
    * Get all tags with usage counts
+   * OPTIMIZED: Uses database RPC function instead of N+1 queries
    * @returns {Promise<Array>} Tags with usage counts
    */
   async getTagsWithUsage() {
-    const tags = await this.getTags();
+    // Use RPC function that performs LEFT JOIN + GROUP BY in single query
+    // Prevents N+1 issue: 1 query instead of 1 + N queries for N tags
+    const { data, error } = await supabase.rpc('get_tags_with_usage');
 
-    // Get usage counts for all tags
-    const tagsWithUsage = await Promise.all(
-      tags.map(async (tag) => {
-        const usage = await this.getTagUsage(tag.id);
-        return {
-          ...tag,
-          usageCount: usage.usageCount,
-        };
-      })
-    );
+    if (error) throw error;
 
-    // Sort by usage count (descending) then name
-    return tagsWithUsage.sort((a, b) => {
-      if (b.usageCount !== a.usageCount) {
-        return b.usageCount - a.usageCount;
-      }
-      return a.name.localeCompare(b.name);
-    });
+    // Map usage_count to usageCount for consistency with existing code
+    return (data || []).map(tag => ({
+      ...tag,
+      usageCount: tag.usage_count,
+    }));
   },
 
   /**

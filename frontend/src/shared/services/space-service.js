@@ -303,22 +303,49 @@ export const spaceService = {
 
   /**
    * Get spaces with project counts
+   * OPTIMIZED: Uses single query instead of N+1 pattern
    * @returns {Promise<Array>} Array of spaces with project_count property
    */,
   async getSpacesWithCounts() {
     try {
+      const companyId = await authUtils.getUserCompanyId();
+      const user = await supabase.auth.getUser();
+      const userId = user.data?.user?.id;
+
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Get all spaces
       const spaces = await this.getSpaces();
 
-      // Get project counts for each space
-      const spacesWithCounts = await Promise.all(
-        spaces.map(async (space) => {
-          const projects = await this.getProjectsInSpace(space.id);
-          return {
-            ...space,
-            project_count: projects.length,
-          };
-        })
-      );
+      // Get ALL projects in ONE query (instead of N queries)
+      let projectQuery = supabase
+        .from('projects')
+        .select('id, space_id');
+
+      if (companyId) {
+        projectQuery = projectQuery.eq('company_id', companyId);
+      } else {
+        projectQuery = projectQuery.is('company_id', null).eq('created_by', userId);
+      }
+
+      const { data: projects, error } = await projectQuery;
+      if (error) throw error;
+
+      // Count projects by space in memory (fast, no additional queries)
+      const projectCountsBySpace = {};
+      (projects || []).forEach(project => {
+        if (project.space_id) {
+          projectCountsBySpace[project.space_id] = (projectCountsBySpace[project.space_id] || 0) + 1;
+        }
+      });
+
+      // Merge counts with spaces
+      const spacesWithCounts = spaces.map(space => ({
+        ...space,
+        project_count: projectCountsBySpace[space.id] || 0,
+      }));
 
       return spacesWithCounts;
     } catch (error) {

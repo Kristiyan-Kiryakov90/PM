@@ -4,7 +4,7 @@
  */
 
 import { projectService } from '@services/project-service.js';
-import { openKanbanSettings } from './kanban-settings.js';
+import { openKanbanSettings } from './workflow/kanban-settings.js';
 import { uiHelpers } from '@utils/ui-helpers.js';
 
 let currentProjectId = null;

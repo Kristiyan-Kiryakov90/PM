@@ -6,24 +6,40 @@
 
 import supabase from '@services/supabase.js';
 
+// Cache for user metadata (in-memory, cleared on page reload)
+let metadataCache = null;
+let currentUserCache = null;
+
 export const authUtils = {
   /**
-   * Get current user session
+   * Get current user session (cached after first call)
    * @returns {Promise<Object|null>} User session or null
    */
   async getCurrentUser() {
+    // Return cached user if available
+    if (currentUserCache) {
+      return currentUserCache;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    return session?.user || null;
+    currentUserCache = session?.user || null;
+    return currentUserCache;
   },
 
   /**
    * Get user metadata (role, company_id, name) from database or metadata
-   * Tries multiple sources in order: users table, profiles table, then user_metadata
+   * Cached after first call to avoid N+1 queries
    * @returns {Promise<Object|null>} User metadata or null
    */
   async getUserMetadata() {
+    // Return cached metadata if available
+    if (metadataCache) {
+      console.log('📦 Using cached metadata');
+      return metadataCache;
+    }
+
     const user = await this.getCurrentUser();
     if (!user) return null;
 
@@ -39,7 +55,7 @@ export const authUtils = {
 
       if (!profilesError && profile) {
         console.log('✅ Found in profiles table:', profile);
-        return {
+        metadataCache = {
           id: user.id,
           email: user.email,
           role: profile.role,
@@ -48,6 +64,7 @@ export const authUtils = {
           last_name: user.user_metadata?.last_name || '',
           created_at: user.created_at,
         };
+        return metadataCache;
       }
     } catch (e) {
       console.error('Error fetching profile:', e.message);
@@ -55,7 +72,7 @@ export const authUtils = {
 
     // Fallback to user_metadata (for bootstrapping and backward compatibility)
     console.log('⚠️ Using user_metadata fallback');
-    const metadata = {
+    metadataCache = {
       id: user.id,
       email: user.email,
       role: user.user_metadata?.role || 'user',
@@ -64,8 +81,8 @@ export const authUtils = {
       last_name: user.user_metadata?.last_name || '',
       created_at: user.created_at,
     };
-    console.log('Returning metadata:', metadata);
-    return metadata;
+    console.log('Returning metadata:', metadataCache);
+    return metadataCache;
   },
 
   /**
@@ -126,6 +143,16 @@ export const authUtils = {
   },
 
   /**
+   * Clear cached metadata and user (called on logout or when data changes)
+   * @returns {void}
+   */
+  clearCache() {
+    metadataCache = null;
+    currentUserCache = null;
+    console.log('🗑️ Metadata cache cleared');
+  },
+
+  /**
    * Sign out user
    * @returns {Promise<void>}
    */
@@ -136,6 +163,7 @@ export const authUtils = {
       throw error;
     }
     // Clear any cached data
+    this.clearCache();
     sessionStorage.clear();
     localStorage.removeItem('supabase.auth.token');
 

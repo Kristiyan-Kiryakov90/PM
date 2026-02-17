@@ -1,0 +1,159 @@
+/**
+ * Reports Print Styles
+ * Print/PDF export optimized styles
+ */
+
+/* =====================================================
+   Print Styles for PDF Export
+   ===================================================== */
+@media print {
+  /* Hide navigation and non-report elements */
+  .navbar,
+  .export-pdf-container,
+  .reports-filters {
+    display: none !important;
+  }
+
+  /* Reset background for print */
+  body {
+    background: white !important;
+  }
+
+  .reports-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  /* Header */
+  .reports-header {
+    margin-bottom: 1.5rem;
+    page-break-after: avoid;
+  }
+
+  .reports-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Metrics grid */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    page-break-inside: avoid;
+  }
+
+  .metric-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb;
+    padding: 1rem !important;
+    page-break-inside: avoid;
+  }
+
+  .metric-card:hover {
+    transform: none;
+    box-shadow: none !important;
+  }
+
+  .metric-value {
+    font-size: 1.75rem;
+  }
+
+  .metric-icon {
+    width: 35px;
+    height: 35px;
+  }
+
+  /* Report sections */
+  .report-section {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb;
+    padding: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    page-break-inside: avoid;
+  }
+
+  .report-section-header {
+    border-bottom: 2px solid #e5e7eb !important;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+    page-break-after: avoid;
+  }
+
+  .report-section-title {
+    font-size: 1.25rem;
+  }
+
+  .report-export-btn {
+    display: none !important;
+  }
+
+  /* Tables */
+  .report-table {
+    font-size: 0.875rem;
+    page-break-inside: auto;
+  }
+
+  .report-table thead {
+    border-bottom: 2px solid #e5e7eb !important;
+  }
+
+  .report-table th {
+    padding: 0.625rem;
+    font-weight: 600;
+  }
+
+  .report-table td {
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 0.625rem;
+  }
+
+  .report-table tbody tr {
+    page-break-inside: avoid;
+  }
+
+  .report-table tbody tr:hover {
+    background: transparent !important;
+  }
+
+  /* Progress bars - keep colors */
+  .progress-bar {
+    border: 1px solid #e5e7eb;
+  }
+
+  /* Status badges - keep colors */
+  .status-badge {
+    border: 1px solid currentColor;
+    opacity: 0.9;
+  }
+
+  /* Empty states */
+  .report-empty {
+    padding: 2rem 1rem;
+  }
+
+  .report-empty-icon {
+    font-size: 2rem;
+  }
+
+  /* Avoid page breaks in certain elements */
+  .metric-card,
+  .report-section-header,
+  .progress-bar-container {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure colors are preserved */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

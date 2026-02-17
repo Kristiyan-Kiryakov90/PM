@@ -1,0 +1,115 @@
+/**
+ * Gantt Bars & Grid Styles
+ * Chart grid, task bars, today marker, and critical path
+ */
+
+/* Override Frappe Gantt styles for better visual integration */
+.gantt .grid-background {
+  fill: #fafafa;
+}
+
+.gantt .grid-header {
+  fill: #f5f5f5;
+  stroke: #e0e0e0;
+}
+
+.gantt .grid-row {
+  fill: #ffffff;
+}
+
+.gantt .grid-row:nth-child(even) {
+  fill: #fafafa;
+}
+
+/* Today marker as a thin red vertical line */
+.gantt .today-highlight {
+  fill: none !important;
+  opacity: 1 !important;
+}
+
+/* Add red border on the left side to create a vertical line effect */
+.gantt .grid-row .today-highlight {
+  fill: none !important;
+  stroke: #dc2626 !important;
+  stroke-width: 2 !important;
+  opacity: 1 !important;
+}
+
+/* If Frappe Gantt uses a different structure, target the rect directly */
+.gantt rect.today-highlight {
+  fill: none !important;
+  stroke: #dc2626 !important;
+  stroke-width: 3 !important;
+  stroke-opacity: 1 !important;
+}
+
+/* Alternative: Use transform to make it thinner */
+.gantt .today-highlight {
+  transform: scaleX(0.02) !important;
+  transform-origin: center !important;
+  fill: #dc2626 !important;
+  opacity: 1 !important;
+}
+
+/* Ensure dependency arrows are visible */
+.gantt .arrow {
+  stroke: #666;
+  stroke-width: 1.4px;
+  fill: none;
+  opacity: 1 !important;
+}
+
+.gantt .arrow-head {
+  fill: #666;
+  stroke: #666;
+}
+
+/* Task bars - Priority colors */
+.gantt .bar-wrapper.priority-urgent .bar {
+  fill: #ef4444 !important;
+}
+
+.gantt .bar-wrapper.priority-high .bar {
+  fill: #f59e0b !important;
+}
+
+.gantt .bar-wrapper.priority-medium .bar {
+  fill: #3b82f6 !important;
+}
+
+.gantt .bar-wrapper.priority-low .bar {
+  fill: #6b7280 !important;
+}
+
+/* Status styling */
+.gantt .bar-wrapper.status-done .bar {
+  opacity: 0.6;
+  fill: #10b981 !important;
+}
+
+.gantt .bar-wrapper.status-in_progress .bar {
+  opacity: 0.85;
+}
+
+.gantt .bar-wrapper.status-todo .bar {
+  opacity: 0.7;
+}
+
+/* Overdue tasks */
+.gantt .bar-wrapper.overdue .bar {
+  stroke: #dc2626;
+  stroke-width: 2px;
+}
+
+/* Critical Path Highlighting */
+.gantt .bar-wrapper.critical-path .bar {
+  fill: #dc2626 !important;
+  stroke: #fca5a5;
+  stroke-width: 3px;
+  filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.3));
+}
+
+.gantt .bar-wrapper.critical-path .bar-label {
+  font-weight: 600;
+  fill: white;
+}

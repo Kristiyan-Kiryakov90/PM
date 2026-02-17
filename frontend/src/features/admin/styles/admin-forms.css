@@ -1,0 +1,105 @@
+/**
+ * Admin Forms Styles
+ * Invite forms, member forms, company forms, and modals
+ */
+
+/* Invite Form */
+.invite-form {
+  max-width: 600px;
+}
+
+.form-group {
+  margin-bottom: var(--space-6);
+}
+
+/* Company Settings Form */
+.settings-form {
+  max-width: 800px;
+}
+
+.form-section {
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-8);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.form-section:last-child {
+  border-bottom: none;
+}
+
+.form-section-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--space-6);
+}
+
+/* Member Form */
+.member-form .form-group {
+  margin-bottom: var(--space-5);
+}
+
+.member-form .form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  color: var(--gray-900);
+}
+
+.member-form .form-control {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.member-form .form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.member-form .form-control:disabled {
+  background-color: var(--gray-100);
+  cursor: not-allowed;
+}
+
+.member-form .form-text {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.member-form .row {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: 0;
+}
+
+.member-form .col-md-6 {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Modal Styles */
+.modal-header .btn-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.modal-header .btn-close:hover {
+  opacity: 1;
+}

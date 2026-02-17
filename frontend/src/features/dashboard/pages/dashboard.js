@@ -17,6 +17,7 @@ let currentUser = null;
  * Initialize the dashboard page
  */
 async function init() {
+  console.time('⏱️ Dashboard Page Load');
   try {
     // Require authentication
     await router.requireAuth();
@@ -29,9 +30,12 @@ async function init() {
 
     // Load all dashboard data
     await loadDashboard();
+
+    console.timeEnd('⏱️ Dashboard Page Load');
   } catch (error) {
     console.error('Dashboard page initialization error:', error);
     uiHelpers.showError('Failed to load dashboard. Please refresh.');
+    console.timeEnd('⏱️ Dashboard Page Load');
   }
 }
 
@@ -74,51 +78,62 @@ async function loadDashboard() {
 }
 
 /**
- * Render stat cards
+ * Render stat cards - smooth transition from skeleton
  */
 function renderStats(stats) {
-  // Total Projects
-  const totalProjectsEl = document.getElementById('statTotalProjects');
-  if (totalProjectsEl) {
-    totalProjectsEl.textContent = stats.totalProjects;
-  }
+  // Helper to smoothly replace skeleton with actual number
+  const updateStat = (elementId, value) => {
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
-  // Active Tasks
-  const activeTasksEl = document.getElementById('statActiveTasks');
-  if (activeTasksEl) {
-    activeTasksEl.textContent = stats.activeTasks;
-  }
+    // Remove skeleton (if present)
+    const skeleton = el.querySelector('.skeleton');
+    if (skeleton) {
+      skeleton.style.opacity = '0';
+      setTimeout(() => skeleton.remove(), 200);
+    }
 
-  // Completed This Week
-  const completedWeekEl = document.getElementById('statCompletedWeek');
-  if (completedWeekEl) {
-    completedWeekEl.textContent = stats.completedThisWeek;
-  }
+    // Set number with fade-in
+    el.style.opacity = '0';
+    el.textContent = value;
+    setTimeout(() => {
+      el.style.opacity = '1';
+      el.style.transition = 'opacity 0.3s';
+    }, 200);
+  };
 
-  // Overdue Tasks
-  const overdueEl = document.getElementById('statOverdue');
-  if (overdueEl) {
-    overdueEl.textContent = stats.overdueTasks;
-  }
+  // Update all stats smoothly
+  updateStat('statTotalProjects', stats.totalProjects);
+  updateStat('statActiveTasks', stats.activeTasks);
+  updateStat('statCompletedWeek', stats.completedThisWeek);
+  updateStat('statOverdue', stats.overdueTasks);
 }
 
 /**
- * Render my tasks
+ * Render my tasks - smooth transition from skeleton
  */
-function renderMyTasks(tasks) {
+async function renderMyTasks(tasks) {
   const container = document.getElementById('myTasksContainer');
   if (!container) return;
 
+  // Fade out skeleton first
+  const skeletonList = container.querySelector('.skeleton-list');
+  if (skeletonList) {
+    skeletonList.style.opacity = '0';
+    skeletonList.style.transition = 'opacity 0.2s';
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+
   if (tasks.length === 0) {
     container.innerHTML = `
-      <div class="empty-state-small">
+      <div class="empty-state-small content-loaded">
         <p>No tasks assigned to you</p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = tasks
+  container.innerHTML = `<div class="content-loaded">${tasks
     .map(
       (task) => `
     <div class="task-item">
@@ -133,19 +148,27 @@ function renderMyTasks(tasks) {
     </div>
   `
     )
-    .join('');
+    .join('')}</div>`;
 }
 
 /**
- * Render upcoming deadlines
+ * Render upcoming deadlines - smooth transition from skeleton
  */
-function renderUpcomingDeadlines(tasks) {
+async function renderUpcomingDeadlines(tasks) {
   const container = document.getElementById('upcomingDeadlinesContainer');
   if (!container) return;
 
+  // Fade out skeleton first
+  const skeletonList = container.querySelector('.skeleton-list');
+  if (skeletonList) {
+    skeletonList.style.opacity = '0';
+    skeletonList.style.transition = 'opacity 0.2s';
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+
   if (tasks.length === 0) {
     container.innerHTML = `
-      <div class="empty-state-small">
+      <div class="empty-state-small content-loaded">
         <p>No upcoming deadlines</p>
       </div>
     `;

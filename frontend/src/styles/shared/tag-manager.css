@@ -1,0 +1,249 @@
+/**
+ * Tag Manager Modal
+ * Admin tag manager, tag list, forms, and actions
+ */
+
+/* =====================================================
+   Tag Manager Modal
+   ===================================================== */
+.tag-manager {
+  padding: 1rem;
+}
+
+.tag-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.tag-manager-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.tag-manager-search {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.tag-manager-search input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  padding-left: 2.5rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.tag-manager-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+}
+
+.tag-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.tag-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--gray-50);
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.tag-manager-item:hover {
+  background-color: var(--gray-100);
+}
+
+.tag-manager-color-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.tag-manager-color-preview:hover {
+  border-color: var(--gray-400);
+}
+
+.tag-manager-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-manager-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-900);
+  margin-bottom: 0.125rem;
+}
+
+.tag-manager-usage {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.tag-manager-actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tag-manager-item:hover .tag-manager-actions {
+  opacity: 1;
+}
+
+.tag-manager-action-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: none;
+  border: 1px solid var(--gray-300);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--gray-600);
+}
+
+.tag-manager-action-btn:hover {
+  background-color: white;
+  border-color: var(--gray-400);
+  color: var(--gray-900);
+}
+
+.tag-manager-action-btn.delete:hover {
+  background-color: var(--danger);
+  border-color: var(--danger);
+  color: white;
+}
+
+.tag-manager-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.tag-manager-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.tag-manager-empty-text {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+/* =====================================================
+   Tag Form (Create/Edit)
+   ===================================================== */
+.tag-form {
+  padding: 1rem;
+}
+
+.tag-form-group {
+  margin-bottom: 1rem;
+}
+
+.tag-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.tag-form-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.tag-form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.tag-form-color-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0.5rem;
+}
+
+.tag-form-color-option {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tag-form-color-option:hover {
+  transform: scale(1.1);
+}
+
+.tag-form-color-option.selected {
+  border-color: var(--gray-900);
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--gray-900);
+}
+
+.tag-form-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--gray-50);
+  border-radius: 6px;
+}
+
+.tag-form-preview-label {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+@media (max-width: 768px) {
+  .tag-form-color-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* =====================================================
+   Dark Mode Support
+   ===================================================== */
+@media (prefers-color-scheme: dark) {
+  .tag-form-input {
+    background-color: var(--gray-800);
+    border-color: var(--gray-600);
+    color: var(--gray-100);
+  }
+
+  .tag-manager-item {
+    background-color: var(--gray-800);
+  }
+
+  .tag-manager-item:hover {
+    background-color: var(--gray-700);
+  }
+}

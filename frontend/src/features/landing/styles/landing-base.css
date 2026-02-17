@@ -1,0 +1,34 @@
+/**
+ * Landing Page - Base Styles
+ * CSS variables, page background, and typography foundation
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700&display=swap');
+
+.landing-page {
+  --c-bg: #f7f8ff;
+  --c-bg-alt: #eef2ff;
+  --c-surface: #ffffff;
+  --c-surface-soft: #f8f9ff;
+  --c-border: #d9def7;
+  --c-border-strong: #bcc5f0;
+  --c-text: #1a1f3a;
+  --c-text-muted: #5a628c;
+  --c-primary: #2f6dff;
+  --c-primary-hover: #2558d4;
+  --c-accent: #09c6ad;
+  --c-warm: #ff8a43;
+
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  color: var(--c-text);
+  background:
+    radial-gradient(1200px 640px at -5% -20%, rgba(9, 198, 173, 0.16), transparent 60%),
+    radial-gradient(980px 560px at 110% 0%, rgba(47, 109, 255, 0.18), transparent 62%),
+    linear-gradient(180deg, #f9fbff 0%, #f5f7ff 34%, #eff3ff 100%);
+  min-height: 100vh;
+}
+
+.landing-page main {
+  position: relative;
+  overflow: hidden;
+}

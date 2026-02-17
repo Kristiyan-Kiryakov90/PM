@@ -330,30 +330,34 @@ export const statusService = {
 
   /**
    * Get task count per status for a project
+   * OPTIMIZED: Uses single query instead of N+1 pattern
    * @param {number} projectId - Project ID
    * @returns {Promise<Array>} Array of statuses with task counts
    */
   async getStatusesWithTaskCounts(projectId) {
     try {
+      // Get all statuses for the project
       const statuses = await this.getProjectStatuses(projectId);
 
-      // Get task counts for each status
-      const statusesWithCounts = await Promise.all(
-        statuses.map(async (status) => {
-          const { data: tasks, error } = await supabase
-            .from('tasks')
-            .select('id')
-            .eq('project_id', projectId)
-            .eq('status', status.slug);
+      // Get ALL tasks for the project in ONE query (instead of N queries)
+      const { data: tasks, error } = await supabase
+        .from('tasks')
+        .select('id, status')
+        .eq('project_id', projectId);
 
-          if (error) throw error;
+      if (error) throw error;
 
-          return {
-            ...status,
-            task_count: tasks ? tasks.length : 0,
-          };
-        })
-      );
+      // Count tasks by status in memory (fast, no additional queries)
+      const taskCountsByStatus = {};
+      (tasks || []).forEach(task => {
+        taskCountsByStatus[task.status] = (taskCountsByStatus[task.status] || 0) + 1;
+      });
+
+      // Merge counts with statuses
+      const statusesWithCounts = statuses.map(status => ({
+        ...status,
+        task_count: taskCountsByStatus[status.slug] || 0,
+      }));
 
       return statusesWithCounts;
     } catch (error) {

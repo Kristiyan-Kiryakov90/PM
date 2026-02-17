@@ -1,0 +1,272 @@
+/**
+ * CLS (Cumulative Layout Shift) Fixes
+ * Prevent layout shifts during page load
+ */
+
+/* ============================================
+   1. NAVBAR - Prevent navbar shift
+   ============================================ */
+
+/* Reserve space for navbar before it loads */
+body {
+  padding-top: 64px; /* Match navbar height */
+}
+
+.navbar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px; /* Fixed height prevents shift */
+  z-index: 1030;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   2. TASKS PAGE - Prevent main content shifts
+   ============================================ */
+
+.tasks-main {
+  /* Prevent shifts during content loading */
+  min-height: 100vh;
+  contain: layout; /* Optimize layout performance */
+}
+
+/* Header area - fixed height to prevent shifts */
+.tasks-header {
+  min-height: 200px; /* Reserve space for header + filters */
+}
+
+/* Kanban container - match skeleton dimensions */
+#tasksContainer {
+  /* Fixed minimum dimensions prevent collapse */
+  min-height: 600px !important; /* Override inline styles */
+  width: 100%;
+}
+
+/* Kanban board - proper sizing */
+.task-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  min-height: 550px; /* Match skeleton */
+}
+
+/* Task columns - prevent height shifts */
+.task-column {
+  min-height: 500px; /* Ensure columns don't collapse */
+  background: var(--gray-50);
+  border-radius: 8px;
+}
+
+.task-column-content {
+  min-height: 400px; /* Reserve space for cards */
+}
+
+/* ============================================
+   3. DASHBOARD - Prevent stats shifts
+   ============================================ */
+
+.dashboard-main {
+  min-height: 100vh;
+  contain: layout;
+}
+
+/* Stats cards - fixed dimensions */
+.stats-number {
+  min-height: 48px; /* Prevent number size shifts */
+  display: flex;
+  align-items: center;
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+/* ============================================
+   4. SMOOTH TRANSITIONS - Fade in content
+   ============================================ */
+
+/* Fade out skeleton, fade in content */
+.skeleton-container {
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+.skeleton-container.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.content-loaded {
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   5. LIST VIEW - Prevent shifts
+   ============================================ */
+
+.list-view {
+  min-height: 600px !important;
+}
+
+.list-view table {
+  width: 100%;
+  table-layout: fixed; /* Prevent column width shifts */
+}
+
+/* ============================================
+   6. GANTT VIEW - Prevent shifts
+   ============================================ */
+
+.gantt-view {
+  min-height: 600px !important;
+}
+
+#ganttChart {
+  min-height: 500px; /* Match skeleton */
+  width: 100%;
+}
+
+/* Frappe's inner scroll container must fill the wrapper */
+#ganttChart .gantt-container {
+  width: 100%;
+}
+
+.gantt-empty {
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   7. FILTERS - Fixed height to prevent push
+   ============================================ */
+
+.tasks-header .row.g-2,
+.tasks-header .row.g-3 {
+  min-height: 60px; /* Prevent filter row from shifting */
+}
+
+.form-select,
+.form-control {
+  min-height: 38px; /* Reserve space without clipping content */
+}
+
+/* ============================================
+   8. VIEW MODE TOGGLE - Fixed position
+   ============================================ */
+
+.view-mode-toggle {
+  height: 42px; /* Fixed height prevents shift */
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   9. CONTENT VISIBILITY - Optimize rendering
+   ============================================ */
+
+/* Use content-visibility for off-screen content */
+.task-column:not(:first-child):not(:nth-child(2)) {
+  content-visibility: auto;
+  contain-intrinsic-size: 320px 500px;
+}
+
+/* ============================================
+   10. PREVENT REFLOW - Critical rendering
+   ============================================ */
+
+/* Prevent reflow from dynamic content */
+img,
+svg:not(.gantt) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Aspect ratio boxes for dynamic content */
+.aspect-ratio-box {
+  position: relative;
+  width: 100%;
+}
+
+.aspect-ratio-box::before {
+  content: '';
+  display: block;
+  padding-top: 100%; /* 1:1 aspect ratio */
+}
+
+.aspect-ratio-box > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================
+   11. LOADING STATE - Smooth transitions
+   ============================================ */
+
+[data-loading="true"] {
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+[data-loading="false"] {
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+
+/* ============================================
+   12. PREVENT FONT SHIFTS
+   ============================================ */
+
+body, html {
+  font-synthesis: none; /* Prevent font substitution */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   13. RESPONSIVE - Maintain ratios
+   ============================================ */
+
+@media (max-width: 768px) {
+  .task-board {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  #tasksContainer {
+    min-height: 400px !important;
+  }
+}
+
+/* ============================================
+   14. CRITICAL CSS - Load immediately
+   ============================================ */
+
+/* These styles load first to prevent shifts */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden; /* Prevent horizontal shift */
+}

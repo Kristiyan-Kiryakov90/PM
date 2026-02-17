@@ -1,16 +1,22 @@
 /**
- * Kanban Board Settings Component
- * Allows users to create, edit, delete, and reorder status columns
+ * Kanban Board Settings - Main Component
+ * Entry point for workflow settings modal
  */
 
 import { Modal } from 'bootstrap';
 import { statusService } from '@services/status-service.js';
 import { uiHelpers } from '@utils/ui-helpers.js';
+import { setupDragAndDrop } from './workflow-drag-drop.js';
+import {
+  openEditStatusModal,
+  openDeleteStatusModal,
+  setupColorPickerSync,
+  setupSlugAutoGenerate
+} from './workflow-status-editor.js';
 
 let settingsModal = null;
 let currentProjectId = null;
 let statuses = [];
-let draggedItem = null;
 
 /**
  * Open Kanban board settings modal
@@ -215,7 +221,22 @@ function renderStatuses() {
   }).join('');
 
   // Setup drag and drop
-  setupDragAndDrop();
+  setupDragAndDrop(statuses, currentProjectId, handleReorderComplete);
+}
+
+/**
+ * Handle reorder complete callback
+ */
+function handleReorderComplete(updatedStatuses) {
+  if (updatedStatuses) {
+    statuses = updatedStatuses;
+  } else {
+    // Error occurred, reload
+    loadStatuses().then(() => {
+      renderStatuses();
+      setupEventListeners();
+    });
+  }
 }
 
 /**
@@ -225,7 +246,7 @@ function setupEventListeners() {
   // Add status button
   const addBtn = document.getElementById('addStatusBtn');
   if (addBtn) {
-    addBtn.onclick = () => openEditStatusModal();
+    addBtn.onclick = () => openEditStatusModal(null, handleSaveComplete);
   }
 
   // Edit status buttons
@@ -234,7 +255,7 @@ function setupEventListeners() {
       const statusId = parseInt(btn.dataset.statusId, 10);
       const status = statuses.find((s) => s.id === statusId);
       if (status) {
-        openEditStatusModal(status);
+        openEditStatusModal(status, handleSaveComplete);
       }
     };
   });
@@ -245,281 +266,44 @@ function setupEventListeners() {
       const statusId = parseInt(btn.dataset.statusId, 10);
       const status = statuses.find((s) => s.id === statusId);
       if (status) {
-        openDeleteStatusModal(status);
+        openDeleteStatusModal(status, handleDeleteComplete);
       }
     };
   });
 
-  // Save status button
-  const saveBtn = document.getElementById('saveStatusBtn');
-  if (saveBtn) {
-    saveBtn.onclick = handleSaveStatus;
-  }
-
-  // Confirm delete button
-  const confirmDeleteBtn = document.getElementById('confirmDeleteStatusBtn');
-  if (confirmDeleteBtn) {
-    confirmDeleteBtn.onclick = handleDeleteStatus;
-  }
-
-  // Color picker sync
-  const colorPicker = document.getElementById('editStatusColor');
-  const colorHex = document.getElementById('editStatusColorHex');
-
-  if (colorPicker && colorHex) {
-    colorPicker.oninput = () => {
-      colorHex.value = colorPicker.value;
-    };
-    colorHex.oninput = () => {
-      if (/^#[0-9A-Fa-f]{6}$/.test(colorHex.value)) {
-        colorPicker.value = colorHex.value;
-      }
-    };
-  }
-
-  // Auto-generate slug from name
-  const nameInput = document.getElementById('editStatusName');
-  const slugInput = document.getElementById('editStatusSlug');
-
-  if (nameInput && slugInput) {
-    nameInput.oninput = () => {
-      // Only auto-generate if creating new status (no id)
-      const statusId = document.getElementById('editStatusId').value;
-      if (!statusId) {
-        const slug = nameInput.value
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '_')
-          .replace(/^_+|_+$/g, '');
-        slugInput.value = slug;
-      }
-    };
-  }
+  // Setup form helpers
+  setupColorPickerSync();
+  setupSlugAutoGenerate();
 }
 
 /**
- * Setup drag and drop for reordering
+ * Handle save complete callback
  */
-function setupDragAndDrop() {
-  const items = document.querySelectorAll('.status-item');
-
-  items.forEach((item) => {
-    item.addEventListener('dragstart', handleDragStart);
-    item.addEventListener('dragover', handleDragOver);
-    item.addEventListener('drop', handleDrop);
-    item.addEventListener('dragend', handleDragEnd);
-  });
-}
-
-function handleDragStart(e) {
-  draggedItem = this;
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/html', this.innerHTML);
-  this.classList.add('dragging');
-}
-
-function handleDragOver(e) {
-  if (e.preventDefault) {
-    e.preventDefault();
-  }
-  e.dataTransfer.dropEffect = 'move';
-
-  const container = document.getElementById('statusList');
-  const afterElement = getDragAfterElement(container, e.clientY);
-
-  if (afterElement == null) {
-    container.appendChild(draggedItem);
-  } else {
-    container.insertBefore(draggedItem, afterElement);
-  }
-
-  return false;
-}
-
-function handleDrop(e) {
-  if (e.stopPropagation) {
-    e.stopPropagation();
-  }
-  return false;
-}
-
-function handleDragEnd(e) {
-  this.classList.remove('dragging');
-
-  // Save new order
-  const items = document.querySelectorAll('.status-item');
-  const newOrder = Array.from(items).map((item, index) => ({
-    id: parseInt(item.dataset.statusId, 10),
-    sort_order: index,
-  }));
-
-  saveStatusOrder(newOrder);
-}
-
-function getDragAfterElement(container, y) {
-  const draggableElements = [...container.querySelectorAll('.status-item:not(.dragging)')];
-
-  return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-
-    if (offset < 0 && offset > closest.offset) {
-      return { offset: offset, element: child };
-    } else {
-      return closest;
-    }
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-/**
- * Save status order
- */
-async function saveStatusOrder(newOrder) {
-  try {
-    await statusService.reorderStatuses(currentProjectId, newOrder);
-    statuses = statuses.map((status) => {
-      const newPos = newOrder.find((o) => o.id === status.id);
-      return newPos ? { ...status, sort_order: newPos.sort_order } : status;
-    });
-    statuses.sort((a, b) => a.sort_order - b.sort_order);
-  } catch (error) {
-    console.error('Error saving status order:', error);
-    uiHelpers.showError('Failed to reorder statuses');
-    // Reload to reset order
-    await loadStatuses();
-    renderStatuses();
-  }
-}
-
-/**
- * Open edit status modal
- */
-function openEditStatusModal(status = null) {
-  const modal = new Modal(document.getElementById('editStatusModal'));
-  const form = document.getElementById('editStatusForm');
-
-  // Reset form
-  form.reset();
-
-  if (status) {
-    // Edit existing status
-    document.getElementById('editStatusTitle').textContent = 'Edit Status';
-    document.getElementById('editStatusId').value = status.id;
-    document.getElementById('editStatusName').value = status.name;
-    document.getElementById('editStatusSlug').value = status.slug;
-    document.getElementById('editStatusColor').value = status.color;
-    document.getElementById('editStatusColorHex').value = status.color;
-    document.getElementById('editStatusIsDone').checked = status.is_done;
-    document.getElementById('editStatusIsDefault').checked = status.is_default;
-  } else {
+async function handleSaveComplete(statusId, statusData) {
+  if (!statusId) {
     // Create new status
-    document.getElementById('editStatusTitle').textContent = 'Add Status';
-    document.getElementById('editStatusId').value = '';
-    document.getElementById('editStatusColor').value = '#6b7280';
-    document.getElementById('editStatusColorHex').value = '#6b7280';
+    const maxSortOrder = statuses.length > 0 ? Math.max(...statuses.map((s) => s.sort_order)) : -1;
+    await statusService.createStatus({
+      project_id: currentProjectId,
+      ...statusData,
+      sort_order: maxSortOrder + 1,
+    });
   }
 
-  modal.show();
+  // Reload and re-render
+  await loadStatuses();
+  renderStatuses();
+  setupEventListeners();
 }
 
 /**
- * Handle save status
+ * Handle delete complete callback
  */
-async function handleSaveStatus() {
-  const form = document.getElementById('editStatusForm');
-  if (!form.checkValidity()) {
-    form.reportValidity();
-    return;
-  }
-
-  const statusId = document.getElementById('editStatusId').value;
-  const statusData = {
-    name: document.getElementById('editStatusName').value.trim(),
-    slug: document.getElementById('editStatusSlug').value.trim().toLowerCase(),
-    color: document.getElementById('editStatusColorHex').value,
-    is_done: document.getElementById('editStatusIsDone').checked,
-    is_default: document.getElementById('editStatusIsDefault').checked,
-  };
-
-  try {
-    if (statusId) {
-      // Update existing status
-      await statusService.updateStatus(parseInt(statusId, 10), statusData);
-      uiHelpers.showSuccess('Status updated successfully');
-    } else {
-      // Create new status
-      const maxSortOrder = statuses.length > 0 ? Math.max(...statuses.map((s) => s.sort_order)) : -1;
-      await statusService.createStatus({
-        project_id: currentProjectId,
-        ...statusData,
-        sort_order: maxSortOrder + 1,
-      });
-      uiHelpers.showSuccess('Status created successfully');
-    }
-
-    // Close modal
-    const modal = Modal.getInstance(document.getElementById('editStatusModal'));
-    modal.hide();
-
-    // Reload and re-render
-    await loadStatuses();
-    renderStatuses();
-    setupEventListeners();
-
-    // Notify parent to reload
-    window.dispatchEvent(new CustomEvent('kanbanSettingsChanged'));
-  } catch (error) {
-    console.error('Error saving status:', error);
-    uiHelpers.showError(error.message || 'Failed to save status');
-  }
-}
-
-/**
- * Open delete status modal
- */
-function openDeleteStatusModal(status) {
-  const modal = new Modal(document.getElementById('deleteStatusModal'));
-
-  document.getElementById('deleteStatusName').textContent = status.name;
-  const warning = document.getElementById('deleteStatusWarning');
-
-  if (status.task_count > 0) {
-    warning.textContent = `Cannot delete: ${status.task_count} task(s) are using this status. Please reassign tasks first.`;
-    document.getElementById('confirmDeleteStatusBtn').disabled = true;
-  } else {
-    warning.textContent = 'This action cannot be undone.';
-    document.getElementById('confirmDeleteStatusBtn').disabled = false;
-    document.getElementById('confirmDeleteStatusBtn').dataset.statusId = status.id;
-  }
-
-  modal.show();
-}
-
-/**
- * Handle delete status
- */
-async function handleDeleteStatus() {
-  const btn = document.getElementById('confirmDeleteStatusBtn');
-  const statusId = parseInt(btn.dataset.statusId, 10);
-
-  try {
-    await statusService.deleteStatus(statusId);
-    uiHelpers.showSuccess('Status deleted successfully');
-
-    // Close modal
-    const modal = Modal.getInstance(document.getElementById('deleteStatusModal'));
-    modal.hide();
-
-    // Reload and re-render
-    await loadStatuses();
-    renderStatuses();
-    setupEventListeners();
-
-    // Notify parent to reload
-    window.dispatchEvent(new CustomEvent('kanbanSettingsChanged'));
-  } catch (error) {
-    console.error('Error deleting status:', error);
-    uiHelpers.showError(error.message || 'Failed to delete status');
-  }
+async function handleDeleteComplete(statusId) {
+  // Reload and re-render
+  await loadStatuses();
+  renderStatuses();
+  setupEventListeners();
 }
 
 /**

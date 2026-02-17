@@ -1,0 +1,60 @@
+/**
+ * Reports Dark Mode Support
+ * Dark mode styles for all report components
+ */
+
+/* =====================================================
+   Dark Mode Support
+   ===================================================== */
+@media (prefers-color-scheme: dark) {
+  .reports-header h1 {
+    color: var(--gray-100);
+  }
+
+  .reports-header p {
+    color: var(--gray-400);
+  }
+
+  .reports-filters,
+  .metric-card,
+  .report-section {
+    background: var(--gray-800);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .filter-preset-btn {
+    background: var(--gray-700);
+    border-color: var(--gray-600);
+    color: var(--gray-300);
+  }
+
+  .filter-preset-btn:hover {
+    background: var(--gray-600);
+  }
+
+  .metric-value {
+    color: var(--gray-100);
+  }
+
+  .report-table thead {
+    background: var(--gray-700);
+  }
+
+  .report-table th {
+    color: var(--gray-300);
+  }
+
+  .report-table td {
+    color: var(--gray-300);
+    border-color: var(--gray-700);
+  }
+
+  .report-table tbody tr:hover {
+    background: var(--gray-700);
+  }
+
+  .chart-placeholder {
+    background: var(--gray-700);
+    color: var(--gray-500);
+  }
+}

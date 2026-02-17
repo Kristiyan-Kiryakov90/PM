@@ -56,6 +56,9 @@
 
   --font-family: var(--font-sans);
 
+  /* Font Loading Strategy - Reduce CLS */
+  font-display: swap; /* Fallback font shown immediately while custom fonts load */
+
   /* Type Scale (modular scale 1.125) */
   --text-xs: 0.75rem;     /* 12px */
   --text-sm: 0.875rem;    /* 14px */

@@ -4,11 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - TaskFlow</title>
+
+  <!-- Resource Hints: Reduce CLS -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- CRITICAL CSS INLINE - Prevent navbar shift -->
+  <style>
+    body {
+      margin: 0;
+      padding-top: 64px;
+      overflow-x: hidden;
+    }
+
+    .navbar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      z-index: 1030;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .dashboard-main {
+      min-height: 100vh;
+      contain: layout;
+    }
+  </style>
+
   <link rel="stylesheet" href="../src/styles/global/global.css">
   <link rel="stylesheet" href="../src/features/dashboard/styles/dashboard.css">
   <link rel="stylesheet" href="../src/features/dashboard/styles/activity.css">
 </head>
-<body>
+<body class="dashboard-page">
   <!-- Navigation (injected by navbar component) -->
 
   <!-- Main Content -->
@@ -24,43 +54,51 @@
         </div>
       </div>
 
-      <!-- Stats Grid -->
+      <!-- Stats Grid with Skeleton Loaders (prevents CLS) -->
       <div class="row g-4 mb-8">
         <div class="col-md-3">
-          <div class="card">
+          <div class="card" style="min-height: 120px;">
             <div class="card-body">
               <div class="stats-label">Total Projects</div>
-              <div class="stats-number" id="statTotalProjects">0</div>
+              <div class="stats-number" id="statTotalProjects">
+                <div class="skeleton skeleton-stat-number"></div>
+              </div>
               <div class="stats-trend text-success small">All projects</div>
             </div>
           </div>
         </div>
 
         <div class="col-md-3">
-          <div class="card">
+          <div class="card" style="min-height: 120px;">
             <div class="card-body">
               <div class="stats-label">Active Tasks</div>
-              <div class="stats-number" id="statActiveTasks">0</div>
+              <div class="stats-number" id="statActiveTasks">
+                <div class="skeleton skeleton-stat-number"></div>
+              </div>
               <div class="stats-trend text-primary small">In progress</div>
             </div>
           </div>
         </div>
 
         <div class="col-md-3">
-          <div class="card">
+          <div class="card" style="min-height: 120px;">
             <div class="card-body">
               <div class="stats-label">Completed This Week</div>
-              <div class="stats-number" id="statCompletedWeek">0</div>
+              <div class="stats-number" id="statCompletedWeek">
+                <div class="skeleton skeleton-stat-number"></div>
+              </div>
               <div class="stats-trend text-success small">Last 7 days</div>
             </div>
           </div>
         </div>
 
         <div class="col-md-3">
-          <div class="card">
+          <div class="card" style="min-height: 120px;">
             <div class="card-body">
               <div class="stats-label">Overdue Tasks</div>
-              <div class="stats-number" id="statOverdue">0</div>
+              <div class="stats-number" id="statOverdue">
+                <div class="skeleton skeleton-stat-number"></div>
+              </div>
               <div class="stats-trend text-danger small">Needs attention</div>
             </div>
           </div>
@@ -69,29 +107,71 @@
 
       <!-- Dashboard Content Grid -->
       <div class="row g-4 mb-4">
-        <!-- My Tasks -->
+        <!-- My Tasks with Skeleton Loader -->
         <div class="col-lg-6">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title mb-0">My Tasks</h3>
             </div>
-            <div class="card-body" id="myTasksContainer">
-              <div class="empty-state-small">
-                <p>Loading tasks...</p>
+            <div class="card-body skeleton-container" id="myTasksContainer" style="min-height: 300px;">
+              <!-- Skeleton loader - prevents CLS -->
+              <div class="skeleton-list">
+                <div class="skeleton-list-item">
+                  <div class="skeleton skeleton-list-avatar"></div>
+                  <div class="skeleton-list-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text skeleton-w-75"></div>
+                  </div>
+                </div>
+                <div class="skeleton-list-item">
+                  <div class="skeleton skeleton-list-avatar"></div>
+                  <div class="skeleton-list-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text skeleton-w-75"></div>
+                  </div>
+                </div>
+                <div class="skeleton-list-item">
+                  <div class="skeleton skeleton-list-avatar"></div>
+                  <div class="skeleton-list-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text skeleton-w-75"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Upcoming Deadlines -->
+        <!-- Upcoming Deadlines with Skeleton Loader -->
         <div class="col-lg-6">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title mb-0">Upcoming Deadlines</h3>
             </div>
-            <div class="card-body" id="upcomingDeadlinesContainer">
-              <div class="empty-state-small">
-                <p>Loading deadlines...</p>
+            <div class="card-body skeleton-container" id="upcomingDeadlinesContainer" style="min-height: 300px;">
+              <!-- Skeleton loader - prevents CLS -->
+              <div class="skeleton-list">
+                <div class="skeleton-list-item">
+                  <div class="skeleton skeleton-list-avatar"></div>
+                  <div class="skeleton-list-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text skeleton-w-50"></div>
+                  </div>
+                </div>
+                <div class="skeleton-list-item">
+                  <div class="skeleton skeleton-list-avatar"></div>
+                  <div class="skeleton-list-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text skeleton-w-50"></div>
+                  </div>
+                </div>
+                <div class="skeleton-list-item">
+                  <div class="skeleton skeleton-list-avatar"></div>
+                  <div class="skeleton-list-content">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text skeleton-w-50"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

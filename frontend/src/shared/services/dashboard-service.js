@@ -6,6 +6,7 @@
 import supabase from './supabase.js';
 import { authUtils } from '@utils/auth.js';
 import { errorHandler } from '@utils/error-handler.js';
+import { getStatusDefinitionsMap, isTaskCompleted } from './status-helpers.js';
 
 /**
  * Get dashboard statistics
@@ -64,12 +65,12 @@ export const dashboardService = {
 
   /**
    * Get active task count (not done)
+   * Uses is_done flag from status_definitions to determine completion
    */
   async getTaskCount(companyId, userId) {
     let query = supabase
       .from('tasks')
-      .select('id', { count: 'exact', head: true })
-      .is('completed_at', null);
+      .select('id, project_id, status');
 
     if (companyId) {
       query = query.eq('company_id', companyId);
@@ -77,13 +78,23 @@ export const dashboardService = {
       query = query.is('company_id', null).eq('created_by', userId);
     }
 
-    const { count, error } = await query;
+    const { data: tasks, error } = await query;
     if (error) throw error;
-    return count || 0;
+
+    if (!tasks || tasks.length === 0) return 0;
+
+    // Get status definitions for all projects
+    const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+    const statusDefsMap = await getStatusDefinitionsMap(projectIds);
+
+    // Count tasks that are NOT completed
+    const activeTasks = tasks.filter(task => !isTaskCompleted(task, statusDefsMap));
+    return activeTasks.length;
   },
 
   /**
    * Get tasks completed this week
+   * Uses is_done flag and updated_at to determine recent completions
    */
   async getCompletedThisWeekCount(companyId, userId) {
     const weekAgo = new Date();
@@ -91,9 +102,8 @@ export const dashboardService = {
 
     let query = supabase
       .from('tasks')
-      .select('id', { count: 'exact', head: true })
-      .not('completed_at', 'is', null)
-      .gte('completed_at', weekAgo.toISOString());
+      .select('id, project_id, status, updated_at')
+      .gte('updated_at', weekAgo.toISOString());
 
     if (companyId) {
       query = query.eq('company_id', companyId);
@@ -101,21 +111,30 @@ export const dashboardService = {
       query = query.is('company_id', null).eq('created_by', userId);
     }
 
-    const { count, error } = await query;
+    const { data: tasks, error } = await query;
     if (error) throw error;
-    return count || 0;
+
+    if (!tasks || tasks.length === 0) return 0;
+
+    // Get status definitions for all projects
+    const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+    const statusDefsMap = await getStatusDefinitionsMap(projectIds);
+
+    // Count tasks that are completed and updated this week
+    const completedTasks = tasks.filter(task => isTaskCompleted(task, statusDefsMap));
+    return completedTasks.length;
   },
 
   /**
    * Get overdue task count
+   * Excludes tasks with is_done = true
    */
   async getOverdueTaskCount(companyId, userId) {
     const now = new Date().toISOString();
 
     let query = supabase
       .from('tasks')
-      .select('id', { count: 'exact', head: true })
-      .is('completed_at', null)
+      .select('id, project_id, status, due_date')
       .not('due_date', 'is', null)
       .lt('due_date', now);
 
@@ -125,13 +144,23 @@ export const dashboardService = {
       query = query.is('company_id', null).eq('created_by', userId);
     }
 
-    const { count, error } = await query;
+    const { data: tasks, error } = await query;
     if (error) throw error;
-    return count || 0;
+
+    if (!tasks || tasks.length === 0) return 0;
+
+    // Get status definitions for all projects
+    const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+    const statusDefsMap = await getStatusDefinitionsMap(projectIds);
+
+    // Count tasks that are NOT completed
+    const overdueTasks = tasks.filter(task => !isTaskCompleted(task, statusDefsMap));
+    return overdueTasks.length;
   },
 
   /**
    * Get tasks assigned to current user
+   * Excludes completed tasks based on is_done flag
    * @returns {Promise<Array>} Tasks assigned to user, grouped by status
    */
   async getMyTasks() {
@@ -143,16 +172,24 @@ export const dashboardService = {
         throw new Error('User not authenticated');
       }
 
-      const { data, error } = await supabase
+      const { data: tasks, error } = await supabase
         .from('tasks')
         .select('*, projects(name)')
         .eq('assigned_to', userId)
-        .is('completed_at', null)
         .order('due_date', { ascending: true, nullsFirst: false })
-        .limit(10);
+        .limit(50); // Get more to filter
 
       if (error) throw error;
-      return data || [];
+      if (!tasks || tasks.length === 0) return [];
+
+      // Get status definitions for all projects
+      const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+      const statusDefsMap = await getStatusDefinitionsMap(projectIds);
+
+      // Filter out completed tasks
+      const activeTasks = tasks.filter(task => !isTaskCompleted(task, statusDefsMap));
+
+      return activeTasks.slice(0, 10); // Return top 10
     } catch (error) {
       errorHandler.handleError(error, { showAlert: false, logError: true });
       throw error;
@@ -161,6 +198,7 @@ export const dashboardService = {
 
   /**
    * Get upcoming deadlines (tasks due within 7 days)
+   * Excludes completed tasks based on is_done flag
    * @returns {Promise<Array>} Tasks with upcoming due dates
    */
   async getUpcomingDeadlines() {
@@ -180,12 +218,11 @@ export const dashboardService = {
       let query = supabase
         .from('tasks')
         .select('*, projects(name)')
-        .is('completed_at', null)
         .not('due_date', 'is', null)
         .gte('due_date', now.toISOString())
         .lte('due_date', weekFromNow.toISOString())
         .order('due_date', { ascending: true })
-        .limit(10);
+        .limit(50); // Get more to filter
 
       if (companyId) {
         query = query.eq('company_id', companyId);
@@ -193,9 +230,18 @@ export const dashboardService = {
         query = query.is('company_id', null).eq('created_by', userId);
       }
 
-      const { data, error } = await query;
+      const { data: tasks, error } = await query;
       if (error) throw error;
-      return data || [];
+      if (!tasks || tasks.length === 0) return [];
+
+      // Get status definitions for all projects
+      const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+      const statusDefsMap = await getStatusDefinitionsMap(projectIds);
+
+      // Filter out completed tasks
+      const activeTasks = tasks.filter(task => !isTaskCompleted(task, statusDefsMap));
+
+      return activeTasks.slice(0, 10); // Return top 10
     } catch (error) {
       errorHandler.handleError(error, { showAlert: false, logError: true });
       throw error;
@@ -204,6 +250,7 @@ export const dashboardService = {
 
   /**
    * Get project progress (completion percentage per project)
+   * Uses is_done flag to determine completion
    * @returns {Promise<Array>} Projects with completion stats
    */
   async getProjectProgress() {
@@ -231,34 +278,34 @@ export const dashboardService = {
 
       const { data: projects, error: projectsError } = await projectQuery;
       if (projectsError) throw projectsError;
+      if (!projects || projects.length === 0) return [];
 
-      // Get task counts for each project
-      const projectsWithProgress = await Promise.all(
-        (projects || []).map(async (project) => {
-          const [totalResult, completedResult] = await Promise.all([
-            supabase
-              .from('tasks')
-              .select('id', { count: 'exact', head: true })
-              .eq('project_id', project.id),
-            supabase
-              .from('tasks')
-              .select('id', { count: 'exact', head: true })
-              .eq('project_id', project.id)
-              .not('completed_at', 'is', null),
-          ]);
+      // Get status definitions for all projects
+      const projectIds = projects.map(p => p.id);
+      const statusDefsMap = await getStatusDefinitionsMap(projectIds);
 
-          const total = totalResult.count || 0;
-          const completed = completedResult.count || 0;
-          const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+      // Get all tasks for these projects
+      const { data: allTasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('id, project_id, status')
+        .in('project_id', projectIds);
 
-          return {
-            ...project,
-            total_tasks: total,
-            completed_tasks: completed,
-            percentage,
-          };
-        })
-      );
+      if (tasksError) throw tasksError;
+
+      // Calculate progress for each project
+      const projectsWithProgress = projects.map(project => {
+        const projectTasks = allTasks?.filter(t => t.project_id === project.id) || [];
+        const total = projectTasks.length;
+        const completed = projectTasks.filter(task => isTaskCompleted(task, statusDefsMap)).length;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        return {
+          ...project,
+          total_tasks: total,
+          completed_tasks: completed,
+          percentage,
+        };
+      });
 
       return projectsWithProgress;
     } catch (error) {
