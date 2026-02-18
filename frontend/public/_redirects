@@ -1,4 +1,6 @@
 # Netlify redirects configuration for multi-page application
-# This file does NOT redirect all requests because TaskFlow is a multi-page app
-# Each HTML file (signup.html, signin.html, dashboard.html, etc.) is standalone
-# No catch-all redirects needed
+# Serve index.html at root without redirect (rewrite with 200 status)
+/   /index.html   200
+
+# Each HTML page (signup.html, signin.html, etc.) is standalone and accessible directly
+# No catch-all redirect for other routes - Netlify will serve files as-is
