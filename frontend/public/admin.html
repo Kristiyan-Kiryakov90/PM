@@ -6,12 +6,6 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://zuupemhuaovzqqhyyocz.supabase.co wss://zuupemhuaovzqqhyyocz.supabase.co; img-src 'self' data: blob: https://zuupemhuaovzqqhyyocz.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <title>Admin Panel - TaskFlow</title>
-  <link rel="stylesheet" href="../src/styles/global/global.css">
-  <link rel="stylesheet" href="../src/styles/shared/navbar.css">
-  <link rel="stylesheet" href="../src/styles/shared/notifications.css">
-  <link rel="stylesheet" href="../src/features/admin/styles/admin.css">
-  <link rel="stylesheet" href="../src/styles/shared/tags.css">
-  <link rel="stylesheet" href="../src/features/admin/styles/kanban-settings.css">
 </head>
 <body>
   <!-- Navigation (injected by navbar component) -->
@@ -95,6 +89,14 @@
   </main>
 
   <script type="module">
+    // Import styles
+    import '@styles/global/global.css';
+    import '@styles/shared/navbar.css';
+    import '@styles/shared/notifications.css';
+    import '@admin/styles/admin.css';
+    import '@styles/shared/tags.css';
+    import '@admin/styles/kanban-settings.css';
+
     import { renderNavbar } from '../src/shared/components/navbar.js';
     import { router } from '../src/shared/utils/router.js';
     import { authUtils } from '../src/shared/utils/auth.js';

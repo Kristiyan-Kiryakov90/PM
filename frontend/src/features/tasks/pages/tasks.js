@@ -4,6 +4,14 @@
  * Refactored into modular architecture
  */
 
+// Import styles
+import '@styles/global/global.css';
+import '@styles/shared/navbar.css';
+import '@styles/shared/notifications.css';
+import '@tasks/styles/tasks.css';
+import '@tasks/styles/comments.css';
+import '@styles/shared/tags.css';
+
 import { Modal } from 'bootstrap';
 import { renderNavbar } from '@components/navbar.js';
 import { router } from '@utils/router.js';

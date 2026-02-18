@@ -3,6 +3,10 @@
  * User login with role-based redirect
  */
 
+// Import styles
+import '@styles/global/global.css';
+import '@features/auth/styles/signin.css';
+
 import { authService } from '@services/auth-service.js';
 import { router } from '@utils/router.js';
 import { validation } from '@utils/validation.js';

@@ -3,6 +3,10 @@
  * Initializes landing page, checks authentication, sets up interactive demos
  */
 
+// Import styles
+import '@styles/global/global.css';
+import '@features/landing/styles/index.css';
+
 import supabase from '@services/supabase.js';
 import { authUtils } from '@utils/auth.js';
 import { checkBootstrap, setupBootstrapForm } from './landing-forms.js';

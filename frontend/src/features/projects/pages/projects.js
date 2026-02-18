@@ -3,6 +3,12 @@
  * Main coordinator for project CRUD operations and UI interactions
  */
 
+// Import styles
+import '@styles/global/global.css';
+import '@styles/shared/navbar.css';
+import '@styles/shared/notifications.css';
+import '@projects/styles/projects.css';
+
 import { renderNavbar } from '@components/navbar.js';
 import { router } from '@utils/router.js';
 import { authUtils } from '@utils/auth.js';

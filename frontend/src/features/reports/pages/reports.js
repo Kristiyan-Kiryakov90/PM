@@ -5,6 +5,12 @@
  * Refactored from 703 lines using modular rendering functions
  */
 
+// Import styles
+import '@styles/global/global.css';
+import '@styles/shared/navbar.css';
+import '@styles/shared/notifications.css';
+import '@reports/styles/reports.css';
+
 import { renderNavbar } from '@components/navbar.js';
 import { router } from '@utils/router.js';
 import { authUtils } from '@utils/auth.js';

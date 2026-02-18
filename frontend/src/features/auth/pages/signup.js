@@ -3,6 +3,10 @@
  * User registration with optional company creation
  */
 
+// Import styles
+import '@styles/global/global.css';
+import '@features/auth/styles/signup.css';
+
 import supabase from '@services/supabase.js';
 import { validation } from '@utils/validation.js';
 
