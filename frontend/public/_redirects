@@ -1,0 +1,5 @@
+# Netlify redirects configuration for multi-page application
+# This file handles routing for the multi-page app
+
+# Redirect all not-found requests to index.html with 200 status (SPA-like behavior for navigation)
+/* /index.html 200
