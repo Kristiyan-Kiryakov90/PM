@@ -119,27 +119,38 @@ To provide a lightweight, efficient, and user-friendly alternative to enterprise
 
 #### Multi-Page Application (MPA) Structure
 ```
-Frontend (Vanilla JS + Vite)
-├── Pages (HTML)
+Frontend Root (frontend/ with Vite)
+├── HTML Pages (Vite entry points - processed by build)
 │   ├── index.html (Landing/Bootstrap)
 │   ├── signin.html (Authentication)
 │   ├── signup.html (Registration)
 │   ├── dashboard.html (User Overview)
 │   ├── projects.html (Project Management)
 │   ├── tasks.html (Task Board)
-│   └── admin.html (Admin Panel)
-├── Features (src/features/)
-│   ├── projects/
-│   ├── tasks/
-│   ├── comments/
-│   ├── time-tracking/
-│   ├── reports/
-│   └── ... (other features)
-├── Shared (src/shared/)
-│   ├── Components
-│   ├── Services
-│   └── Utils
-└── Styles (CSS3)
+│   ├── admin.html (Admin Panel)
+│   ├── profile.html (User Profile)
+│   └── reports.html (Analytics)
+├── src/features/ (Feature-based modules)
+│   ├── landing/           # Landing page feature
+│   ├── auth/              # Auth pages (signin, signup)
+│   ├── projects/          # Project management
+│   ├── tasks/             # Task board
+│   ├── dashboard/         # Dashboard
+│   ├── admin/             # Admin panel
+│   ├── reports/           # Analytics
+│   ├── comments/          # Comments system
+│   ├── time-tracking/     # Time tracking
+│   └── notifications/     # Notifications
+├── src/shared/ (Shared across features)
+│   ├── services/          # API/business logic
+│   ├── components/        # Reusable components
+│   ├── utils/             # Helper functions
+│   └── constants/         # Enums & constants
+├── src/styles/ (CSS organization)
+│   ├── global/            # Bootstrap, variables
+│   ├── shared/            # Component CSS
+│   └── features/          # Feature-specific CSS
+└── src/assets/            # Static files
 ```
 
 #### Multi-Tenant Architecture
@@ -232,47 +243,49 @@ Frontend (Vanilla JS + Vite)
 
 ```
 PM/
-├── frontend/                          # Frontend application
+├── frontend/                          # Frontend application (Vite root)
 │   ├── src/
 │   │   ├── features/                 # Feature-based modules
 │   │   │   ├── projects/
-│   │   │   │   ├── pages/            # Page scripts
+│   │   │   │   ├── pages/            # Page scripts (tasks.js, dashboard.js, etc.)
 │   │   │   │   ├── services/         # Business logic
-│   │   │   │   └── components/       # UI components
+│   │   │   │   ├── components/       # UI components
+│   │   │   │   └── styles/           # Feature CSS
 │   │   │   ├── tasks/
 │   │   │   ├── comments/
 │   │   │   ├── time-tracking/
 │   │   │   ├── notifications/
 │   │   │   ├── reports/
+│   │   │   ├── landing/
+│   │   │   ├── auth/
+│   │   │   ├── admin/
+│   │   │   ├── dashboard/
 │   │   │   └── ...
 │   │   ├── shared/                   # Shared across features
-│   │   │   ├── services/
-│   │   │   │   ├── auth-service.js
-│   │   │   │   ├── api-client.js
-│   │   │   │   └── ...
-│   │   │   ├── components/
-│   │   │   │   ├── navbar.js
-│   │   │   │   ├── sidebar.js
-│   │   │   │   └── ...
-│   │   │   └── utils/
-│   │   ├── styles/                   # Global styles
-│   │   │   ├── global.css
-│   │   │   └── variables.css
-│   │   └── assets/                   # Images, icons
-│   ├── public/                        # Static files
-│   ├── pages/                         # HTML pages
-│   │   ├── index.html
-│   │   ├── dashboard.html
-│   │   ├── projects.html
-│   │   ├── tasks.html
-│   │   ├── admin.html
-│   │   ├── signin.html
-│   │   └── signup.html
+│   │   │   ├── services/             # Service layer (project, task, etc.)
+│   │   │   ├── components/           # Shared components (navbar, sidebar)
+│   │   │   ├── utils/                # Utility functions (auth, validation)
+│   │   │   └── constants/            # Constants and enums
+│   │   ├── styles/                   # Global & shared styles
+│   │   │   ├── global/               # Global CSS (bootstrap, variables)
+│   │   │   ├── shared/               # Shared component CSS
+│   │   │   └── features/             # Feature-specific CSS
+│   │   └── assets/                   # Images, icons, static files
+│   ├── public/                        # Static files served as-is
+│   ├── index.html                     # Landing/bootstrap page (Vite entry)
+│   ├── dashboard.html                 # Dashboard page (Vite entry)
+│   ├── projects.html                  # Projects page (Vite entry)
+│   ├── tasks.html                     # Tasks board page (Vite entry)
+│   ├── admin.html                     # Admin panel page (Vite entry)
+│   ├── profile.html                   # User profile page (Vite entry)
+│   ├── signin.html                    # Sign in page (Vite entry)
+│   ├── signup.html                    # Registration page (Vite entry)
+│   ├── reports.html                   # Reports page (Vite entry)
 │   ├── tests/                         # Test files
-│   │   ├── unit/
-│   │   ├── integration/
-│   │   └── e2e/
-│   ├── vite.config.js
+│   │   ├── unit/                      # Unit tests
+│   │   ├── integration/               # Integration tests
+│   │   └── e2e/                       # End-to-end tests
+│   ├── vite.config.js                 # Vite configuration (defines HTML entries)
 │   ├── package.json
 │   └── .env                           # Environment variables
 ├── supabase/                          # Database migrations
