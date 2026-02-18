@@ -137,7 +137,7 @@ function renderProjectItem(project, activeProjectId) {
   const isActive = project.id === activeProjectId;
 
   return `
-    <a href="/public/tasks.html?project=${project.id}"
+    <a href="/tasks.html?project=${project.id}"
        class="project-item ${isActive ? 'project-item-active' : ''}"
        data-project-id="${project.id}">
       <span class="project-icon" style="color: ${project.color || '#3b82f6'}">${project.icon || '📁'}</span>

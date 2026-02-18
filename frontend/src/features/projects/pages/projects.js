@@ -236,7 +236,7 @@ function handleCheckboxChange(e) {
  */
 function openProjectDetails(projectId) {
   // Navigate to tasks page filtered by this project
-  window.location.href = `/public/tasks.html?project=${projectId}`;
+  window.location.href = `/tasks.html?project=${projectId}`;
 }
 
 /**

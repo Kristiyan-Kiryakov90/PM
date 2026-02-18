@@ -95,7 +95,7 @@ export async function handleBootstrapSubmit(e) {
     });
 
     // Success - redirect to admin panel
-    window.location.href = '/public/admin.html';
+    window.location.href = '/admin.html';
   } catch (error) {
     console.error('Bootstrap error:', error);
     const errorDiv = document.getElementById('bootstrapError');

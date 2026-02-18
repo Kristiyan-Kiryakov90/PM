@@ -53,7 +53,7 @@ export const authService = {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/public/index.html`,
+        emailRedirectTo: `${window.location.origin}/index.html`,
         data: {
           role: 'sys_admin',
           company_id: companyData.company_id,
@@ -111,7 +111,7 @@ export const authService = {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/public/index.html`,
+        emailRedirectTo: `${window.location.origin}/index.html`,
         data: {
           role: companyData.role,
           company_id: companyData.company_id,
@@ -177,9 +177,9 @@ export const authService = {
     switch (role) {
       case 'sys_admin':
       case 'admin':
-        return '/public/admin.html';
+        return '/admin.html';
       default:
-        return '/public/dashboard.html';
+        return '/dashboard.html';
     }
   }
 

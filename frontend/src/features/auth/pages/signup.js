@@ -153,7 +153,7 @@ async function handleSignupSubmit(e) {
 
     // Redirect to sign in after 3 seconds
     setTimeout(() => {
-      window.location.href = '/public/signin.html';
+      window.location.href = '/signin.html';
     }, 3000);
   } catch (error) {
     console.error('Signup error:', error);

@@ -1,247 +1,217 @@
 /**
  * Admin Page (admin.html)
- * Company admin functions: manage users, view company settings
+ * Company admin functions: manage team, tags, workflow, and system admin
  */
 
-import { Modal } from 'bootstrap';
-import supabase from '@services/supabase.js';
+// Import styles
+import '@styles/global/global.css';
+import '@styles/shared/navbar.css';
+import '@styles/shared/notifications.css';
+import '@admin/styles/admin.css';
+import '@styles/shared/tags.css';
+import '@admin/styles/kanban-settings.css';
+
+import { renderNavbar } from '@components/navbar.js';
+import { router } from '@utils/router.js';
 import { authUtils } from '@utils/auth.js';
+import { uiHelpers } from '@utils/ui-helpers.js';
+import { renderTagManager } from '@admin/components/tag-manager-admin.js';
+import { renderTeamMemberManager } from '@admin/components/team/team-manager-admin.js';
+import { renderSystemAdminManager } from '@admin/components/sysadmin/system-admin-manager.js';
+import { renderWorkflowManager } from '@admin/components/workflow-manager-admin.js';
+import supabase from '@services/supabase.js';
 
-// State
-let currentCompanyId = null;
-let currentUserRole = null;
+let tagManagerInitialized = false;
+let teamManagerInitialized = false;
+let workflowManagerInitialized = false;
+let sysadminManagerInitialized = false;
+let isSysAdmin = false;
 
-/**
- * Initialize admin page
- */
 async function init() {
-  // Ensure user is admin
-  await requireAdmin();
-
-  // Get user metadata
-  const metadata = await authUtils.getUserMetadata();
-  currentCompanyId = metadata.company_id;
-  currentUserRole = metadata.role;
-
-  // Check if user has a company
-  if (!currentCompanyId) {
-    uiHelpers.showError('You must create a company before accessing admin features.');
-    window.location.href = '/public/dashboard.html';
-    return;
-  }
-
-  // Load company users
-  await loadCompanyUsers();
-
-  // Attach event listeners
-  attachEventListeners();
-}
-
-/**
- * Attach event listeners
- */
-function attachEventListeners() {
-  const createUserForm = document.getElementById('createUserForm');
-  if (createUserForm) {
-    createUserForm.addEventListener('submit', handleCreateUser);
-  }
-
-  const createUserBtn = document.getElementById('createUserBtn');
-  if (createUserBtn) {
-    createUserBtn.addEventListener('click', showCreateUserModal);
-  }
-}
-
-/**
- * Load company users from profiles table
- */
-async function loadCompanyUsers() {
   try {
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        role,
-        created_at
-      `)
-      .eq('company_id', currentCompanyId)
-      .order('created_at', { ascending: false });
+    // Ensure user is authenticated and is admin
+    await router.requireAdmin();
 
-    if (error) throw error;
+    // Render navbar
+    await renderNavbar();
 
-    // Get auth.users data for email and name
-    const userIds = profiles.map(p => p.id);
-    const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
+    // Load user info and check for sys_admin
+    const metadata = await authUtils.getUserMetadata();
+    console.log('Admin user:', metadata);
 
-    if (usersError) {
-      console.error('Failed to fetch user details:', usersError);
-    }
+    // Check if user is sys_admin
+    await checkSysAdmin();
 
-    // Merge profiles with auth.users data
-    const usersWithDetails = profiles.map(profile => {
-      const authUser = users?.find(u => u.id === profile.id);
-      return {
-        id: profile.id,
-        email: authUser?.email || 'Unknown',
-        first_name: authUser?.user_metadata?.first_name || '',
-        last_name: authUser?.user_metadata?.last_name || '',
-        role: profile.role,
-        created_at: profile.created_at,
-      };
-    });
+    // Setup tab switching
+    setupTabs();
 
-    renderUserTable(usersWithDetails);
-
+    // Tags will be loaded when user clicks the Tags tab
   } catch (error) {
-    console.error('Failed to load users:', error);
-    uiHelpers.showError('Failed to load company users: ' + error.message);
+    console.error('Admin page initialization error:', error);
+    uiHelpers.showError('Failed to load admin panel. Please refresh the page.');
   }
 }
 
-/**
- * Render user table
- */
-function renderUserTable(users) {
-  const tbody = document.querySelector('#usersTable tbody');
-  if (!tbody) return;
-
-  tbody.innerHTML = '';
-
-  if (users.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center text-muted">
-          No users yet. Create your first team member.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  users.forEach(user => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${escapeHtml(user.email)}</td>
-      <td>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</td>
-      <td>
-        <span class="badge ${user.role === 'admin' ? 'bg-primary' : 'bg-secondary'}">
-          ${escapeHtml(user.role)}
-        </span>
-      </td>
-      <td>${new Date(user.created_at).toLocaleDateString()}</td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
-/**
- * Show create user modal
- */
-function showCreateUserModal() {
-  const modal = document.getElementById('createUserModal');
-  if (modal) {
-    // Use Bootstrap modal or custom modal logic
-    const bsModal = new Modal(modal);
-    bsModal.show();
-  }
-}
-
-/**
- * Handle create user form submission
- * Calls Edge Function with service role
- */
-async function handleCreateUser(e) {
-  e.preventDefault();
-
-  const email = document.getElementById('newUserEmail').value.trim();
-  const firstName = document.getElementById('newUserFirstName').value.trim();
-  const lastName = document.getElementById('newUserLastName').value.trim();
-  const role = document.getElementById('newUserRole').value;
-
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Creating...';
-
+async function checkSysAdmin() {
   try {
-    // Call Edge Function (uses service role internally)
-    const { data, error } = await supabase.functions.invoke('admin-create-user', {
-      body: {
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-        role: role
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    isSysAdmin = profile?.role === 'sys_admin';
+
+    // Show/hide sys_admin tab
+    const sysadminTab = document.getElementById('sysadminTab');
+    if (sysadminTab && isSysAdmin) {
+      sysadminTab.style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Error checking sys_admin status:', error);
+  }
+}
+
+function setupTabs() {
+  const tabButtons = document.querySelectorAll('.admin-tab-btn');
+  const tabContents = document.querySelectorAll('.admin-tab-content');
+
+  console.log('Setting up tabs:', tabButtons.length, 'buttons found');
+  console.log('Tab contents:', tabContents.length, 'content areas found');
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const tabName = btn.getAttribute('data-tab');
+      console.log('Tab clicked:', tabName);
+
+      // Remove active from all buttons and contents
+      tabButtons.forEach((b) => b.classList.remove('active'));
+      tabContents.forEach((c) => c.classList.remove('active'));
+
+      // Add active to clicked button and corresponding content
+      btn.classList.add('active');
+      const tabContent = document.getElementById(tabName + '-tab');
+      if (tabContent) {
+        tabContent.classList.add('active');
+        console.log('Activated tab content:', tabName + '-tab');
+      } else {
+        console.error('Tab content not found:', tabName + '-tab');
+      }
+
+      // Load tab-specific content
+      if (tabName === 'team' && !teamManagerInitialized) {
+        console.log('Loading team manager...');
+        await loadTeamManager();
+      } else if (tabName === 'tags' && !tagManagerInitialized) {
+        console.log('Loading tag manager...');
+        await loadTagManager();
+      } else if (tabName === 'workflow' && !workflowManagerInitialized) {
+        console.log('Loading workflow manager...');
+        await loadWorkflowManager();
+      } else if (tabName === 'sysadmin' && !sysadminManagerInitialized) {
+        console.log('Loading system admin manager...');
+        await loadSysAdminManager();
       }
     });
+  });
 
-    if (error) throw error;
+  // Load team manager by default on page load
+  console.log('Loading team manager on page load...');
+  loadTeamManager();
+}
 
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to create user');
-    }
+async function loadTeamManager() {
+  const teamContainer = document.getElementById('teamContainer');
+  console.log('loadTeamManager - container found:', !!teamContainer);
 
-    // Success!
-    uiHelpers.showSuccess(
-      `User created successfully!\n\n` +
-      `Email: ${data.user.email}\n` +
-      `Temporary Password: ${data.user.temp_password}\n\n` +
-      `⚠️ Share this password securely with the user.`
-    );
+  if (!teamContainer) {
+    console.error('Team container not found!');
+    return;
+  }
 
-    // Reload user list
-    await loadCompanyUsers();
+  teamContainer.innerHTML = '<p class="text-center">Loading team members...</p>';
 
-    // Reset form
-    document.getElementById('createUserForm').reset();
-
-    // Close modal
-    const modal = Modal.getInstance(document.getElementById('createUserModal'));
-    if (modal) modal.hide();
-
+  try {
+    console.log('Calling renderTeamMemberManager...');
+    await renderTeamMemberManager(teamContainer);
+    teamManagerInitialized = true;
+    console.log('Team manager loaded successfully');
   } catch (error) {
-    console.error('Failed to create user:', error);
-    uiHelpers.showError('Failed to create user: ' + error.message);
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Create User';
+    console.error('Failed to load team manager:', error);
+    teamContainer.innerHTML = `
+      <div class="alert alert-danger">
+        <h5>Failed to load team manager</h5>
+        <p>${error.message || 'Unknown error'}</p>
+        <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+      </div>
+    `;
   }
 }
 
-/**
- * Show error message
- */
-function showError(message) {
-  const errorDiv = document.getElementById('adminError');
-  if (errorDiv) {
-    errorDiv.textContent = message;
-    errorDiv.classList.remove('d-none');
-    setTimeout(() => errorDiv.classList.add('d-none'), 5000);
-  } else {
-    alert('Error: ' + message);
+async function loadTagManager() {
+  const tagsContainer = document.getElementById('tagsContainer');
+  if (!tagsContainer) return;
+
+  try {
+    await renderTagManager(tagsContainer);
+    tagManagerInitialized = true;
+  } catch (error) {
+    console.error('Failed to load tag manager:', error);
+    tagsContainer.innerHTML = `
+      <div class="text-center text-danger">
+        <p>Failed to load tag manager</p>
+        <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+      </div>
+    `;
   }
 }
 
-/**
- * Show success message
- */
-function showSuccess(message) {
-  const successDiv = document.getElementById('adminSuccess');
-  if (successDiv) {
-    successDiv.textContent = message;
-    successDiv.classList.remove('d-none');
-    setTimeout(() => successDiv.classList.add('d-none'), 10000);
-  } else {
-    alert(message);
+async function loadWorkflowManager() {
+  const workflowContainer = document.getElementById('workflowContainer');
+  if (!workflowContainer) return;
+
+  try {
+    await renderWorkflowManager(workflowContainer);
+    workflowManagerInitialized = true;
+  } catch (error) {
+    console.error('Failed to load workflow manager:', error);
+    workflowContainer.innerHTML = `
+      <div class="text-center text-danger">
+        <p>Failed to load workflow manager</p>
+        <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+      </div>
+    `;
   }
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+async function loadSysAdminManager() {
+  const sysadminContainer = document.getElementById('sysadminContainer');
+  if (!sysadminContainer) return;
+
+  if (!isSysAdmin) {
+    sysadminContainer.innerHTML = `
+      <div class="alert alert-danger">
+        <p>Access denied. System admin privileges required.</p>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    await renderSystemAdminManager(sysadminContainer);
+    sysadminManagerInitialized = true;
+  } catch (error) {
+    console.error('Failed to load system admin manager:', error);
+    sysadminContainer.innerHTML = `
+      <div class="text-center text-danger">
+        <p>Failed to load system admin manager</p>
+        <button class="btn btn-sm btn-primary" onclick="location.reload()">Retry</button>
+      </div>
+    `;
+  }
 }
 
-// Initialize on page load
 init();

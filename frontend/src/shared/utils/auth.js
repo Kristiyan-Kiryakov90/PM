@@ -201,7 +201,7 @@ export const authUtils = {
   async requireAuth() {
     const authenticated = await this.isAuthenticated();
     if (!authenticated) {
-      window.location.href = '/public/signin.html';
+      window.location.href = '/signin.html';
     }
   },
 
@@ -212,7 +212,7 @@ export const authUtils = {
   async redirectIfAuthenticated() {
     const authenticated = await this.isAuthenticated();
     if (authenticated) {
-      window.location.href = '/public/dashboard.html';
+      window.location.href = '/dashboard.html';
     }
   },
 
@@ -229,7 +229,7 @@ export const authUtils = {
 
     if (!allowedRoles.includes(metadata.role)) {
       alert('Access denied. You do not have permission to view this page.');
-      window.location.href = '/public/dashboard.html';
+      window.location.href = '/dashboard.html';
     }
   },
 

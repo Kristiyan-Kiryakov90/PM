@@ -17,7 +17,7 @@ export const router = {
     if (!user) {
       const currentPath = window.location.pathname;
       const returnUrl = encodeURIComponent(currentPath);
-      window.location.href = `/public/signin.html?return=${returnUrl}`;
+      window.location.href = `/signin.html?return=${returnUrl}`;
       throw new Error('Not authenticated');
     }
 
@@ -38,7 +38,7 @@ export const router = {
 
     if (!allowedRoles.includes(metadata.role)) {
       alert('Access denied. You do not have permission to view this page.');
-      window.location.href = '/public/dashboard.html';
+      window.location.href = '/dashboard.html';
       throw new Error('Insufficient permissions');
     }
 
@@ -76,10 +76,10 @@ export const router = {
       // Redirect based on role
       if (metadata?.role === 'sys_admin' || metadata?.role === 'admin') {
         console.log('Redirecting to admin.html');
-        window.location.href = '/public/admin.html';
+        window.location.href = '/admin.html';
       } else {
         console.log('Redirecting to dashboard.html');
-        window.location.href = '/public/dashboard.html';
+        window.location.href = '/dashboard.html';
       }
 
       return true;
@@ -98,7 +98,7 @@ export const router = {
 
   /**
    * Get return URL from query parameter
-   * Only allows relative paths within /public/ to prevent open redirect attacks.
+   * Only allows relative paths to prevent open redirect attacks.
    * @returns {string} Return URL or default dashboard
    */
   getReturnUrl() {
@@ -106,12 +106,12 @@ export const router = {
     const returnUrl = params.get('return');
     if (returnUrl) {
       const decoded = decodeURIComponent(returnUrl);
-      // Strict allowlist: only /public/<name>.html with safe characters
-      if (/^\/public\/[a-zA-Z0-9_-]+\.html$/.test(decoded)) {
+      // Strict allowlist: only /<name>.html with safe characters
+      if (/^\/[a-zA-Z0-9_-]+\.html$/.test(decoded)) {
         return decoded;
       }
     }
-    return '/public/dashboard.html';
+    return '/dashboard.html';
   },
 
   /**

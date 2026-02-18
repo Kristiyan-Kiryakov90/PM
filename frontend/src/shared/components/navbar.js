@@ -23,7 +23,7 @@ export async function renderNavbar() {
       <div class="navbar-container">
         <!-- Logo -->
         <div class="navbar-brand">
-          <a href="/public/dashboard.html" class="navbar-logo">
+          <a href="/dashboard.html" class="navbar-logo">
             <span class="navbar-logo-icon">📊</span>
             <span class="navbar-logo-text">TaskFlow</span>
           </a>
@@ -31,11 +31,11 @@ export async function renderNavbar() {
 
         <!-- Navigation Links -->
         <div class="navbar-menu">
-          <a href="/public/dashboard.html" class="navbar-link">Dashboard</a>
-          <a href="/public/projects.html" class="navbar-link">Projects</a>
-          <a href="/public/tasks.html" class="navbar-link">Tasks</a>
-          <a href="/public/reports.html" class="navbar-link">Reports</a>
-          ${isAdmin ? `<a href="/public/admin.html" class="navbar-link navbar-link-admin">Admin</a>` : ''}
+          <a href="/dashboard.html" class="navbar-link">Dashboard</a>
+          <a href="/projects.html" class="navbar-link">Projects</a>
+          <a href="/tasks.html" class="navbar-link">Tasks</a>
+          <a href="/reports.html" class="navbar-link">Reports</a>
+          ${isAdmin ? `<a href="/admin.html" class="navbar-link navbar-link-admin">Admin</a>` : ''}
         </div>
 
         <!-- User Menu -->
@@ -53,7 +53,7 @@ export async function renderNavbar() {
             </button>
 
             <div class="user-menu" id="userMenu">
-              <a href="/public/profile.html" class="user-menu-link">
+              <a href="/profile.html" class="user-menu-link">
                 <span class="menu-icon">👤</span>
                 <span>Profile</span>
               </a>
@@ -77,22 +77,6 @@ export async function renderNavbar() {
 
   // Insert navbar at the beginning of body
   document.body.insertAdjacentHTML('afterbegin', navbarHTML);
-
-  // Add navbar CSS if not already loaded
-  if (!document.querySelector('link[href*="navbar.css"]')) {
-    const navbarCSS = document.createElement('link');
-    navbarCSS.rel = 'stylesheet';
-    navbarCSS.href = '/src/styles/shared/navbar.css';
-    document.head.appendChild(navbarCSS);
-  }
-
-  // Add notification CSS if not already loaded
-  if (!document.querySelector('link[href*="notifications.css"]')) {
-    const notificationCSS = document.createElement('link');
-    notificationCSS.rel = 'stylesheet';
-    notificationCSS.href = '/src/styles/shared/notifications.css';
-    document.head.appendChild(notificationCSS);
-  }
 
   // Setup event listeners
   setupNavbarEvents();

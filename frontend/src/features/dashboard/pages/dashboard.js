@@ -141,7 +141,7 @@ async function renderMyTasks(tasks) {
     <div class="task-item">
       <div class="task-item-header">
         <span class="task-item-priority priority-${task.priority || 'medium'}">${getPriorityIcon(task.priority)}</span>
-        <a href="/public/tasks.html?task=${task.id}" class="task-item-title">${escapeHtml(task.title)}</a>
+        <a href="/tasks.html?task=${task.id}" class="task-item-title">${escapeHtml(task.title)}</a>
       </div>
       <div class="task-item-meta">
         <span class="task-item-project">${escapeHtml(task.projects?.name || 'No Project')}</span>
@@ -181,7 +181,7 @@ async function renderUpcomingDeadlines(tasks) {
     .map(
       (task) => `
     <div class="deadline-item">
-      <a href="/public/tasks.html?task=${task.id}" class="deadline-title">${escapeHtml(task.title)}</a>
+      <a href="/tasks.html?task=${task.id}" class="deadline-title">${escapeHtml(task.title)}</a>
       <div class="deadline-meta">
         <span class="deadline-project">${escapeHtml(task.projects?.name || 'No Project')}</span>
         <span class="deadline-date">${formatDate(task.due_date)}</span>
