@@ -12,13 +12,6 @@
 # - VITE_SUPABASE_ANON_KEY
 # - VITE_APP_URL (set to your Netlify domain, e.g., https://taskflow.netlify.app)
 
-# Redirect all requests to index.html for multi-page app
-# The app will handle routing from there
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
 # Cache control headers
 [[headers]]
   for = "/*"

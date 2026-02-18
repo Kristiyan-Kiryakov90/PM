@@ -1,5 +1,4 @@
 # Netlify redirects configuration for multi-page application
-# This file handles routing for the multi-page app
-
-# Redirect all not-found requests to index.html with 200 status (SPA-like behavior for navigation)
-/* /index.html 200
+# This file does NOT redirect all requests because TaskFlow is a multi-page app
+# Each HTML file (signup.html, signin.html, dashboard.html, etc.) is standalone
+# No catch-all redirects needed
