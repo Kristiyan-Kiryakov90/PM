@@ -97,15 +97,15 @@
     import '@styles/shared/tags.css';
     import '@admin/styles/kanban-settings.css';
 
-    import { renderNavbar } from '../src/shared/components/navbar.js';
-    import { router } from '../src/shared/utils/router.js';
-    import { authUtils } from '../src/shared/utils/auth.js';
-    import { uiHelpers } from '../src/shared/utils/ui-helpers.js';
-    import { renderTagManager } from '../src/features/admin/components/tag-manager-admin.js';
-    import { renderTeamMemberManager } from '../src/features/admin/components/team/team-manager-admin.js';
-    import { renderSystemAdminManager } from '../src/features/admin/components/sysadmin/system-admin-manager.js';
-    import { renderWorkflowManager } from '../src/features/admin/components/workflow-manager-admin.js';
-    import supabase from '../src/shared/services/supabase.js';
+    import { renderNavbar } from './src/shared/components/navbar.js';
+    import { router } from './src/shared/utils/router.js';
+    import { authUtils } from './src/shared/utils/auth.js';
+    import { uiHelpers } from './src/shared/utils/ui-helpers.js';
+    import { renderTagManager } from './src/features/admin/components/tag-manager-admin.js';
+    import { renderTeamMemberManager } from './src/features/admin/components/team/team-manager-admin.js';
+    import { renderSystemAdminManager } from './src/features/admin/components/sysadmin/system-admin-manager.js';
+    import { renderWorkflowManager } from './src/features/admin/components/workflow-manager-admin.js';
+    import supabase from './src/shared/services/supabase.js';
 
     let tagManagerInitialized = false;
     let teamManagerInitialized = false;

@@ -48,13 +48,15 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'public/index.html'),
-        signup: resolve(__dirname, 'public/signup.html'),
-        signin: resolve(__dirname, 'public/signin.html'),
-        dashboard: resolve(__dirname, 'public/dashboard.html'),
-        projects: resolve(__dirname, 'public/projects.html'),
-        tasks: resolve(__dirname, 'public/tasks.html'),
-        admin: resolve(__dirname, 'public/admin.html'),
+        index: resolve(__dirname, 'index.html'),
+        signup: resolve(__dirname, 'signup.html'),
+        signin: resolve(__dirname, 'signin.html'),
+        dashboard: resolve(__dirname, 'dashboard.html'),
+        projects: resolve(__dirname, 'projects.html'),
+        tasks: resolve(__dirname, 'tasks.html'),
+        admin: resolve(__dirname, 'admin.html'),
+        reports: resolve(__dirname, 'reports.html'),
+        profile: resolve(__dirname, 'profile.html'),
       },
     },
     outDir: '../dist',
@@ -65,7 +67,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    open: '/public/index.html',
+    open: '/index.html',
     headers: securityHeaders(),
   },
 
