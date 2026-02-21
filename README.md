@@ -309,45 +309,56 @@ PM/
 
 ## 6. Database Schema
 
-### Database Architecture Diagram
+### Database Architecture Diagram (19 Tables)
 
 ```mermaid
 erDiagram
     COMPANIES ||--o{ PROJECTS : contains
     COMPANIES ||--o{ SPACES : contains
-    COMPANIES ||--o{ STATUSES : contains
+    COMPANIES ||--o{ PROFILES : contains
+    COMPANIES ||--o{ STATUS_DEFINITIONS : defines
     COMPANIES ||--o{ TAGS : contains
-    
+    COMPANIES ||--o{ ACTIVITY_LOG : tracks
+    COMPANIES ||--o{ NOTIFICATIONS : scopes
+    COMPANIES ||--o{ TIME_ENTRIES : isolates
+    COMPANIES ||--o{ SAVED_VIEWS : contains
+    COMPANIES ||--o{ TASK_DEPENDENCIES : isolates
+
+    AUTH_USERS ||--o{ PROFILES : mapped_to
     AUTH_USERS ||--o{ PROJECTS : creates
     AUTH_USERS ||--o{ TASKS : creates
     AUTH_USERS ||--o{ TASKS : assigned_to
     AUTH_USERS ||--o{ COMMENTS : creates
     AUTH_USERS ||--o{ TIME_ENTRIES : tracks
     AUTH_USERS ||--o{ TAGS : creates
-    AUTH_USERS ||--o{ MENTIONS : mentioned_in
+    AUTH_USERS ||--o{ MENTIONS : mentioned_by
     AUTH_USERS ||--o{ ACTIVITY_LOG : initiates
     AUTH_USERS ||--o{ NOTIFICATIONS : receives
-    
+    AUTH_USERS ||--o{ CHECKLIST_ITEMS : completes
+    AUTH_USERS ||--o{ SAVED_VIEWS : creates
+    AUTH_USERS ||--o{ TASK_DEPENDENCIES : creates
+    AUTH_USERS ||--o{ USER_STATUS : has
+
     SPACES ||--o{ PROJECTS : contains
-    SPACES ||--o{ TASKS : organizes
-    
     PROJECTS ||--o{ TASKS : contains
-    PROJECTS ||--o{ ACTIVITY_LOG : related_to
-    
+    PROJECTS ||--o{ STATUS_DEFINITIONS : uses
+
     TASKS ||--o{ COMMENTS : has
+    TASKS ||--o{ ATTACHMENTS : has
     TASKS ||--o{ TIME_ENTRIES : tracked_in
-    TASKS ||--o{ TASK_TAGS : has
+    TASKS ||--o{ TASK_TAGS : linked_to
     TASKS ||--o{ CHECKLISTS : contains
+    TASKS ||--o{ CHECKLIST_ITEMS : has_items
     TASKS ||--o{ NOTIFICATIONS : triggers
     TASKS ||--o{ ACTIVITY_LOG : related_to
-    
+    TASKS ||--o{ TASK_DEPENDENCIES : has_dependencies
+
+    CHECKLISTS ||--o{ CHECKLIST_ITEMS : contains
     COMMENTS ||--o{ COMMENTS : threaded
     COMMENTS ||--o{ MENTIONS : has
     COMMENTS ||--o{ NOTIFICATIONS : triggers
-    
+
     TAGS ||--o{ TASK_TAGS : linked_to
-    
-    ACTIVITY_LOG ||--o{ COMPANIES : tracks
 ```
 
 ### Core Tables
@@ -466,25 +477,53 @@ CREATE TABLE spaces (
 - Custom sort order for UI arrangement
 - Projects and Tasks can be grouped within spaces
 
-#### 6. Statuses
-**Purpose**: Custom workflow status definitions per company. Allows each company to define their own status workflows (e.g., To Do → In Progress → Review → Done) instead of using fixed statuses.
+#### 6. Profiles
+**Purpose**: User mapping table linking Supabase Auth users to companies with role assignment. Bridges authentication (auth.users) to application data (companies) with role-based access control.
 
 ```sql
-CREATE TABLE statuses (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  name TEXT NOT NULL,
-  color TEXT,
-  order INT,
-  company_id BIGINT REFERENCES companies(id),
-  created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  company_id BIGINT REFERENCES companies(id) (nullable - personal users),
+  role TEXT NOT NULL CHECK (role IN ('admin', 'user', 'sys_admin')),
+  email TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
 **Key Features**:
-- Company-specific status definitions
+- One-to-one mapping with auth.users
+- Company association for multi-tenant support
+- Role assignment (sys_admin, admin, user)
+- Supports personal users (company_id NULL)
+- Email cache for quick access
+
+#### 7. Status Definitions
+**Purpose**: Custom workflow status definitions per company/project. Allows each company to define their own status workflows (e.g., To Do → In Progress → Review → Done) instead of using fixed statuses.
+
+```sql
+CREATE TABLE status_definitions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  color TEXT DEFAULT '#6b7280',
+  sort_order INT DEFAULT 0,
+  is_done BOOLEAN DEFAULT FALSE,
+  is_default BOOLEAN DEFAULT FALSE,
+  company_id BIGINT REFERENCES companies(id),
+  project_id BIGINT REFERENCES projects(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Company and project-scoped status definitions
 - Visual color coding for UI distinction
 - Custom ordering for workflow sequencing
-- Enables flexible workflow management per company
+- `is_done` flag to mark completion statuses
+- `is_default` to set initial task status
+- Slug for URL-friendly status names
 
 #### 7. Comments
 **Purpose**: Threaded discussion system on tasks. Supports rich collaboration with threading, action item tracking, and resolution status for comment-based tasks.
@@ -631,34 +670,181 @@ CREATE TABLE notifications (
 - Real-time Supabase subscriptions for live updates
 
 #### 14. Checklists
-**Purpose**: Granular task breakdown within individual tasks. Enables detailed task decomposition for complex work items with progress tracking.
+**Purpose**: Container for checklist items within tasks. Enables detailed task decomposition for complex work items with progress tracking organized into named groups.
 
 ```sql
 CREATE TABLE checklists (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  completed BOOLEAN DEFAULT FALSE,
+  title VARCHAR NOT NULL,
+  sort_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
 **Key Features**:
-- Per-task checklist items
-- Completion status tracking
-- Provides task breakdown visibility
+- Per-task checklist groups
+- Named checklist collections
+- Sort order for custom arrangement
 - Automatic cascade deletion with task
+- Contains multiple checklist items
+
+#### 15. Checklist Items
+**Purpose**: Individual items within checklists. Tracks completion status, assignments, and due dates for granular task breakdown.
+
+```sql
+CREATE TABLE checklist_items (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  checklist_id BIGINT REFERENCES checklists(id) ON DELETE CASCADE,
+  content VARCHAR NOT NULL,
+  is_completed BOOLEAN DEFAULT FALSE,
+  completed_at TIMESTAMP,
+  completed_by UUID REFERENCES auth.users(id),
+  assigned_to UUID REFERENCES auth.users(id),
+  due_date TIMESTAMP,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Individual checklist items with content
+- Completion tracking with timestamp and completer
+- Assignment to team members
+- Per-item due dates
+- Sort order for custom arrangement
+- Auto cascade with checklist deletion
+
+#### 16. Attachments
+**Purpose**: File uploads and document management for tasks. Stores metadata for files uploaded to task details with size tracking and upload attribution.
+
+```sql
+CREATE TABLE attachments (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  company_id BIGINT REFERENCES companies(id),
+  task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT NOT NULL CHECK (file_size > 0),
+  mime_type TEXT,
+  uploaded_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Per-task file attachments
+- File metadata (name, size, mime type)
+- Upload attribution and timestamps
+- File path for storage reference
+- Company-scoped isolation
+- Auto cascade with task deletion
+
+#### 17. Task Dependencies
+**Purpose**: Task blocking and scheduling relationships. Enables dependency management for Gantt chart scheduling with multiple relationship types (finish-to-start, start-to-start, etc.).
+
+```sql
+CREATE TABLE task_dependencies (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  company_id BIGINT REFERENCES companies(id),
+  task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+  depends_on_task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+  dependency_type VARCHAR DEFAULT 'finish_to_start'
+    CHECK (dependency_type IN ('finish_to_start', 'start_to_start', 'finish_to_finish', 'start_to_finish')),
+  created_by UUID REFERENCES auth.users(id),
+  is_auto BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Task blocking relationships
+- Multiple dependency types for scheduling
+- Gantt chart integration (`is_auto` for auto-generated)
+- Creator attribution
+- Company-scoped isolation
+
+#### 18. User Status
+**Purpose**: Real-time user presence and availability tracking. Tracks online status, away status, and last-seen timestamps for team collaboration visibility.
+
+```sql
+CREATE TABLE user_status (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id),
+  status TEXT DEFAULT 'offline'
+    CHECK (status IN ('online', 'away', 'busy', 'offline')),
+  status_message TEXT,
+  last_seen TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Real-time user availability status
+- Optional status messages ("In a meeting", "On vacation", etc.)
+- Last-seen timestamp for presence tracking
+- Automatically updated on user activity
+
+#### 19. Saved Views
+**Purpose**: User-defined saved task filter views. Enables users to create, save, and quickly load custom filtered task views without recreating filters.
+
+```sql
+CREATE TABLE saved_views (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  company_id BIGINT REFERENCES companies(id),
+  name VARCHAR NOT NULL CHECK (TRIM(name) <> ''),
+  filters JSONB DEFAULT '{}',
+  is_default BOOLEAN DEFAULT FALSE,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Per-user saved filter views
+- JSON filter criteria storage
+- Set default view per user
+- Sort order for view list arrangement
+- Company-scoped access
+
+### Complete Table Reference (19 Tables)
+
+| # | Table | Purpose | Rows |
+|---|-------|---------|------|
+| 1 | companies | Multi-tenant company containers | 3 |
+| 2 | profiles | User to company mapping with roles | 5 |
+| 3 | projects | Work containers organized by spaces | 121 |
+| 4 | spaces | Logical project grouping | 3 |
+| 5 | tasks | Individual work items | 133 |
+| 6 | checklists | Checklist groups within tasks | 7 |
+| 7 | checklist_items | Individual checklist items | 14 |
+| 8 | comments | Threaded task discussions | 61 |
+| 9 | mentions | @mentions within comments | 0 |
+| 10 | status_definitions | Custom workflow statuses | 483 |
+| 11 | tags | Task labels/categories | 4 |
+| 12 | task_tags | Many-to-many task-tag junction | 2 |
+| 13 | attachments | File uploads on tasks | 1 |
+| 14 | time_entries | Time tracking entries | 1 |
+| 15 | task_dependencies | Task blocking relationships | 2 |
+| 16 | activity_log | Audit trail of all changes | 846 |
+| 17 | notifications | User notifications queue | 1 |
+| 18 | user_status | Real-time user presence | 0 |
+| 19 | saved_views | User-saved filter views | 0 |
 
 ### Key Database Features
-- **Row-Level Security (RLS)**: All tables have RLS policies
+- **Row-Level Security (RLS)**: All 19 tables have RLS policies enabled
 - **PostgreSQL Triggers**: Auto-calculate durations, track activity, generate notifications
 - **Helper Functions**: `is_system_admin()`, `user_company_id()`, `is_company_admin()`
 - **Performance**: Indexes on foreign keys, company_id, and frequently queried columns
 - **Data Type Standards**:
-  - PKs: `bigint GENERATED ALWAYS AS IDENTITY`
+  - PKs: `bigint GENERATED ALWAYS AS IDENTITY` (except profiles/user_status which use uuid)
   - User references: `uuid` (from auth.users)
   - Company/Project/Task IDs: `bigint`
+- **Multi-Tenancy**: Company-scoped isolation via RLS on all tenant-aware tables
+- **Cascade Deletes**: Attachments, comments, checklists, and checklist_items auto-delete with parent
 
 ---
 
