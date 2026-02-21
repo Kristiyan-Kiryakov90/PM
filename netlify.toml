@@ -32,4 +32,4 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Note: CSP is handled in vite.config.js
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; connect-src 'self' https://zuupemhuaovzqqhyyocz.supabase.co wss://zuupemhuaovzqqhyyocz.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://zuupemhuaovzqqhyyocz.supabase.co; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self';"
