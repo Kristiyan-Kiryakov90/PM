@@ -19,7 +19,7 @@ export function renderChecklistsSection(checklists) {
     <div class="view-task-section">
       <div class="section-header-with-action">
         <h6>Checklists</h6>
-        <button class="btn-sm btn-outline-primary checklist-add-btn">
+        <button class="btn-sm btn-outline-primary" onclick="window.addNewChecklist()">
           <span>➕</span>
           <span>Add Checklist</span>
         </button>
@@ -49,6 +49,7 @@ function renderChecklist(checklist) {
             <span class="checklist-progress-text">${completedItems}/${totalItems}</span>
             <button
               class="btn-icon-xs checklist-delete-checklist-btn"
+              onclick="window.deleteChecklistHandler(${checklist.id})"
               title="Delete checklist"
             >
               🗑️
@@ -62,7 +63,7 @@ function renderChecklist(checklist) {
       <ul class="checklist-items-list">
         ${items.map(item => renderChecklistItem(item)).join('')}
         <li class="checklist-add-item">
-          <button class="btn-link-sm checklist-add-item-btn" data-checklist-id="${checklist.id}">
+          <button class="btn-link-sm" onclick="window.addChecklistItem(${checklist.id})">
             + Add item
           </button>
         </li>
@@ -81,10 +82,12 @@ function renderChecklistItem(item) {
         type="checkbox"
         class="checklist-checkbox"
         ${item.is_completed ? 'checked' : ''}
+        onchange="window.toggleChecklistItemHandler(${item.id})"
       />
       <span class="checklist-item-content">${escapeHtml(item.content)}</span>
       <button
         class="btn-icon-xs checklist-delete-btn"
+        onclick="window.deleteChecklistItemHandler(${item.id})"
         title="Delete item"
       >
         ✕
@@ -102,19 +105,23 @@ async function updateTaskStatusFromChecklists(taskId) {
     const checklists = await checklistService.getTaskChecklists(taskId);
     console.log('📋 Loaded checklists:', checklists.length);
 
+    // Count total and completed items across ALL checklists
     let totalItems = 0;
     let completedItems = 0;
 
     checklists.forEach((checklist, index) => {
       const items = checklist.checklist_items || [];
       const completed = items.filter(item => item.is_completed).length;
+
       console.log(`📝 Checklist ${index + 1} "${checklist.title}": ${completed}/${items.length} items complete`);
+
       totalItems += items.length;
       completedItems += completed;
     });
 
     console.log(`📊 Total across all checklists: ${completedItems}/${totalItems} items complete`);
 
+    // Determine new status based on completion
     let newStatus = null;
     if (totalItems > 0) {
       if (completedItems === 0) {
@@ -127,11 +134,16 @@ async function updateTaskStatusFromChecklists(taskId) {
 
       console.log(`🎯 Calculated status: ${newStatus}`);
 
+      // Update task status
       if (newStatus) {
         const { taskService } = await import('@services/task-service.js');
         await taskService.updateTask(taskId, { status: newStatus });
         console.log(`✅ Task status updated to: ${newStatus}`);
+
+        // Update status badge in view modal if open
         updateStatusBadgeInModal(newStatus);
+
+        // Trigger task list reload
         window.dispatchEvent(new CustomEvent('taskStatusChanged', { detail: { taskId, status: newStatus } }));
       }
     }
@@ -146,6 +158,7 @@ async function updateTaskStatusFromChecklists(taskId) {
 function updateStatusBadgeInModal(newStatus) {
   const statusBadge = document.querySelector('.view-task-status-badge');
   if (statusBadge) {
+    // Update badge text and class
     const statusText = {
       'todo': 'To Do',
       'in_progress': 'In Progress',
@@ -185,102 +198,16 @@ async function refreshChecklistsSection(taskId) {
 }
 
 /**
- * Setup checklist event handlers using event delegation on the modal element.
- * Replaces previous listener on each call to avoid stale taskId closures.
+ * Setup checklist event handlers
  */
-export function setupChecklistHandlers(taskId) {
-  const modal = document.getElementById('viewTaskModal');
-  if (!modal) return;
-
-  // Remove previous listeners to avoid duplicates / stale taskId
-  if (modal._checklistClickHandler) {
-    modal.removeEventListener('click', modal._checklistClickHandler);
-  }
-  if (modal._checklistChangeHandler) {
-    modal.removeEventListener('change', modal._checklistChangeHandler);
-  }
-
-  // --- Click delegation ---
-  modal._checklistClickHandler = async (e) => {
-    // Add Checklist
-    if (e.target.closest('.checklist-add-btn')) {
-      const title = prompt('Enter checklist name:');
-      if (!title || !title.trim()) return;
-      try {
-        await checklistService.createChecklist({ task_id: taskId, title: title.trim() });
-        uiHelpers.showSuccess('Checklist created');
-        await refreshChecklistsSection(taskId);
-      } catch (error) {
-        console.error('Error creating checklist:', error);
-        uiHelpers.showError('Failed to create checklist');
-      }
-      return;
-    }
-
-    // Delete Checklist
-    const deleteChecklistBtn = e.target.closest('.checklist-delete-checklist-btn');
-    if (deleteChecklistBtn) {
-      const block = deleteChecklistBtn.closest('[data-checklist-id]');
-      if (!block) return;
-      const checklistId = parseInt(block.dataset.checklistId, 10);
-      if (!confirm('Delete this entire checklist? All items will be removed.')) return;
-      try {
-        await checklistService.deleteChecklist(checklistId);
-        uiHelpers.showSuccess('Checklist deleted');
-        await refreshChecklistsSection(taskId);
-      } catch (error) {
-        console.error('Error deleting checklist:', error);
-        uiHelpers.showError('Failed to delete checklist');
-      }
-      return;
-    }
-
-    // Add Item
-    const addItemBtn = e.target.closest('.checklist-add-item-btn');
-    if (addItemBtn) {
-      const checklistId = parseInt(addItemBtn.dataset.checklistId, 10);
-      const content = prompt('Enter checklist item:');
-      if (!content || !content.trim()) return;
-      try {
-        await checklistService.createChecklistItem({ checklist_id: checklistId, content: content.trim() });
-        uiHelpers.showSuccess('Item added');
-        await updateTaskStatusFromChecklists(taskId);
-        await refreshChecklistsSection(taskId);
-      } catch (error) {
-        console.error('Error adding checklist item:', error);
-        uiHelpers.showError('Failed to add item');
-      }
-      return;
-    }
-
-    // Delete Item
-    const deleteItemBtn = e.target.closest('.checklist-delete-btn');
-    if (deleteItemBtn) {
-      const li = deleteItemBtn.closest('[data-item-id]');
-      if (!li) return;
-      const itemId = parseInt(li.dataset.itemId, 10);
-      if (!confirm('Delete this checklist item?')) return;
-      try {
-        await checklistService.deleteChecklistItem(itemId);
-        uiHelpers.showSuccess('Checklist item deleted');
-        await updateTaskStatusFromChecklists(taskId);
-        await refreshChecklistsSection(taskId);
-      } catch (error) {
-        console.error('Error deleting checklist item:', error);
-        uiHelpers.showError('Failed to delete checklist item');
-      }
-    }
-  };
-
-  // --- Change delegation (checkboxes) ---
-  modal._checklistChangeHandler = async (e) => {
-    if (!e.target.matches('.checklist-checkbox')) return;
-    const li = e.target.closest('[data-item-id]');
-    if (!li) return;
-    const itemId = parseInt(li.dataset.itemId, 10);
+export function setupChecklistHandlers(taskId, reopenViewModal) {
+  // Global handlers for checklist operations
+  window.toggleChecklistItemHandler = async (itemId) => {
     try {
       await checklistService.toggleChecklistItem(itemId);
+      // Update task status based on completion
       await updateTaskStatusFromChecklists(taskId);
+      // Refresh only checklists section, not entire modal
       await refreshChecklistsSection(taskId);
     } catch (error) {
       console.error('Error toggling checklist item:', error);
@@ -288,6 +215,61 @@ export function setupChecklistHandlers(taskId) {
     }
   };
 
-  modal.addEventListener('click', modal._checklistClickHandler);
-  modal.addEventListener('change', modal._checklistChangeHandler);
+  window.deleteChecklistItemHandler = async (itemId) => {
+    if (!confirm('Delete this checklist item?')) return;
+    try {
+      await checklistService.deleteChecklistItem(itemId);
+      uiHelpers.showSuccess('Checklist item deleted');
+      // Update task status based on completion
+      await updateTaskStatusFromChecklists(taskId);
+      // Refresh only checklists section, not entire modal
+      await refreshChecklistsSection(taskId);
+    } catch (error) {
+      console.error('Error deleting checklist item:', error);
+      uiHelpers.showError('Failed to delete checklist item');
+    }
+  };
+
+  window.addChecklistItem = async (checklistId) => {
+    const content = prompt('Enter checklist item:');
+    if (!content || !content.trim()) return;
+    try {
+      await checklistService.createChecklistItem({ checklist_id: checklistId, content: content.trim() });
+      uiHelpers.showSuccess('Item added');
+      // Update task status based on completion
+      await updateTaskStatusFromChecklists(taskId);
+      // Refresh only checklists section, not entire modal
+      await refreshChecklistsSection(taskId);
+    } catch (error) {
+      console.error('Error adding checklist item:', error);
+      uiHelpers.showError('Failed to add item');
+    }
+  };
+
+  window.addNewChecklist = async () => {
+    const title = prompt('Enter checklist name:');
+    if (!title || !title.trim()) return;
+    try {
+      await checklistService.createChecklist({ task_id: taskId, title: title.trim() });
+      uiHelpers.showSuccess('Checklist created');
+      // Refresh only checklists section, not entire modal
+      await refreshChecklistsSection(taskId);
+    } catch (error) {
+      console.error('Error creating checklist:', error);
+      uiHelpers.showError('Failed to create checklist');
+    }
+  };
+
+  window.deleteChecklistHandler = async (checklistId) => {
+    if (!confirm('Delete this entire checklist? All items will be removed.')) return;
+    try {
+      await checklistService.deleteChecklist(checklistId);
+      uiHelpers.showSuccess('Checklist deleted');
+      // Refresh only checklists section, not entire modal
+      await refreshChecklistsSection(taskId);
+    } catch (error) {
+      console.error('Error deleting checklist:', error);
+      uiHelpers.showError('Failed to delete checklist');
+    }
+  };
 }

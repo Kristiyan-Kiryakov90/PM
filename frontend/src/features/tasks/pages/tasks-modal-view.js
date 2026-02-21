@@ -185,7 +185,7 @@ export async function openViewModal(taskId, teamMembers, currentUser, openEditMo
       window._viewChecklists = checklists;
 
       // Setup checklist event listeners
-      setupChecklistHandlers(taskId);
+      setupChecklistHandlers(taskId, (tid) => openViewModal(tid, teamMembers, currentUser, openEditModal, setCurrentDeletingTaskId));
 
       // Setup Comments tab initialization
       const commentsTab = document.getElementById('comments-tab');

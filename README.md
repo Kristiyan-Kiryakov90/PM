@@ -309,9 +309,52 @@ PM/
 
 ## 6. Database Schema
 
+### Database Architecture Diagram
+
+```mermaid
+erDiagram
+    COMPANIES ||--o{ PROJECTS : contains
+    COMPANIES ||--o{ SPACES : contains
+    COMPANIES ||--o{ STATUSES : contains
+    COMPANIES ||--o{ TAGS : contains
+    
+    AUTH_USERS ||--o{ PROJECTS : creates
+    AUTH_USERS ||--o{ TASKS : creates
+    AUTH_USERS ||--o{ TASKS : assigned_to
+    AUTH_USERS ||--o{ COMMENTS : creates
+    AUTH_USERS ||--o{ TIME_ENTRIES : tracks
+    AUTH_USERS ||--o{ TAGS : creates
+    AUTH_USERS ||--o{ MENTIONS : mentioned_in
+    AUTH_USERS ||--o{ ACTIVITY_LOG : initiates
+    AUTH_USERS ||--o{ NOTIFICATIONS : receives
+    
+    SPACES ||--o{ PROJECTS : contains
+    SPACES ||--o{ TASKS : organizes
+    
+    PROJECTS ||--o{ TASKS : contains
+    PROJECTS ||--o{ ACTIVITY_LOG : related_to
+    
+    TASKS ||--o{ COMMENTS : has
+    TASKS ||--o{ TIME_ENTRIES : tracked_in
+    TASKS ||--o{ TASK_TAGS : has
+    TASKS ||--o{ CHECKLISTS : contains
+    TASKS ||--o{ NOTIFICATIONS : triggers
+    TASKS ||--o{ ACTIVITY_LOG : related_to
+    
+    COMMENTS ||--o{ COMMENTS : threaded
+    COMMENTS ||--o{ MENTIONS : has
+    COMMENTS ||--o{ NOTIFICATIONS : triggers
+    
+    TAGS ||--o{ TASK_TAGS : linked_to
+    
+    ACTIVITY_LOG ||--o{ COMPANIES : tracks
+```
+
 ### Core Tables
 
 #### 1. Companies
+**Purpose**: Multi-tenant company container for complete data isolation. Each company has its own projects, spaces, tasks, and team members. Enables the SaaS model where different organizations operate independently within the same platform.
+
 ```sql
 CREATE TABLE companies (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -321,9 +364,15 @@ CREATE TABLE companies (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
-Stores company information for multi-tenant isolation.
+
+**Key Fields**:
+- `name`: Unique company identifier
+- `logo_url`: Company branding/logo
+- **Isolation**: All company data is accessed through `auth.user_company_id()` RLS function
 
 #### 2. Users (via Supabase Auth)
+**Purpose**: Authentication and user metadata storage. Leverages Supabase Auth for secure credential management while storing application-specific metadata in the auth.users table. Supports three roles: sys_admin (system administrator), admin (company administrator), and user (standard employee).
+
 ```
 Metadata stored in auth.users:
 - company_id (nullable - NULL = personal user)
@@ -332,7 +381,15 @@ Metadata stored in auth.users:
 - avatar_url
 ```
 
+**Key Points**:
+- JWT-based authentication via Supabase
+- Single sys_admin created via bootstrap modal during initial setup
+- Each company can have multiple admins and users
+- Multi-company support: users can belong to only one company
+
 #### 3. Projects
+**Purpose**: Top-level work containers that organize all tasks and activities. Projects can belong to spaces for hierarchical organization and support lifecycle management with status tracking (active, paused, archived).
+
 ```sql
 CREATE TABLE projects (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -352,7 +409,16 @@ CREATE TABLE projects (
 );
 ```
 
+**Key Features**:
+- Can be personal (company_id NULL) or company-owned
+- Visual customization with color and icon
+- Optional time-based tracking (start_year, end_year)
+- Sort order for custom arrangement
+- RLS enforced: users only see their company's projects
+
 #### 4. Tasks
+**Purpose**: Individual work items within projects. The core entity of the system, supporting assignment, status tracking, prioritization, and detailed tracking of work completion.
+
 ```sql
 CREATE TABLE tasks (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -370,95 +436,16 @@ CREATE TABLE tasks (
 );
 ```
 
-#### 5. Comments
-```sql
-CREATE TABLE comments (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
-  created_by UUID REFERENCES auth.users(id),
-  content TEXT NOT NULL,
-  parent_comment_id BIGINT REFERENCES comments(id) (for threading),
-  is_action_item BOOLEAN DEFAULT FALSE,
-  resolved BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
+**Key Relationships**:
+- Belongs to a project and space
+- Assigned to a team member
+- Tracked by status (custom statuses per company)
+- Priority levels: low, medium, high
+- Has deadline tracking with due_date
 
-#### 6. Mentions
-```sql
-CREATE TABLE mentions (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  comment_id BIGINT REFERENCES comments(id) ON DELETE CASCADE,
-  mentioned_user_id UUID REFERENCES auth.users(id),
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+#### 5. Spaces
+**Purpose**: Logical grouping mechanism for organizing projects within a company. Enables hierarchical project organization (e.g., by department, product area, or initiative).
 
-#### 7. Activity Log
-```sql
-CREATE TABLE activity_log (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  entity_type TEXT NOT NULL,
-  entity_id BIGINT NOT NULL,
-  action TEXT NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
-  company_id BIGINT REFERENCES companies(id),
-  details JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-#### 8. Notifications
-```sql
-CREATE TABLE notifications (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  type TEXT NOT NULL,
-  related_user_id UUID REFERENCES auth.users(id),
-  task_id BIGINT REFERENCES tasks(id),
-  comment_id BIGINT REFERENCES comments(id),
-  read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-#### 9. Time Entries
-```sql
-CREATE TABLE time_entries (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  task_id BIGINT REFERENCES tasks(id),
-  user_id UUID REFERENCES auth.users(id),
-  start_time TIMESTAMP NOT NULL,
-  end_time TIMESTAMP,
-  duration_seconds INT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-#### 10. Tags
-```sql
-CREATE TABLE tags (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  name TEXT NOT NULL,
-  color TEXT,
-  company_id BIGINT REFERENCES companies(id),
-  created_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-#### 11. Task Tags (Junction Table)
-```sql
-CREATE TABLE task_tags (
-  task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
-  tag_id BIGINT REFERENCES tags(id) ON DELETE CASCADE,
-  PRIMARY KEY (task_id, tag_id)
-);
-```
-
-#### 12. Spaces
 ```sql
 CREATE TABLE spaces (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -473,7 +460,15 @@ CREATE TABLE spaces (
 );
 ```
 
-#### 13. Statuses
+**Key Features**:
+- Company-scoped organization
+- Visual customization (color, icon)
+- Custom sort order for UI arrangement
+- Projects and Tasks can be grouped within spaces
+
+#### 6. Statuses
+**Purpose**: Custom workflow status definitions per company. Allows each company to define their own status workflows (e.g., To Do → In Progress → Review → Done) instead of using fixed statuses.
+
 ```sql
 CREATE TABLE statuses (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -485,7 +480,159 @@ CREATE TABLE statuses (
 );
 ```
 
+**Key Features**:
+- Company-specific status definitions
+- Visual color coding for UI distinction
+- Custom ordering for workflow sequencing
+- Enables flexible workflow management per company
+
+#### 7. Comments
+**Purpose**: Threaded discussion system on tasks. Supports rich collaboration with threading, action item tracking, and resolution status for comment-based tasks.
+
+```sql
+CREATE TABLE comments (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+  created_by UUID REFERENCES auth.users(id),
+  content TEXT NOT NULL,
+  parent_comment_id BIGINT REFERENCES comments(id) (for threading),
+  is_action_item BOOLEAN DEFAULT FALSE,
+  resolved BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Nested threaded discussions (parent_comment_id)
+- Action item marking for task-like comments
+- Resolution tracking
+- Automatic cascade deletion with task
+
+#### 8. Mentions
+**Purpose**: Association table for tracking @mentions within comments. Enables notification triggering when users are mentioned and helps identify who was involved in discussions.
+
+```sql
+CREATE TABLE mentions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  comment_id BIGINT REFERENCES comments(id) ON DELETE CASCADE,
+  mentioned_user_id UUID REFERENCES auth.users(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Purpose**:
+- Links comments to mentioned users
+- Triggers notifications for mentioned users
+- Automatic cascade deletion with comment
+
+#### 9. Task Tags
+**Purpose**: Many-to-many junction table linking tasks to tags/labels. Enables flexible categorization and filtering of tasks across projects.
+
+```sql
+CREATE TABLE task_tags (
+  task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE,
+  tag_id BIGINT REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (task_id, tag_id)
+);
+```
+
+**Key Purpose**:
+- Flexible task categorization
+- Multiple tags per task
+- Enables filtering and reporting by tag
+
+#### 10. Tags
+**Purpose**: Reusable labels/categories for organizing and filtering tasks. Admin-created tags provide consistent categorization across the company.
+
+```sql
+CREATE TABLE tags (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name TEXT NOT NULL,
+  color TEXT,
+  company_id BIGINT REFERENCES companies(id),
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Company-scoped tags
+- Visual color coding
+- Admin-only creation (enforced via RLS)
+- Support for task filtering and analytics
+
+#### 11. Time Entries
+**Purpose**: Tracks time spent on tasks. Supports both manual time entry and running timers, with automatic duration calculation and overlap prevention.
+
+```sql
+CREATE TABLE time_entries (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  task_id BIGINT REFERENCES tasks(id),
+  user_id UUID REFERENCES auth.users(id),
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP,
+  duration_seconds INT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Per-task time tracking
+- User-attributed time entries
+- Automatic duration calculation
+- Running timers (end_time NULL) and completed entries
+- Supports reporting and productivity analytics
+
+#### 12. Activity Log
+**Purpose**: Automatic audit trail of all system changes. PostgreSQL triggers automatically log every create, update, and delete operation for compliance, debugging, and change history tracking.
+
+```sql
+CREATE TABLE activity_log (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  entity_type TEXT NOT NULL,
+  entity_id BIGINT NOT NULL,
+  action TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  company_id BIGINT REFERENCES companies(id),
+  details JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- Automatic trigger-based logging
+- Tracks: projects, tasks, comments, tags, time entries
+- Captures who made what change when
+- JSONB details for full change history
+- Company-scoped for isolation
+
+#### 13. Notifications
+**Purpose**: Real-time notification queue for user engagement events. Tracks assignments, mentions, and activity that requires user attention.
+
+```sql
+CREATE TABLE notifications (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  type TEXT NOT NULL,
+  related_user_id UUID REFERENCES auth.users(id),
+  task_id BIGINT REFERENCES tasks(id),
+  comment_id BIGINT REFERENCES comments(id),
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Key Features**:
+- User-scoped notifications
+- Multiple notification types (assignment, mention, activity)
+- Read/unread tracking
+- Real-time Supabase subscriptions for live updates
+
 #### 14. Checklists
+**Purpose**: Granular task breakdown within individual tasks. Enables detailed task decomposition for complex work items with progress tracking.
+
 ```sql
 CREATE TABLE checklists (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -496,6 +643,12 @@ CREATE TABLE checklists (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
+**Key Features**:
+- Per-task checklist items
+- Completion status tracking
+- Provides task breakdown visibility
+- Automatic cascade deletion with task
 
 ### Key Database Features
 - **Row-Level Security (RLS)**: All tables have RLS policies

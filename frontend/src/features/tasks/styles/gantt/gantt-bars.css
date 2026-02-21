@@ -101,6 +101,14 @@
   stroke-width: 2px;
 }
 
+/* Hide progress drag handle - progress is read-only, calculated from checklists */
+.gantt .handle.progress,
+.gantt .bar-group .handle.progress,
+polygon.handle.progress {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 /* Critical Path Highlighting */
 .gantt .bar-wrapper.critical-path .bar {
   fill: #dc2626 !important;

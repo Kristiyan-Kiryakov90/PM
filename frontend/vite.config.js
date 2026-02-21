@@ -81,9 +81,9 @@ function securityHeaders() {
   const supabaseOrigin = 'https://zuupemhuaovzqqhyyocz.supabase.co';
   const csp = [
     "default-src 'self'",
-    `script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com`,
+    `script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com`,
     `style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net`,
-    `connect-src 'self' ${supabaseOrigin} wss://zuupemhuaovzqqhyyocz.supabase.co`,
+    `connect-src 'self' ${supabaseOrigin} wss://zuupemhuaovzqqhyyocz.supabase.co https://cdn.jsdelivr.net`,
     `img-src 'self' data: blob: ${supabaseOrigin}`,
     "font-src 'self'",
     "object-src 'none'",

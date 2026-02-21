@@ -57,7 +57,6 @@ export async function initGanttChart(container, options = {}) {
       viewMode: options.viewMode || 'Day',
       onTaskClick: options.onTaskClick || (() => {}),
       onDateChange: options.onDateChange || (() => {}),
-      onProgressChange: options.onProgressChange || (() => {}),
       onDependencyCreate: options.onDependencyCreate || (() => {}),
       ...options
     };
@@ -114,7 +113,7 @@ export async function initGanttChart(container, options = {}) {
       view_mode: currentOptions.viewMode,
       date_format: 'YYYY-MM-DD',
       language: 'en',
-      readonly: false, // Enable dragging
+      readonly: false,
       custom_popup_html: (task) => {
         return `
           <div class="gantt-popup">
@@ -132,9 +131,6 @@ export async function initGanttChart(container, options = {}) {
       },
       on_date_change: (task, start, end) => {
         currentOptions.onDateChange(task, start, end);
-      },
-      on_progress_change: (task, progress) => {
-        currentOptions.onProgressChange(task, progress);
       },
       on_view_change: (mode) => {
         // Re-add today marker when view changes

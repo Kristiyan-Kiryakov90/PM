@@ -137,9 +137,6 @@ export async function loadGanttView(tasks, currentFilters, openViewModal) {
           uiHelpers.showError('Failed to update task dates: ' + error.message);
         }
       },
-      onProgressChange: async (task, progress) => {
-        // Optionally update task status based on progress
-      },
     });
 
     // Check if Gantt initialized successfully
