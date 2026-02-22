@@ -114,6 +114,7 @@ To provide a lightweight, efficient, and user-friendly alternative to enterprise
 - **Hosting**: Supabase Cloud
 - **CDN**: Supabase CDN for static assets
 - **Database Migrations**: Custom SQL migrations
+- **Deployment**: Netlify
 
 ### Architecture Overview
 
@@ -812,27 +813,27 @@ CREATE TABLE saved_views (
 
 ### Complete Table Reference (19 Tables)
 
-| # | Table | Purpose | Rows |
-|---|-------|---------|------|
-| 1 | companies | Multi-tenant company containers | 3 |
-| 2 | profiles | User to company mapping with roles | 5 |
-| 3 | projects | Work containers organized by spaces | 121 |
-| 4 | spaces | Logical project grouping | 3 |
-| 5 | tasks | Individual work items | 133 |
-| 6 | checklists | Checklist groups within tasks | 7 |
-| 7 | checklist_items | Individual checklist items | 14 |
-| 8 | comments | Threaded task discussions | 61 |
-| 9 | mentions | @mentions within comments | 0 |
-| 10 | status_definitions | Custom workflow statuses | 483 |
-| 11 | tags | Task labels/categories | 4 |
-| 12 | task_tags | Many-to-many task-tag junction | 2 |
-| 13 | attachments | File uploads on tasks | 1 |
-| 14 | time_entries | Time tracking entries | 1 |
-| 15 | task_dependencies | Task blocking relationships | 2 |
-| 16 | activity_log | Audit trail of all changes | 846 |
-| 17 | notifications | User notifications queue | 1 |
-| 18 | user_status | Real-time user presence | 0 |
-| 19 | saved_views | User-saved filter views | 0 |
+| # | Table | Purpose |
+|---|-------|---------|
+| 1 | companies | Multi-tenant company containers |
+| 2 | profiles | User to company mapping with roles |
+| 3 | projects | Work containers organized by spaces |
+| 4 | spaces | Logical project grouping |
+| 5 | tasks | Individual work items |
+| 6 | checklists | Checklist groups within tasks |
+| 7 | checklist_items | Individual checklist items |
+| 8 | comments | Threaded task discussions |
+| 9 | mentions | @mentions within comments |
+| 10 | status_definitions | Custom workflow statuses |
+| 11 | tags | Task labels/categories |
+| 12 | task_tags | Many-to-many task-tag junction |
+| 13 | attachments | File uploads on tasks |
+| 14 | time_entries | Time tracking entries |
+| 15 | task_dependencies | Task blocking relationships |
+| 16 | activity_log | Audit trail of all changes |
+| 17 | notifications | User notifications queue |
+| 18 | user_status | Real-time user presence |
+| 19 | saved_views | User-saved filter views |
 
 ### Key Database Features
 - **Row-Level Security (RLS)**: All 19 tables have RLS policies enabled
